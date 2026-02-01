@@ -63,3 +63,110 @@ input::placeholder,
 textarea::placeholder {
   color: var(--muted);
 }
+/* ---------------- ADMIN ---------------- */
+
+body.admin {
+  max-width: 900px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.admin-main {
+  display: grid;
+  gap: 24px;
+}
+
+.admin-card {
+  padding: 20px;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 14px;
+}
+
+.stack {
+  display: grid;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.85em;
+  color: var(--muted);
+}
+
+input, select {
+  background: #111;
+  color: var(--text);
+  border: 1px solid #2a2d36;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid #2a2d36;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 0.9em;
+}
+
+th, td {
+  padding: 8px;
+  border-bottom: 1px solid #2a2d36;
+}
+
+th {
+  color: var(--muted);
+  text-align: left;
+}
+
+.ideas {
+  list-style: none;
+  padding: 0;
+  margin-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.ideas li {
+  display: flex;
+  justify-content: space-between;
+  background: #111;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.error {
+  color: #ff6b6b;
+  margin-top: 8px;
+}
