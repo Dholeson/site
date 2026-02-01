@@ -1,18 +1,17 @@
 window.WEEKS = [
   {
     week: 1,
-    start: "2026-02-01",
-    end: "2026-02-07",
+    start: "2026-02-01", // Sunday
     title: "Website reboot",
     status: "active",
     days: {
-      Mon: { note: "" },
-      Tue: { note: "" },
-      Wed: { note: "" },
-      Thu: { note: "" },
-      Fri: { note: "" },
-      Sat: { note: "" },
-      Sun: { note: "" }
+      Sun: {},
+      Mon: {},
+      Tue: {},
+      Wed: {},
+      Thu: {},
+      Fri: {},
+      Sat: {}
     }
   }
 ];
