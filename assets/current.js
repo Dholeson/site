@@ -1,26 +1,30 @@
 document.addEventListener("DOMContentLoaded", () => {
   const el = document.getElementById("current");
-  if (!el) return;
+  if (!el || !window.WEEKS) return;
 
-  const start = new Date("2026-02-01"); // start date
+  const start = new Date("2026-02-01");
   const now = new Date();
 
-  const week =
+  const weekNum =
     Math.floor((now - start) / (7 * 24 * 60 * 60 * 1000)) + 1;
 
-  const day = now.toLocaleDateString(undefined, { weekday: "long" });
+  const today = now.toLocaleDateString(undefined, { weekday: "long" });
 
-  const project = "Website reboot";
+  const weekData =
+    window.WEEKS.find(w => w.week === weekNum) ||
+    { title: "Unplanned week", status: "unknown" };
+
   const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
   const dayRow = days
-    .map(d => `<span class="day ${d === day ? "today" : ""}">${d.slice(0,3)}</span>`)
+    .map(d => `<span class="day ${d === today ? "today" : ""}">${d.slice(0,3)}</span>`)
     .join("");
 
   el.innerHTML = `
     <div class="current">
-      <strong>Week ${week}: ${project}</strong><br>
-      <div>${dayRow}</div>
+      <strong>Week ${weekNum}: ${weekData.title}</strong><br>
+      <small>Status: ${weekData.status}</small>
+      <div style="margin-top:6px">${dayRow}</div>
     </div>
   `;
 });
