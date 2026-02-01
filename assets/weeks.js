@@ -1,30 +1,29 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const el = document.getElementById("weeks");
-  if (!el || !window.WEEKS) return;
+const params = new URLSearchParams(window.location.search);
+const weekNum = Number(params.get("week")) || 1;
 
-  const start = new Date("2026-02-01");
-  const now = new Date();
-  const currentWeek =
-    Math.floor((now - start) / (7 * 24 * 60 * 60 * 1000)) + 1;
+const week = window.WEEKS.find(w => w.week === weekNum);
+if (!week) return;
 
-  const maxWeeks = 48;
+const today = new Date().toLocaleDateString(undefined, { weekday: "short" });
 
-  const html = Array.from({ length: maxWeeks }, (_, i) => {
-    const weekNum = i + 1;
-    const data = window.WEEKS.find(w => w.week === weekNum);
+document.getElementById("week-header").innerHTML = `
+  <h1>Week ${week.week}: ${week.title}</h1>
+  <small>${week.start} → ${week.end} · ${week.status}</small>
+`;
 
-    const title = data ? data.title : "—";
-    const status = data ? data.status : "planned";
-    const isCurrent = weekNum === currentWeek ? "current" : "";
+document.getElementById("week-nav").innerHTML = `
+  <button onclick="location.href='week.html?week=${weekNum - 1}'">←</button>
+  <button onclick="location.href='week.html?week=${weekNum + 1}'">→</button>
+`;
 
-    return `
-      <div class="${isCurrent}">
-        <strong>Week ${weekNum}</strong><br>
-        <span>${title}</span><br>
-        <small>${status}</small>
-      </div>
-    `;
-  }).join("");
+const days = Object.entries(week.days);
 
-  el.innerHTML = html;
-});
+document.getElementById("day-cards").innerHTML = days.map(([day, data]) => {
+  const isToday = day === today ? "today" : "";
+  return `
+    <div class="day-card ${isToday}">
+      <strong>${day}</strong>
+      <p>${data.note || "—"}</p>
+    </div>
+  `;
+}).join("");
