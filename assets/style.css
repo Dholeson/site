@@ -1,59 +1,65 @@
+:root {
+  --bg: #0f1115;
+  --card: #1a1d24;
+  --text: #e6e6e6;
+  --muted: #9aa0aa;
+  --accent: #6c8cff;
+}
+
 body {
+  background: var(--bg);
+  color: var(--text);
   font-family: system-ui, -apple-system, sans-serif;
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 0 16px;
-  line-height: 1.6;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
 }
 
-a { text-decoration: none; }
-
-.current {
-  background: #f5f7ff;
-  border-left: 4px solid #4f6cff;
-  padding: 12px 16px;
+h1 {
+  margin-bottom: 4px;
 }
 
-.week-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-}
-
-.day {
-  padding: 8px;
-  border-radius: 6px;
-  opacity: 0.5;
-}
-
-.day.today {
-  opacity: 1;
-  font-weight: 600;
-}
-
-.week-grid div {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 10px;
-  background: #fafafa;
-}
 .day-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
   margin-top: 20px;
 }
 
 .day-card {
-  flex: 1;
+  background: var(--card);
+  border-radius: 10px;
   padding: 12px;
-  border-radius: 8px;
-  background: #f2f2f2;
   opacity: 0.6;
 }
 
 .day-card.today {
-  flex: 2;
   opacity: 1;
-  background: #e8edff;
-  border: 2px solid #4f6cff;
+  outline: 2px solid var(--accent);
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+input, textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  margin-bottom: 6px;
+  font-family: inherit;
+}
+
+textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
 }
