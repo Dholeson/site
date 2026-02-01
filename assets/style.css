@@ -30,3 +30,10 @@ a { text-decoration: none; }
   opacity: 1;
   font-weight: 600;
 }
+
+.week-grid div {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  background: #fafafa;
+}
