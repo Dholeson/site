@@ -1,18 +1,18 @@
 window.WEEKS = [
   {
     week: 1,
+    start: "2026-02-01",
+    end: "2026-02-07",
     title: "Website reboot",
-    status: "active"
-  },
-  {
-    week: 2,
-    title: "Weekly grid + progress UI",
-    status: "planned"
-  },
-  {
-    week: 3,
-    title: "Task → time decomposer",
-    status: "planned"
+    status: "active",
+    days: {
+      Mon: { note: "" },
+      Tue: { note: "" },
+      Wed: { note: "" },
+      Thu: { note: "" },
+      Fri: { note: "" },
+      Sat: { note: "" },
+      Sun: { note: "" }
+    }
   }
-  // keep adding weeks here
 ];
