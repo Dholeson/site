@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin – Weekly Planner</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <!--
+        The admin page lets you manage weeks and ideas. To keep things simple
+        this demo uses localStorage as a database. A password prompt guards
+        access; feel free to change the password in admin.js. After logging
+        in, you can create new weeks, edit existing ones, and assign ideas
+        (projects) to them. Ideas represent high‑level goals or tasks that can
+        be scheduled into specific weeks.  See admin.js for details.
+    -->
+    <header id="app-header">
+        <h1>Admin Console</h1>
+        <button id="logout" style="display:none">Log out</button>
+    </header>
+    <main id="admin-main" class="admin-main">
+        <section id="login-section">
+            <h2>Please log in</h2>
+            <form id="login-form">
+                <label for="password">Password:</label>
+                <input type="password" id="password" required />
+                <button type="submit">Login</button>
+            </form>
+            <p id="login-error" class="error"></p>
+        </section>
+        <section id="manage-section" style="display:none">
+            <h2>Manage Weeks</h2>
+            <form id="week-form">
+                <input type="hidden" id="week-id" />
+                <div class="field-group">
+                    <label for="week-title-input">Title:</label>
+                    <input type="text" id="week-title-input" placeholder="Project title" required />
+                </div>
+                <div class="field-group">
+                    <label for="week-start-input">Start date (Sunday):</label>
+                    <input type="date" id="week-start-input" required />
+                </div>
+                <div class="field-group">
+                    <label for="week-status-input">Status:</label>
+                    <select id="week-status-input">
+                        <option value="planned">planned</option>
+                        <option value="in_progress">in progress</option>
+                        <option value="completed">completed</option>
+                        <option value="abandoned">abandoned</option>
+                    </select>
+                </div>
+                <button type="submit" id="save-week-btn">Save Week</button>
+                <button type="button" id="reset-week-form" class="secondary">Reset</button>
+            </form>
+            <h3>Existing Weeks</h3>
+            <table id="weeks-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Date Range</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- rows inserted via JS -->
+                </tbody>
+            </table>
+        </section>
+        <section id="ideas-section" style="display:none">
+            <h2>Manage Ideas</h2>
+            <form id="idea-form">
+                <input type="hidden" id="idea-id" />
+                <div class="field-group">
+                    <label for="idea-title-input">Idea:</label>
+                    <input type="text" id="idea-title-input" placeholder="New idea" required />
+                </div>
+                <button type="submit" id="save-idea-btn">Save Idea</button>
+                <button type="button" id="reset-idea-form" class="secondary">Reset</button>
+            </form>
+            <ul id="ideas-list">
+                <!-- ideas inserted via JS -->
+            </ul>
+        </section>
+    </main>
+    <script src="admin.js"></script>
+</body>
+</html>
