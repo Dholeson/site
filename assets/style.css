@@ -37,3 +37,23 @@ a { text-decoration: none; }
   padding: 10px;
   background: #fafafa;
 }
+.day-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.day-card {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f2f2f2;
+  opacity: 0.6;
+}
+
+.day-card.today {
+  flex: 2;
+  opacity: 1;
+  background: #e8edff;
+  border: 2px solid #4f6cff;
+}
