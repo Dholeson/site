@@ -1,12 +1,45 @@
 // admin.js
-// Lightweight admin gate + week/idea management
-// NOTE: client-side only, not real security
+// Client-side admin UI (NOT secure — personal use only)
 
-const ADMIN_PASSWORD = "weeklybuilds"; // <-- change this if you want
+const ADMIN_PASSWORD = "weeklybuilds"; // change if you want
 
-function qs(id) {
+function $(id) {
   return document.getElementById(id);
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const loginSection = $("login-section");
+  const manageSection = $("manage-section");
+  const ideasSection = $("ideas-section");
+  const logoutBtn = $("logout");
+  const errorEl = $("login-error");
+
+  // ---- LOGIN ----
+  $("login-form").addEventListener("submit", e => {
+    e.preventDefault();
+    const pw = $("password").value;
+
+    if (pw !== ADMIN_PASSWORD) {
+      errorEl.textContent = "Incorrect password";
+      return;
+    }
+
+    loginSection.style.display = "none";
+    manageSection.style.display = "block";
+    ideasSection.style.display = "block";
+    logoutBtn.style.display = "inline-block";
+    errorEl.textContent = "";
+
+    renderWeeks();
+    renderIdeas();
+  });
+
+  logoutBtn.addEventListener("click", () => {
+    location.reload();
+  });
+});
+
+/* ---------------- DATA ---------------- */
 
 function load(key, fallback) {
   try {
@@ -20,42 +53,11 @@ function save(key, value) {
   localStorage.setItem(key, JSON.stringify(value, null, 2));
 }
 
-/* ---------- LOGIN ---------- */
-
-const loginSection = qs("login-section");
-const manageSection = qs("manage-section");
-const ideasSection = qs("ideas-section");
-const logoutBtn = qs("logout");
-
-qs("login-form").addEventListener("submit", e => {
-  e.preventDefault();
-  const pw = qs("password").value;
-
-  if (pw !== ADMIN_PASSWORD) {
-    qs("login-error").textContent = "Incorrect password";
-    return;
-  }
-
-  loginSection.style.display = "none";
-  manageSection.style.display = "block";
-  ideasSection.style.display = "block";
-  logoutBtn.style.display = "inline-block";
-
-  renderWeeks();
-  renderIdeas();
-});
-
-logoutBtn.addEventListener("click", () => {
-  location.reload();
-});
-
-/* ---------- WEEKS ---------- */
-
-const weeksKey = "weeks";
+/* ---------------- WEEKS ---------------- */
 
 function renderWeeks() {
-  const weeks = load(weeksKey, {});
-  const tbody = qs("weeks-table").querySelector("tbody");
+  const weeks = load("weeks", {});
+  const tbody = $("weeks-table").querySelector("tbody");
   tbody.innerHTML = "";
 
   Object.entries(weeks)
@@ -78,49 +80,47 @@ function renderWeeks() {
   tbody.onclick = e => {
     const edit = e.target.dataset.edit;
     const del = e.target.dataset.del;
-    const weeks = load(weeksKey, {});
+    const weeks = load("weeks", {});
 
     if (edit) {
       const w = weeks[edit];
-      qs("week-id").value = edit;
-      qs("week-title-input").value = w.title;
-      qs("week-start-input").value = w.start;
-      qs("week-status-input").value = w.status;
+      $("week-id").value = edit;
+      $("week-title-input").value = w.title;
+      $("week-start-input").value = w.start;
+      $("week-status-input").value = w.status;
     }
 
-    if (del && confirm("Delete week?")) {
+    if (del && confirm("Delete this week?")) {
       delete weeks[del];
-      save(weeksKey, weeks);
+      save("weeks", weeks);
       renderWeeks();
     }
   };
 }
 
-qs("week-form").addEventListener("submit", e => {
+$("week-form").addEventListener("submit", e => {
   e.preventDefault();
-  const weeks = load(weeksKey, {});
-  const id = qs("week-id").value || String(Date.now());
+  const weeks = load("weeks", {});
+  const id = $("week-id").value || Date.now().toString();
 
   weeks[id] = {
-    title: qs("week-title-input").value,
-    start: qs("week-start-input").value,
-    status: qs("week-status-input").value,
+    title: $("week-title-input").value,
+    start: $("week-start-input").value,
+    status: $("week-status-input").value,
     days: weeks[id]?.days || {}
   };
 
-  save(weeksKey, weeks);
+  save("weeks", weeks);
   e.target.reset();
-  qs("week-id").value = "";
+  $("week-id").value = "";
   renderWeeks();
 });
 
-/* ---------- IDEAS ---------- */
-
-const ideasKey = "ideas";
+/* ---------------- IDEAS ---------------- */
 
 function renderIdeas() {
-  const ideas = load(ideasKey, []);
-  const list = qs("ideas-list");
+  const ideas = load("ideas", []);
+  const list = $("ideas-list");
   list.innerHTML = "";
 
   ideas.forEach((idea, i) => {
@@ -135,17 +135,17 @@ function renderIdeas() {
   list.onclick = e => {
     if (e.target.dataset.del) {
       ideas.splice(e.target.dataset.del, 1);
-      save(ideasKey, ideas);
+      save("ideas", ideas);
       renderIdeas();
     }
   };
 }
 
-qs("idea-form").addEventListener("submit", e => {
+$("idea-form").addEventListener("submit", e => {
   e.preventDefault();
-  const ideas = load(ideasKey, []);
-  ideas.push(qs("idea-title-input").value);
-  save(ideasKey, ideas);
+  const ideas = load("ideas", []);
+  ideas.push($("idea-title-input").value);
+  save("ideas", ideas);
   e.target.reset();
   renderIdeas();
 });
