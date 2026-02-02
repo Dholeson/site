@@ -1,17 +1,25 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Week</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <meta charset="UTF‑8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Week Archive – Weekly Project Journal</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <script defer src="assets/week.js"></script>
 </head>
 <body>
-
-<div id="week-nav"></div>
-<div id="week-header"></div>
-<div id="day-cards" class="day-row"></div>
-
-<script src="data/weeks.js"></script>
-<script defer src="assets/week.js"></script>
+  <header class="app-header">
+    <h1>Week Archive</h1>
+    <nav class="nav-bar">
+      <a href="index.html">Home</a>
+      <a href="weeks.html">Archive</a>
+    </nav>
+  </header>
+  <main id="week-main" class="container">
+    <!-- Dynamic content inserted by week.js -->
+  </main>
+  <footer class="app-footer">
+    <small>&copy; 2026. Crafted with care.</small>
+  </footer>
 </body>
 </html>
