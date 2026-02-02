@@ -1,145 +1,88 @@
-/* Global styles */
 :root {
-  --bg-color: #0d1117;
-  --card-bg: #161b22;
-  --primary: #58a6ff;
-  --text-color: #c9d1d9;
+  --bg: #0d1117;
+  --fg: #c9d1d9;
+  --accent: #58a6ff;
   --muted: #8b949e;
-  --border-radius: 0.5rem;
-  --padding: 1rem;
-  --max-width: 900px;
-  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  --border: #30363d;
+  --card: #161b22;
+  --radius: 8px;
+  font-family: system-ui, sans-serif;
 }
 
 body {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  font-family: var(--font-family);
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 16px;
   line-height: 1.5;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
-a {
-  color: var(--primary);
+header {
+  background: var(--card);
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  margin: 0 0 0.5rem 0;
+}
+
+nav a {
+  margin-right: 1rem;
+  color: var(--accent);
   text-decoration: none;
 }
 
-a:hover {
-  text-decoration: underline;
+main {
+  padding: 2rem;
 }
 
-.app-header,
-.app-footer {
-  background: var(--card-bg);
-  padding: var(--padding);
-  border-bottom: 1px solid #30363d;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 1.75rem;
-}
-
-.nav-bar {
-  margin-top: 0.5rem;
-}
-
-.nav-bar a {
-  margin-right: 1rem;
-}
-
-.container {
-  flex: 1;
-  width: 100%;
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: var(--padding);
-}
-
-.card {
-  background: var(--card-bg);
-  border: 1px solid #30363d;
-  border-radius: var(--border-radius);
-  padding: var(--padding);
+.week-card, .day-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
   margin-bottom: 1rem;
 }
 
-.card h3 {
-  margin-bottom: 0.5rem;
+.day-list {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
 }
 
-.status {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  text-transform: capitalize;
+.day-card {
+  min-width: 200px;
+  flex: 0 0 auto;
 }
 
-.status.planned {
-  background-color: #21262d;
-  color: var(--muted);
+.today {
+  border: 2px solid var(--accent);
 }
 
-.status.in_progress {
-  background-color: #21262d;
-  color: #d29922;
-}
-
-.status.completed {
-  background-color: #21262d;
-  color: #3fb950;
-}
-
-.status.abandoned {
-  background-color: #21262d;
-  color: #f85149;
-}
-
-.button {
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
-  border: none;
-  background-color: var(--primary);
-  color: var(--bg-color);
-  cursor: pointer;
-  margin-top: 0.5rem;
-}
-
-.button.secondary {
-  background-color: transparent;
-  border: 1px solid var(--primary);
-  color: var(--primary);
-}
-
-.button:hover {
-  opacity: 0.9;
-}
-
-table {
+textarea {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-th, td {
+  height: 5rem;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 0.5rem;
-  border-bottom: 1px solid #30363d;
 }
 
-th {
-  text-align: left;
+input, select, button {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #0d1117;
+  color: var(--fg);
+}
+
+button {
+  cursor: pointer;
 }
 
 .error {
   color: #f85149;
-  margin-top: 0.5rem;
 }
