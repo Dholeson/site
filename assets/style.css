@@ -83,6 +83,7 @@ button {
   cursor: pointer;
 }
 
-.error {
-  color: #f85149;
+ul {
+  margin: 0;
+  padding-left: 1.5rem;
 }
