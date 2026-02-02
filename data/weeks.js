@@ -6,13 +6,13 @@ export const weeks = [
     end: "2026-01-11",
     status: "completed",
     notes: {
-      Sunday: "Reviewed project and prepared for release.",
-      Monday: "Set up the project structure, created index and archive pages.",
-      Tuesday: "Designed dark mode theme and cards layout.",
-      Wednesday: "Implemented week archive with simple JSON data store.",
-      Thursday: "Added admin console for managing weeks.",
-      Friday: "Wrote sample content for week 1.",
-      Saturday: "Polished UI and updated styles."
+      Sunday: "Outlined the vision",
+      Monday: "Setup HTML/CSS layout",
+      Tuesday: "Implemented journal UI",
+      Wednesday: "Connected archive rendering",
+      Thursday: "Built admin stub",
+      Friday: "Reviewed styling",
+      Saturday: "Shipped v1"
     }
   }
 ];
