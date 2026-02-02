@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Projects – Archive</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <script type="module">
+    import { weeks } from "./data/weeks.js";
+    import { renderArchive } from "./assets/week.js";
+    window.addEventListener("DOMContentLoaded", () => renderArchive(weeks));
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Archive</h1>
+    <nav>
+      <a href="index.html">🏠 Home</a>
+    </nav>
+  </header>
+  <main id="archive-main"></main>
+</body>
+</html>
