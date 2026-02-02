@@ -2,26 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Weekly Project Journal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Projects – Home</title>
   <link rel="stylesheet" href="assets/style.css" />
+  <script type="module">
+    import { weeks } from "./data/weeks.js";
+    import { renderHome } from "./assets/current.js";
+    window.addEventListener("DOMContentLoaded", () => renderHome(weeks));
+  </script>
 </head>
 <body>
   <header>
-    <h1>Weekly Project Journal</h1>
+    <h1>Weekly Builds 2026</h1>
     <nav>
-      <a href="index.html">This Week</a>
-      <a href="weeks.html">Archive</a>
-      <a href="admin.html">Admin</a>
+      <a href="archive.html">📆 Archive</a>
+      <a href="projects.html">📂 Projects</a>
     </nav>
   </header>
-  <main id="main-content">
+  <main>
     <section id="current-week"></section>
   </main>
-  <script type="module">
-    import { weeks } from './data/weeks.js';
-    import { renderHome } from './assets/current.js';
-    renderHome(weeks);
-  </script>
 </body>
 </html>
