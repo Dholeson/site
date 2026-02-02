@@ -1,64 +1,46 @@
-// current.js – handles rendering the home page (index.html)
+export function renderHome(weeks) {
+  const current = getCurrentWeek(weeks);
+  const currentDay = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
-import { weeks } from '../data/weeks.js';
-
-// Find current week based on today's date
-function getCurrentWeek() {
-  const today = new Date();
-  return weeks.find(week => {
-    const start = new Date(week.startDate);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return today >= start && today <= end;
-  });
-}
-
-// Format date range (e.g. "Jan 1 – Jan 7, 2026")
-function formatDateRange(startDate) {
-  const start = new Date(startDate);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric, year' })}`;
-}
-
-function renderHome() {
-  const main = document.getElementById('main-content');
-  const currentWeek = getCurrentWeek();
-
-  if (!currentWeek) {
-    main.innerHTML = `<p>No current week found. Please check back later.</p>`;
+  if (!current) {
+    document.getElementById("current-week").innerHTML = "<p>No active week found.</p>";
     return;
   }
 
-  // Current week card
-  const currentCard = document.createElement('div');
-  currentCard.className = 'card';
-  currentCard.innerHTML = `
-    <h2>Current Week: ${currentWeek.title}</h2>
-    <p>${formatDateRange(currentWeek.startDate)}</p>
-    <span class="status ${currentWeek.status}">${currentWeek.status.replace('_', ' ')}</span>
-    <p class="mt-2">${currentWeek.summary || ''}</p>
-    <a href="weeks.html?week=${currentWeek.id}" class="button">View Details</a>
-  `;
-  main.appendChild(currentCard);
-
-  // Archive listing
-  const archiveHeader = document.createElement('h2');
-  archiveHeader.textContent = 'Archive';
-  archiveHeader.style.marginTop = '2rem';
-  main.appendChild(archiveHeader);
-
-  weeks.forEach(week => {
-    const weekCard = document.createElement('div');
-    weekCard.className = 'card';
-    weekCard.innerHTML = `
-      <h3>${week.title}</h3>
-      <p>${formatDateRange(week.startDate)}</p>
-      <span class="status ${week.status}">${week.status.replace('_', ' ')}</span>
-      <a href="weeks.html?week=${week.id}" class="button secondary" style="margin-top:0.5rem;">Open</a>
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const cards = days.map(day => {
+    const isToday = day === currentDay ? "today" : "";
+    const note = current.notes?.[day] || "";
+    return `
+      <div class="day-card ${isToday}">
+        <strong>${day}</strong>
+        <textarea placeholder="What did I do?" data-day="${day}">${note}</textarea>
+      </div>
     `;
-    main.appendChild(weekCard);
+  }).join("");
+
+  document.getElementById("current-week").innerHTML = `
+    <div class="week-card">
+      <h2>Week ${current.id}: ${current.title}</h2>
+      <p>${current.start} – ${current.end} · <em>${current.status}</em></p>
+      <div class="day-list">${cards}</div>
+    </div>
+  `;
+
+  // Save on input
+  document.querySelectorAll("textarea").forEach(t => {
+    t.addEventListener("input", () => {
+      current.notes[t.dataset.day] = t.value;
+      localStorage.setItem(`week-${current.id}`, JSON.stringify(current.notes));
+    });
   });
 }
 
-document.addEventListener('DOMContentLoaded', renderHome);
+function getCurrentWeek(weeks) {
+  const today = new Date();
+  return weeks.find(week => {
+    const start = new Date(week.start);
+    const end = new Date(week.end);
+    return today >= start && today <= end;
+  });
+}
