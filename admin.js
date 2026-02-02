@@ -1,151 +1,130 @@
-// admin.js
-// Client-side admin UI (NOT secure — personal use only)
+/* Admin.js – simple admin console using localStorage.
+   NOTE: This demo is intentionally lightweight and not secure.
+   For personal use, adjust as needed. */
 
-const ADMIN_PASSWORD = "weeklybuilds"; // change if you want
+const PASSWORD = 'weeklybuilds'; // simple password for the demo
 
-function $(id) {
-  return document.getElementById(id);
+function loadWeeks() {
+  // Load from localStorage or fallback to default data
+  const stored = localStorage.getItem('weeks');
+  return stored ? JSON.parse(stored) : window.weeks;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const loginSection = $("login-section");
-  const manageSection = $("manage-section");
-  const ideasSection = $("ideas-section");
-  const logoutBtn = $("logout");
-  const errorEl = $("login-error");
+function saveWeeks(weeks) {
+  localStorage.setItem('weeks', JSON.stringify(weeks));
+}
 
-  // ---- LOGIN ----
-  $("login-form").addEventListener("submit", e => {
-    e.preventDefault();
-    const pw = $("password").value;
+function renderWeeksTable() {
+  const weeks = loadWeeks();
+  const tbody = document.querySelector('#weeks-table tbody');
+  tbody.innerHTML = '';
 
-    if (pw !== ADMIN_PASSWORD) {
-      errorEl.textContent = "Incorrect password";
-      return;
+  weeks.forEach((week, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${week.title}</td>
+      <td>${week.startDate}</td>
+      <td><span class="status ${week.status}">${week.status.replace('_',' ')}</span></td>
+      <td>
+        <button class="button small" data-index="${index}" data-action="edit">Edit</button>
+        <button class="button small secondary" data-index="${index}" data-action="delete">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function handleWeekFormSubmit(e) {
+  e.preventDefault();
+  const weeks = loadWeeks();
+  const idField = document.getElementById('week-id-input');
+  const title = document.getElementById('week-title-input').value.trim();
+  const start = document.getElementById('week-start-input').value;
+  const status = document.getElementById('week-status-input').value;
+
+  if (idField.value) {
+    // edit existing
+    const idx = parseInt(idField.value, 10);
+    weeks[idx].title = title;
+    weeks[idx].startDate = start;
+    weeks[idx].status = status;
+  } else {
+    // new entry
+    weeks.push({
+      id: `week-${weeks.length.toString().padStart(2, '0')}`,
+      title,
+      startDate: start,
+      status,
+      summary: '',
+      days: Array.from({ length: 7 }).map((_, i) => ({
+        date: new Date(start).toISOString().split('T')[0],
+        notes: ''
+      }))
+    });
+  }
+  saveWeeks(weeks);
+  renderWeeksTable();
+  e.target.reset();
+}
+
+function handleTableClick(e) {
+  const action = e.target.dataset.action;
+  const index = parseInt(e.target.dataset.index, 10);
+  if (action === 'edit') {
+    const weeks = loadWeeks();
+    const week = weeks[index];
+    document.getElementById('week-id-input').value = index;
+    document.getElementById('week-title-input').value = week.title;
+    document.getElementById('week-start-input').value = week.startDate;
+    document.getElementById('week-status-input').value = week.status;
+  } else if (action === 'delete') {
+    if (confirm('Delete this week?')) {
+      const weeks = loadWeeks();
+      weeks.splice(index, 1);
+      saveWeeks(weeks);
+      renderWeeksTable();
     }
-
-    loginSection.style.display = "none";
-    manageSection.style.display = "block";
-    ideasSection.style.display = "block";
-    logoutBtn.style.display = "inline-block";
-    errorEl.textContent = "";
-
-    renderWeeks();
-    renderIdeas();
-  });
-
-  logoutBtn.addEventListener("click", () => {
-    location.reload();
-  });
-});
-
-/* ---------------- DATA ---------------- */
-
-function load(key, fallback) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) ?? fallback;
-  } catch {
-    return fallback;
   }
 }
 
-function save(key, value) {
-  localStorage.setItem(key, JSON.stringify(value, null, 2));
+function showAdmin() {
+  document.getElementById('login-section').style.display = 'none';
+  document.getElementById('week-manage').style.display = 'block';
+  document.getElementById('logout-btn').style.display = 'block';
+  renderWeeksTable();
 }
 
-/* ---------------- WEEKS ---------------- */
-
-function renderWeeks() {
-  const weeks = load("weeks", {});
-  const tbody = $("weeks-table").querySelector("tbody");
-  tbody.innerHTML = "";
-
-  Object.entries(weeks)
-    .sort(([a],[b]) => Number(a) - Number(b))
-    .forEach(([id, w]) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${id}</td>
-        <td>${w.title}</td>
-        <td>${w.start}</td>
-        <td>${w.status}</td>
-        <td>
-          <button data-edit="${id}">Edit</button>
-          <button data-del="${id}">Delete</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-  tbody.onclick = e => {
-    const edit = e.target.dataset.edit;
-    const del = e.target.dataset.del;
-    const weeks = load("weeks", {});
-
-    if (edit) {
-      const w = weeks[edit];
-      $("week-id").value = edit;
-      $("week-title-input").value = w.title;
-      $("week-start-input").value = w.start;
-      $("week-status-input").value = w.status;
+function initAdmin() {
+  // login
+  document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pw = document.getElementById('password-input').value;
+    if (pw === PASSWORD) {
+      showAdmin();
+    } else {
+      document.getElementById('login-error').textContent = 'Incorrect password';
     }
-
-    if (del && confirm("Delete this week?")) {
-      delete weeks[del];
-      save("weeks", weeks);
-      renderWeeks();
-    }
-  };
-}
-
-$("week-form").addEventListener("submit", e => {
-  e.preventDefault();
-  const weeks = load("weeks", {});
-  const id = $("week-id").value || Date.now().toString();
-
-  weeks[id] = {
-    title: $("week-title-input").value,
-    start: $("week-start-input").value,
-    status: $("week-status-input").value,
-    days: weeks[id]?.days || {}
-  };
-
-  save("weeks", weeks);
-  e.target.reset();
-  $("week-id").value = "";
-  renderWeeks();
-});
-
-/* ---------------- IDEAS ---------------- */
-
-function renderIdeas() {
-  const ideas = load("ideas", []);
-  const list = $("ideas-list");
-  list.innerHTML = "";
-
-  ideas.forEach((idea, i) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      ${idea}
-      <button data-del="${i}">✕</button>
-    `;
-    list.appendChild(li);
   });
 
-  list.onclick = e => {
-    if (e.target.dataset.del) {
-      ideas.splice(e.target.dataset.del, 1);
-      save("ideas", ideas);
-      renderIdeas();
-    }
-  };
+  // week form
+  document.getElementById('week-form').addEventListener('submit', handleWeekFormSubmit);
+
+  // reset button
+  document.getElementById('reset-week-form').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.target.form.reset();
+    document.getElementById('week-id-input').value = '';
+  });
+
+  // logout
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    document.getElementById('login-section').style.display = 'block';
+    document.getElementById('week-manage').style.display = 'none';
+    document.getElementById('logout-btn').style.display = 'none';
+  });
+
+  // table actions
+  document.querySelector('#weeks-table tbody').addEventListener('click', handleTableClick);
 }
 
-$("idea-form").addEventListener("submit", e => {
-  e.preventDefault();
-  const ideas = load("ideas", []);
-  ideas.push($("idea-title-input").value);
-  save("ideas", ideas);
-  e.target.reset();
-  renderIdeas();
-});
+document.addEventListener('DOMContentLoaded', initAdmin);
