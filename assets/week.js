@@ -1,62 +1,49 @@
-document.addEventListener("DOMContentLoaded", () => {
+// week.js – handles rendering an individual week page (weeks.html)
+
+import { weeks } from '../data/weeks.js';
+
+// Get week ID from query parameter (?week=week-01)
+function getWeekId() {
   const params = new URLSearchParams(window.location.search);
-  const weekNum = Number(params.get("week")) || 1;
+  return params.get('week');
+}
 
-  const week = window.WEEKS.find(w => w.week === weekNum);
-  if (!week) return;
+// Format date (e.g. "Mon Jan 1")
+function formatDay(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
-  const STORAGE_KEY = `week-${weekNum}-notes`;
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+function renderWeek() {
+  const weekId = getWeekId();
+  const week = weeks.find(w => w.id === weekId);
+  const container = document.getElementById('week-main');
 
-  const startDate = new Date(week.start);
-  const todayStr = new Date().toDateString();
+  if (!week) {
+    container.innerHTML = `<p>Week not found.</p>`;
+    return;
+  }
 
-  document.getElementById("week-header").innerHTML = `
-    <h1 contenteditable="true" id="week-title">${week.title}</h1>
-    <small>Week ${week.week} · ${week.start} → ${new Date(startDate.getTime() + 6*86400000).toISOString().slice(0,10)}</small>
+  // Header
+  const headerCard = document.createElement('div');
+  headerCard.className = 'card';
+  headerCard.innerHTML = `
+    <h2>${week.title}</h2>
+    <p>${formatDay(week.startDate)} – ${formatDay(new Date(week.startDate).setDate(new Date(week.startDate).getDate() + 6))}</p>
+    <span class="status ${week.status}">${week.status.replace('_',' ')}</span>
   `;
+  container.appendChild(headerCard);
 
-  document.getElementById("week-nav").innerHTML = `
-    <button onclick="location.href='week.html?week=${weekNum - 1}'">←</button>
-    <strong>Week ${weekNum}</strong>
-    <button onclick="location.href='week.html?week=${weekNum + 1}'">→</button>
-  `;
-
-  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-  document.getElementById("day-cards").innerHTML = days.map((day, i) => {
-    const date = new Date(startDate.getTime() + i * 86400000);
-    const isToday = date.toDateString() === todayStr ? "today" : "";
-    const data = saved[day] || {};
-
-    return `
-      <div class="day-card ${isToday}">
-        <div class="day-header">
-          <strong>${day}</strong>
-          <span>${date.getMonth()+1}/${date.getDate()}</span>
-        </div>
-
-        <input placeholder="Focus"
-          data-day="${day}" data-field="focus"
-          value="${data.focus || ""}" />
-
-        <textarea placeholder="Did"
-          data-day="${day}" data-field="did">${data.did || ""}</textarea>
-
-        <input placeholder="Blocker"
-          data-day="${day}" data-field="blocker"
-          value="${data.blocker || ""}" />
-      </div>
+  // Days
+  week.days.forEach(day => {
+    const dayCard = document.createElement('div');
+    dayCard.className = 'card';
+    dayCard.innerHTML = `
+      <h3>${formatDay(day.date)}</h3>
+      <p>${day.notes || '<em>No entry for this day.</em>'}</p>
     `;
-  }).join("");
-
-  document.querySelectorAll("input, textarea").forEach(el => {
-    el.addEventListener("input", () => {
-      const day = el.dataset.day;
-      const field = el.dataset.field;
-      saved[day] = saved[day] || {};
-      saved[day][field] = el.value;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-    });
+    container.appendChild(dayCard);
   });
-});
+}
+
+document.addEventListener('DOMContentLoaded', renderWeek);
