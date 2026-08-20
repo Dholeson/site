@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weekly Projects – Archive</title>
+  <title>Cart — Store</title>
   <link rel="stylesheet" href="assets/style.css" />
   <link rel="stylesheet" href="assets/store.css" />
   <script type="module">
-    import { weeks } from "./data/weeks.js";
-    import { renderArchive } from "./assets/week.js";
-    window.addEventListener("DOMContentLoaded", () => renderArchive(weeks));
+    import { renderCart } from "./assets/store.js";
+    window.addEventListener("DOMContentLoaded", renderCart);
   </script>
 </head>
 <body>
   <header>
-    <h1>Archive</h1>
-    <nav>
+    <h1>Your Cart</h1>
+    <nav class="store-nav">
       <a href="index.html">🏠 Home</a>
-      <a href="store.html">🛒 Store</a>
+      <a href="store.html">← Keep shopping</a>
+      <a class="cart-link" href="cart.html">Cart <span class="cart-badge" data-cart-count></span></a>
     </nav>
   </header>
-  <main id="archive-main"></main>
+  <main id="cart-main"></main>
 </body>
 </html>

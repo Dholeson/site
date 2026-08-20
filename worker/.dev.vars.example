@@ -1,0 +1,4 @@
+# Copy to worker/.dev.vars for local `wrangler dev` testing.
+# .dev.vars is gitignored -- never commit a real key.
+# Use a TEST key (sk_test_...) locally, never the live one.
+STRIPE_SECRET_KEY=sk_test_replace_me

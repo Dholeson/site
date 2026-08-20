@@ -1,0 +1,18 @@
+name = "dhole-store-checkout"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Public, non-secret configuration. The Stripe key is NOT here -- it is set as
+# an encrypted secret with:  npx wrangler secret put STRIPE_SECRET_KEY
+[vars]
+SITE_URL = "https://dhole.dev"
+
+# Only these origins may call the checkout endpoint from a browser.
+ALLOWED_ORIGINS = "https://dhole.dev,https://www.dhole.dev"
+
+# Comma-separated ISO country codes you are willing to ship to.
+SHIP_TO_COUNTRIES = "US"
+
+# Leave "false" until you have configured Stripe Tax (origin address plus tax
+# registrations). Turning it on before that makes Stripe reject every session.
+ENABLE_AUTOMATIC_TAX = "false"

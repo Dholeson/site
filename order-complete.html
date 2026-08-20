@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Complete — Store</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="assets/store.css" />
+  <script type="module">
+    // Stripe sends the buyer back here after a successful payment. The cart is
+    // cleared only on this page -- never before redirecting to Stripe, because
+    // an abandoned checkout must leave the cart intact.
+    import { clearCart } from "./assets/cart.js";
+    import { SUPPORT_EMAIL } from "./assets/store-config.js";
+    window.addEventListener("DOMContentLoaded", () => {
+      clearCart();
+      if (SUPPORT_EMAIL) {
+        document.getElementById("support").innerHTML =
+          `Questions about your order? Email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a>.`;
+      }
+    });
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Order Complete</h1>
+    <nav class="store-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="store.html">🛒 Store</a>
+    </nav>
+  </header>
+  <main>
+    <div class="notice success">
+      <strong>Payment received — thank you.</strong>
+    </div>
+    <p>A receipt is on its way to the email address you gave Stripe.</p>
+    <p>Consoles are packed and shipped within two business days, and you will get a tracking number by email when yours goes out.</p>
+    <p id="support"></p>
+    <p style="margin-top:2rem"><a class="btn" href="store.html">Back to the store</a></p>
+  </main>
+</body>
+</html>

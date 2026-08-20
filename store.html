@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Store — Consoles &amp; Accessories</title>
+  <meta name="description" content="Tested and refurbished retro game consoles, controllers, and accessories." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="assets/store.css" />
+  <script type="module">
+    import { renderStore } from "./assets/store.js";
+    window.addEventListener("DOMContentLoaded", renderStore);
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Store</h1>
+    <nav class="store-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="archive.html">📆 Archive</a>
+      <a href="projects.html">📂 Projects</a>
+      <a href="store.html">🛒 Store</a>
+      <a class="cart-link" href="cart.html">Cart <span class="cart-badge" data-cart-count></span></a>
+    </nav>
+  </header>
+  <main>
+    <p class="muted-note" style="margin-top:0">
+      Consoles are cleaned, tested, and boot-checked before they ship. Every listing says exactly what is in the box.
+    </p>
+
+    <div class="filters">
+      <label>Search
+        <input type="search" id="filter-search" placeholder="N64, controller…" />
+      </label>
+      <label>Platform
+        <select id="filter-platform">
+          <option value="all">All platforms</option>
+        </select>
+      </label>
+      <label>Type
+        <select id="filter-category">
+          <option value="all">Everything</option>
+          <option value="console">Consoles</option>
+          <option value="accessory">Accessories</option>
+        </select>
+      </label>
+      <label>Sort
+        <select id="filter-sort">
+          <option value="default">Featured</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="name">Name</option>
+        </select>
+      </label>
+      <span class="result-count" id="result-count"></span>
+    </div>
+
+    <div class="product-grid" id="product-grid"></div>
+  </main>
+</body>
+</html>
