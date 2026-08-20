@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Nothing useful to index behind checkout, and these pages should never show up
+# in search results ahead of the store itself.
+Disallow: /cart.html
+Disallow: /order-complete.html
+Disallow: /checkout-cancelled.html
+Disallow: /api/
+
+Sitemap: https://dhole.dev/sitemap.xml

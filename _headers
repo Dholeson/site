@@ -13,6 +13,9 @@
 /assets/store/*
   Cache-Control: public, max-age=86400, must-revalidate
 
+/assets/brand/*
+  Cache-Control: public, max-age=604800, must-revalidate
+
 # Never cache the checkout endpoint.
 /api/*
   Cache-Control: no-store
