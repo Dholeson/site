@@ -1,17 +1,16 @@
-// Tests for the order-pricing logic. This is the code that stands between the
-// storefront and someone's card, so it is worth checking the hostile paths and
-// not just the happy one.
+// Tests for the order-pricing logic -- the code standing between the storefront
+// and someone's card, so the hostile paths matter more than the happy one.
 //
-// Run with:  node test/checkout.test.js
+// Run with:  npm test
 
 import assert from "node:assert/strict";
-import { __test } from "../src/index.js";
-import { products } from "../../data/products.js";
+import { products } from "../data/products.js";
+import {
+  priceOrder, shippingFor, toForm, buildSessionPayload
+} from "../lib/checkout-core.js";
 
-const { priceOrder, toForm, shippingFor } = __test;
-
-const console_item = products.find(p => p.shippingClass === "console");
-const small_item = products.find(p => p.shippingClass === "small");
+const consoleItem = products.find(p => p.shippingClass === "console");
+const smallItem   = products.find(p => p.shippingClass === "small");
 
 let passed = 0;
 function test(name, fn) {
@@ -27,52 +26,49 @@ function test(name, fn) {
 
 console.log("\ncheckout pricing\n");
 
-test("prices a valid single-item order from the catalogue", () => {
-  const { priced, error } = priceOrder([{ id: small_item.id, qty: 2 }]);
+test("prices a valid order from the catalogue", () => {
+  const { priced, error } = priceOrder([{ id: smallItem.id, qty: 2 }]);
   assert.equal(error, undefined);
   assert.equal(priced.length, 1);
-  assert.equal(priced[0].product.priceCents, small_item.priceCents);
+  assert.equal(priced[0].product.priceCents, smallItem.priceCents);
   assert.equal(priced[0].qty, 2);
 });
 
 test("ignores any price supplied by the client", () => {
   // The attack this whole design exists to stop.
-  const { priced } = priceOrder([{ id: console_item.id, qty: 1, priceCents: 1 }]);
-  assert.equal(priced[0].product.priceCents, console_item.priceCents);
+  const { priced } = priceOrder([{ id: consoleItem.id, qty: 1, priceCents: 1 }]);
+  assert.equal(priced[0].product.priceCents, consoleItem.priceCents);
 });
 
 test("rejects an unknown product id", () => {
-  const { error } = priceOrder([{ id: "free-console-lol", qty: 1 }]);
-  assert.match(error, /no longer available/);
+  assert.match(priceOrder([{ id: "free-console-lol", qty: 1 }]).error, /no longer available/);
 });
 
 test("rejects quantity above available stock", () => {
-  const { error } = priceOrder([{ id: console_item.id, qty: console_item.stock + 1 }]);
-  assert.match(error, /left in stock/);
+  assert.match(priceOrder([{ id: consoleItem.id, qty: consoleItem.stock + 1 }]).error, /left in stock/);
 });
 
 test("rejects zero, negative, fractional, and non-numeric quantities", () => {
   for (const qty of [0, -5, 1.5, NaN, null, "abc", Infinity]) {
-    const { error } = priceOrder([{ id: small_item.id, qty }]);
-    assert.match(error ?? "", /Invalid quantity/, `qty=${qty} should be rejected`);
+    assert.match(priceOrder([{ id: smallItem.id, qty }]).error ?? "", /Invalid quantity/,
+      `qty=${qty} should be rejected`);
   }
 });
 
 test("coerces a numeric string quantity to a real number", () => {
   // Lenient parsing is fine -- what matters is that it is bounds-checked and
-  // stored as a number, so no string ever reaches the arithmetic.
-  const { priced, error } = priceOrder([{ id: small_item.id, qty: "2" }]);
+  // stored as a number, so no string reaches the arithmetic.
+  const { priced, error } = priceOrder([{ id: smallItem.id, qty: "2" }]);
   assert.equal(error, undefined);
   assert.equal(priced[0].qty, 2);
   assert.equal(typeof priced[0].qty, "number");
 });
 
 test("rejects duplicate ids that would stack past stock", () => {
-  const { error } = priceOrder([
-    { id: console_item.id, qty: console_item.stock },
-    { id: console_item.id, qty: console_item.stock }
-  ]);
-  assert.match(error, /Duplicate/);
+  assert.match(priceOrder([
+    { id: consoleItem.id, qty: consoleItem.stock },
+    { id: consoleItem.id, qty: consoleItem.stock }
+  ]).error, /Duplicate/);
 });
 
 test("rejects an empty or non-array cart", () => {
@@ -94,19 +90,15 @@ test("rejects absurdly large carts", () => {
 console.log("\nshipping\n");
 
 test("an order containing a console ships at the console rate", () => {
-  const { priced } = priceOrder([
-    { id: console_item.id, qty: 1 },
-    { id: small_item.id, qty: 1 }
-  ]);
+  const { priced } = priceOrder([{ id: consoleItem.id, qty: 1 }, { id: smallItem.id, qty: 1 }]);
   assert.equal(shippingFor(priced).cents, 1800);
 });
 
 test("an accessories-only order ships at the small rate", () => {
-  const { priced } = priceOrder([{ id: small_item.id, qty: 1 }]);
-  assert.equal(shippingFor(priced).cents, 600);
+  assert.equal(shippingFor(priceOrder([{ id: smallItem.id, qty: 1 }]).priced).cents, 600);
 });
 
-console.log("\nstripe form encoding\n");
+console.log("\nstripe payload\n");
 
 test("flattens nested objects into Stripe's bracket syntax", () => {
   const form = toForm({
@@ -125,6 +117,30 @@ test("drops undefined values rather than sending the string 'undefined'", () => 
   const form = toForm({ a: 1, b: undefined, c: null });
   assert.equal(form.has("b"), false);
   assert.equal(form.has("c"), false);
+});
+
+test("builds a session payload with server-side prices and absolute image URLs", () => {
+  const { priced } = priceOrder([{ id: consoleItem.id, qty: 1 }]);
+  const p = buildSessionPayload(priced, {
+    siteUrl: "https://dhole.dev/",
+    currency: "usd",
+    automaticTax: false,
+    shipToCountries: ["US"]
+  });
+  assert.equal(p.line_items[0].price_data.unit_amount, consoleItem.priceCents);
+  assert.equal(p.mode, "payment");
+  // Trailing slash on siteUrl must not produce a doubled slash.
+  assert.match(p.line_items[0].price_data.product_data.images[0], /^https:\/\/dhole\.dev\/assets\//);
+  assert.equal(p.success_url, "https://dhole.dev/order-complete.html?session_id={CHECKOUT_SESSION_ID}");
+  assert.equal(p.automatic_tax, undefined, "tax must stay off unless explicitly enabled");
+});
+
+test("enables automatic tax only when asked", () => {
+  const { priced } = priceOrder([{ id: smallItem.id, qty: 1 }]);
+  const p = buildSessionPayload(priced, {
+    siteUrl: "https://dhole.dev", currency: "usd", automaticTax: true, shipToCountries: ["US"]
+  });
+  assert.deepEqual(p.automatic_tax, { enabled: true });
 });
 
 console.log(`\n${passed} checks passed\n`);

@@ -3,43 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weekly Projects – Projects</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <link rel="stylesheet" href="assets/store.css" />
-  <script type="module">
-    import { weeks } from "./data/weeks.js";
-    window.addEventListener("DOMContentLoaded", () => {
-      const container = document.getElementById("projects-list");
-      const seen = {};
-      weeks.forEach(w => {
-        Object.keys(w.notes).forEach(day => {
-          const note = w.notes[day];
-          const match = note.match(/Project: (.+?) – (.+)/);
-          if (match) {
-            const [_, name, update] = match;
-            seen[name] = seen[name] || { updates: [], status: w.status };
-            seen[name].updates.push(`Week ${w.id}: ${update}`);
-          }
-        });
-      });
-      container.innerHTML = Object.entries(seen).map(([name, data]) => `
-        <div class="week-card">
-          <h2>${name}</h2>
-          <p>Status: <em>${data.status}</em></p>
-          <ul>${data.updates.map(x => `<li>${x}</li>`).join("")}</ul>
-        </div>
-      `).join("");
-    });
-  </script>
+  <title>Projects — dhole.dev</title>
+  <meta name="description" content="Side projects you can open and use in the browser. No installs." />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <script type="module" src="/assets/entry/projects.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Projects</h1>
-    <nav>
-      <a href="index.html">🏠 Home</a>
-      <a href="store.html">🛒 Store</a>
-    </nav>
-  </header>
-  <main id="projects-list"></main>
+  <section class="demo-header">
+    <div class="wrap">
+      <p class="eyebrow">Projects</p>
+      <h1>Everything here runs in your browser</h1>
+      <p class="lede">
+        No downloads, no accounts, nothing to install. Click one and it opens.
+      </p>
+    </div>
+  </section>
+
+  <main>
+    <div class="wrap">
+      <div class="grid grid-2" id="projects-grid"></div>
+    </div>
+  </main>
 </body>
 </html>

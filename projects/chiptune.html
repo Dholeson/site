@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chiptune Sequencer — dhole.dev</title>
+  <meta name="description" content="A step sequencer built on raw Web Audio oscillators. No samples, no libraries." />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <link rel="stylesheet" href="/assets/demo.css" />
+  <script type="module" src="./chiptune.entry.js"></script>
+</head>
+<body>
+  <section class="demo-header">
+    <div class="wrap">
+      <p class="eyebrow"><a href="/projects.html">Projects</a> / Live demo</p>
+      <h1>Chiptune Sequencer</h1>
+      <p class="lede">
+        Six tracks, sixteen steps, and not a single audio sample — every sound is an
+        oscillator built at runtime.
+      </p>
+    </div>
+  </section>
+
+  <main>
+    <div class="wrap">
+      <div class="demo-stage">
+        <div class="seq-transport">
+          <button class="btn btn-primary" id="play-btn">Play</button>
+          <button class="btn" id="random-btn">Randomise</button>
+          <button class="btn" id="clear-btn">Clear</button>
+
+          <label>Tempo
+            <input type="range" id="tempo" min="60" max="200" value="132" />
+            <span class="dim mono" id="tempo-out">132 BPM</span>
+          </label>
+
+          <label>Waveform
+            <select id="wave">
+              <option value="square">Square</option>
+              <option value="sawtooth">Sawtooth</option>
+              <option value="triangle">Triangle</option>
+              <option value="sine">Sine</option>
+            </select>
+          </label>
+
+          <label>Volume
+            <input type="range" id="volume" min="0" max="100" value="50" />
+          </label>
+        </div>
+
+        <div class="seq-wrap">
+          <div class="seq-grid" id="seq-grid"></div>
+        </div>
+
+        <p class="demo-note" style="margin-top:1.25rem">
+          Click any square to toggle it. A pattern is loaded already — press Play.
+          Bars are marked every four steps.
+        </p>
+      </div>
+
+      <section class="section">
+        <h2>How it works</h2>
+        <p class="muted" style="max-width:68ch">
+          The three melodic rows are C5, G4, and E4 — a spread of the same chord, so
+          anything you draw stays consonant. Bass is a triangle wave an octave and a
+          half down. Snare and hat are the same one-second buffer of white noise, run
+          through a highpass filter at different cutoffs and cut short by different
+          envelopes.
+        </p>
+        <p class="muted" style="max-width:68ch">
+          The interesting part is the timing. Driving a sequencer directly from
+          <code>setInterval</code> drifts, because timer callbacks jitter under load.
+          Instead the timer only looks ahead: it wakes every 25&nbsp;ms and schedules any
+          notes falling in the next 100&nbsp;ms straight onto the AudioContext clock,
+          which is sample-accurate. The playhead you see is deliberately delayed to
+          match the audio you are hearing rather than the notes already queued.
+        </p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

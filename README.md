@@ -1,12 +1,17 @@
-# site
+# dhole.dev
 
-The dhole.dev site: a weekly build journal, plus a store for retro consoles and
-accessories.
+Projects you can use in the browser, and a shop for retro consoles.
 
-- **Journal** — `index.html`, `archive.html`, `projects.html`
-- **Store** — `store.html`, `product.html`, `cart.html`
-- **Catalogue** — `data/products.js` (prices, stock, copy)
-- **Checkout server** — `worker/` (Cloudflare Worker + Stripe)
+- **Projects** — `projects.html`, demos in `projects/`
+- **Store** — `store.html`, catalogue in `data/products.js`
+- **Checkout** — `functions/api/checkout.js` (Cloudflare Pages Function + Stripe)
+- **Log** — `log.html`
 
-Static site on GitHub Pages. See `HOW_THIS_SITE_WORKS.md` for the day-to-day,
-and `STORE_SETUP.md` to switch payments on.
+```bash
+npm install
+npm run dev      # local preview, functions included
+npm test         # checkout tests
+npx wrangler pages deploy .
+```
+
+Setup and deployment: `SETUP.md`. Day-to-day: `HOW_THIS_SITE_WORKS.md`.

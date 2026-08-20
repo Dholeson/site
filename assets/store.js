@@ -2,18 +2,8 @@
 
 import { products, findProduct, formatMoney, CONDITION_LABELS } from "../data/products.js";
 import { CHECKOUT_ENDPOINT, SUPPORT_EMAIL } from "./store-config.js";
-import {
-  getCart, addToCart, setQty, removeFromCart, priceCart, mountCartBadge
-} from "./cart.js";
-
-// Product copy is authored in this repo rather than submitted by anyone, but
-// escaping it costs nothing and keeps a stray quote or ampersand in a listing
-// title from breaking the markup.
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c => (
-    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
-  ));
-}
+import { getCart, addToCart, setQty, removeFromCart, priceCart } from "./cart.js";
+import { esc } from "./esc.js";
 
 function stockClass(stock) {
   if (stock < 1) return "out";
@@ -27,12 +17,11 @@ function stockLabel(stock) {
   return "In stock";
 }
 
-function tags(p) {
-  return `
-    <div class="meta-row">
-      <span class="tag">${esc(p.platform)}</span>
-      <span class="tag">${esc(CONDITION_LABELS[p.condition] || p.condition)}</span>
-    </div>`;
+function chips(p) {
+  return `<div class="chips">
+    <span class="chip">${esc(p.platform)}</span>
+    <span class="chip">${esc(CONDITION_LABELS[p.condition] || p.condition)}</span>
+  </div>`;
 }
 
 // ---------- catalogue ----------
@@ -45,26 +34,23 @@ export function renderStore() {
   const sortSel = document.getElementById("filter-sort");
   const searchInput = document.getElementById("filter-search");
 
-  // Populate the platform filter from the catalogue so adding a product with a
-  // new platform does not also mean remembering to edit a dropdown.
+  // Built from the catalogue, so adding a product on a new platform does not
+  // also mean remembering to edit a dropdown.
   const platforms = [...new Set(products.map(p => p.platform))].sort();
   platformSel.insertAdjacentHTML("beforeend",
     platforms.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join(""));
 
   function apply() {
-    const platform = platformSel.value;
-    const category = categorySel.value;
     const q = searchInput.value.trim().toLowerCase();
-
     let list = products.filter(p =>
-      (platform === "all" || p.platform === platform) &&
-      (category === "all" || p.category === category) &&
+      (platformSel.value === "all" || p.platform === platformSel.value) &&
+      (categorySel.value === "all" || p.category === categorySel.value) &&
       (!q || `${p.name} ${p.platform} ${p.blurb}`.toLowerCase().includes(q))
     );
 
-    if (sortSel.value === "price-asc") list = [...list].sort((a, b) => a.priceCents - b.priceCents);
+    if (sortSel.value === "price-asc")  list = [...list].sort((a, b) => a.priceCents - b.priceCents);
     if (sortSel.value === "price-desc") list = [...list].sort((a, b) => b.priceCents - a.priceCents);
-    if (sortSel.value === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    if (sortSel.value === "name")       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
 
     countEl.textContent = `${list.length} item${list.length === 1 ? "" : "s"}`;
 
@@ -74,16 +60,17 @@ export function renderStore() {
     }
 
     grid.innerHTML = list.map(p => `
-      <article class="product-card">
-        <a href="product.html?id=${encodeURIComponent(p.id)}">
+      <article class="card product-card">
+        <a href="/product.html?id=${encodeURIComponent(p.id)}">
           <img class="thumb" src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" />
         </a>
-        <div class="body">
-          <h3><a href="product.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a></h3>
-          ${tags(p)}
+        <div class="card-body">
+          <h3><a href="/product.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a></h3>
+          ${chips(p)}
           <div class="price">${formatMoney(p.priceCents)}</div>
-          <div class="stock ${stockClass(p.stock)}">${stockLabel(p.stock)}</div>
-          <button class="btn btn-primary btn-block" data-add="${esc(p.id)}" ${p.stock < 1 ? "disabled" : ""}>
+          <div class="status ${stockClass(p.stock)}">${stockLabel(p.stock)}</div>
+          <button class="btn btn-primary btn-block" data-add="${esc(p.id)}"
+                  style="margin-top:auto" ${p.stock < 1 ? "disabled" : ""}>
             ${p.stock < 1 ? "Sold out" : "Add to cart"}
           </button>
         </div>
@@ -103,7 +90,6 @@ export function renderStore() {
   [platformSel, categorySel, sortSel].forEach(el => el.addEventListener("change", apply));
   searchInput.addEventListener("input", apply);
   apply();
-  mountCartBadge();
 }
 
 // ---------- product detail ----------
@@ -118,24 +104,23 @@ export function renderProduct() {
       <div class="empty-state">
         <h2>Product not found</h2>
         <p>That listing may have sold and been removed.</p>
-        <p><a class="btn" href="store.html">Back to the store</a></p>
+        <p><a class="btn" href="/store.html">Back to the store</a></p>
       </div>`;
-    mountCartBadge();
     return;
   }
 
-  document.title = `${p.name} — Store`;
+  document.title = `${p.name} — dhole.dev`;
 
   main.innerHTML = `
     <div class="product-detail">
-      <img class="hero" src="${esc(p.image)}" alt="${esc(p.name)}" />
+      <img class="hero-img" src="${esc(p.image)}" alt="${esc(p.name)}" />
       <div>
-        <h2>${esc(p.name)}</h2>
-        ${tags(p)}
-        <p class="price" style="margin-top:1rem">${formatMoney(p.priceCents)}</p>
-        <p class="stock ${stockClass(p.stock)}">${stockLabel(p.stock)}</p>
-        <p>${esc(p.blurb)}</p>
-        <ul class="detail-list">${p.details.map(d => `<li>${esc(d)}</li>`).join("")}</ul>
+        <h1>${esc(p.name)}</h1>
+        ${chips(p)}
+        <p class="price" style="margin:1rem 0 .35rem">${formatMoney(p.priceCents)}</p>
+        <p class="status ${stockClass(p.stock)}">${stockLabel(p.stock)}</p>
+        <p class="muted">${esc(p.blurb)}</p>
+        <ul class="spec-list">${p.details.map(d => `<li>${esc(d)}</li>`).join("")}</ul>
         <div class="qty-row">
           <label for="qty">Qty</label>
           <input type="number" id="qty" value="1" min="1" max="${p.stock}" ${p.stock < 1 ? "disabled" : ""} />
@@ -143,7 +128,7 @@ export function renderProduct() {
         <button class="btn btn-primary" id="add-btn" ${p.stock < 1 ? "disabled" : ""}>
           ${p.stock < 1 ? "Sold out" : "Add to cart"}
         </button>
-        <p class="muted-note">Ships from the US. Tracking emailed when it goes out.</p>
+        <p class="dim" style="margin-top:1rem">Ships from the US. Tracking emailed when it goes out.</p>
       </div>
     </div>`;
 
@@ -158,7 +143,6 @@ export function renderProduct() {
       }
     });
   }
-  mountCartBadge();
 }
 
 // ---------- cart ----------
@@ -173,9 +157,8 @@ export function renderCart() {
       main.innerHTML = `
         <div class="empty-state">
           <h2>Your cart is empty</h2>
-          <p><a class="btn btn-primary" href="store.html">Browse the store</a></p>
+          <p><a class="btn btn-primary" href="/store.html">Browse the store</a></p>
         </div>`;
-      mountCartBadge();
       return;
     }
 
@@ -185,9 +168,9 @@ export function renderCart() {
         <div class="cart-line">
           <img src="${esc(i.image)}" alt="${esc(i.name)}" />
           <div>
-            <div class="line-title"><a href="product.html?id=${encodeURIComponent(i.id)}">${esc(i.name)}</a></div>
-            ${tags(i)}
-            <div class="qty-row">
+            <div class="line-title"><a href="/product.html?id=${encodeURIComponent(i.id)}">${esc(i.name)}</a></div>
+            ${chips(i)}
+            <div class="qty-row" style="margin:.6rem 0 0">
               <label for="q-${esc(i.id)}">Qty</label>
               <input type="number" id="q-${esc(i.id)}" data-qty="${esc(i.id)}"
                      value="${i.qty}" min="1" max="${i.stock}" />
@@ -203,10 +186,8 @@ export function renderCart() {
         <div class="totals-row"><span>Subtotal</span><span>${formatMoney(subtotalCents)}</span></div>
         <div class="totals-row"><span>${esc(shippingLabel)}</span><span>${formatMoney(shippingCents)}</span></div>
         <div class="totals-row grand"><span>Total</span><span>${formatMoney(totalCents)}</span></div>
-        <p class="muted-note">Taxes, if applicable, are added at checkout.</p>
-        <button class="btn btn-primary btn-block" id="checkout-btn" style="margin-top:0.75rem">
-          Checkout
-        </button>
+        <p class="dim">Taxes, if applicable, are added at checkout.</p>
+        <button class="btn btn-primary btn-block" id="checkout-btn" style="margin-top:.75rem">Checkout</button>
       </div>`;
 
     main.querySelectorAll("[data-qty]").forEach(input => {
@@ -219,8 +200,6 @@ export function renderCart() {
       btn.addEventListener("click", () => { removeFromCart(btn.dataset.remove); paint(); });
     });
     document.getElementById("checkout-btn").addEventListener("click", checkout);
-
-    mountCartBadge();
   }
 
   async function checkout() {
@@ -232,7 +211,7 @@ export function renderCart() {
       notice.innerHTML = `<div class="notice warn">
         <strong>Checkout is not connected yet.</strong>
         The catalogue is live, but payments are not switched on. See
-        <code>STORE_SETUP.md</code> to deploy the checkout Worker and set
+        <code>SETUP.md</code> to deploy the site and set
         <code>CHECKOUT_ENDPOINT</code> in <code>assets/store-config.js</code>.
       </div>`;
       notice.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -253,10 +232,14 @@ export function renderCart() {
 
       const data = await res.json().catch(() => ({}));
 
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || `Checkout failed (${res.status})`);
+      // A static host with no Pages Function answers a POST to this path with
+      // 404 (no such file) or 405 (files do not accept POST). Either way the
+      // cause is the same, so say so instead of showing a bare status code.
+      if (res.status === 404 || res.status === 405) {
+        throw new Error("The checkout function is not deployed on this host.");
       }
-      // Stripe-hosted checkout page.
+      if (!res.ok || !data.url) throw new Error(data.error || `Checkout failed (${res.status})`);
+
       location.href = data.url;
     } catch (err) {
       btn.disabled = false;

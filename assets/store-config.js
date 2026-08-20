@@ -1,16 +1,14 @@
 // The one file you edit to turn payments on.
 //
-// Set CHECKOUT_ENDPOINT to the URL of your deployed Cloudflare Worker (see
-// STORE_SETUP.md). Until it is set, the storefront still works as a browsable
-// catalogue and the checkout button explains that payments are not live yet --
-// it never silently fails or takes an order it cannot fulfil.
+// Checkout runs as a Cloudflare Pages Function on this same site, so this is a
+// same-origin path rather than a full URL -- no CORS, and it works unchanged on
+// preview deployments too.
 //
-// Example once deployed:
-//   export const CHECKOUT_ENDPOINT = "https://dhole-store-checkout.<subdomain>.workers.dev/checkout";
-// or, if you put the Worker on a route on your own domain:
-//   export const CHECKOUT_ENDPOINT = "https://dhole.dev/api/checkout";
+// Set this to "" to take the shop offline: the catalogue keeps working and the
+// checkout button explains that payments are not switched on, rather than
+// failing silently or taking an order that cannot be fulfilled.
 
-export const CHECKOUT_ENDPOINT = "";
+export const CHECKOUT_ENDPOINT = "/api/checkout";
 
 // Shown on the storefront and in the order confirmation.
 export const STORE_NAME = "dhole.dev store";

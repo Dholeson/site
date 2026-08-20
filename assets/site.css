@@ -1,0 +1,396 @@
+/* ==========================================================================
+   dhole.dev design system
+   One stylesheet for the whole site: homepage, projects, demos, and shop.
+   Monospace for structure and labels (it suits a hardware/dev site), a
+   humanist sans for anything you actually have to read at length.
+   ========================================================================== */
+
+:root {
+  /* Surfaces, darkest to lightest */
+  --bg:        #0b0d12;
+  --bg-soft:   #10131a;
+  --surface:   #161a23;
+  --surface-2: #1e232e;
+  --border:    #2a3040;
+  --border-lit:#3b4459;
+
+  /* Text */
+  --fg:        #e6e9ef;
+  --fg-muted:  #98a1b3;
+  --fg-dim:    #6b7488;
+
+  /* Accents */
+  --accent:      #8b5cf6;
+  --accent-lit:  #a78bfa;
+  --accent-dim:  #6d3fd4;
+  --cyan:        #22d3ee;
+  --amber:       #fbbf24;
+  --good:        #34d399;
+  --bad:         #f87171;
+
+  --radius:    10px;
+  --radius-lg: 16px;
+  --maxw:      1140px;
+
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Anything that scrolls sideways does it inside its own box, never the page. */
+body { overflow-x: hidden; }
+
+a { color: var(--accent-lit); }
+
+h1, h2, h3, h4 {
+  font-family: var(--mono);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ---------- site header ---------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(11,13,18,.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  height: 60px;
+}
+
+.brand {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--fg);
+  text-decoration: none;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.brand .dot { color: var(--accent); }
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.875rem;
+}
+
+.site-nav a {
+  color: var(--fg-muted);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.site-nav a:hover { color: var(--fg); }
+.site-nav a[aria-current="page"] {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+}
+
+.cart-link { position: relative; display: inline-flex; align-items: center; gap: .4rem; }
+
+.cart-badge {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 .35rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Mobile: let the nav scroll rather than wrap into a mess. */
+@media (max-width: 700px) {
+  .site-header .wrap { gap: .75rem; }
+  .site-nav { gap: .9rem; overflow-x: auto; scrollbar-width: none; }
+  .site-nav::-webkit-scrollbar { display: none; }
+}
+
+/* ---------- layout ---------- */
+
+main { padding: 3rem 0 5rem; }
+
+.section { margin-bottom: 4.5rem; }
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.section-head h2 { font-size: 1.4rem; }
+
+.section-head .more {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: .85rem;
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.section-head .more:hover { color: var(--accent-lit); }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--accent-lit);
+  margin-bottom: .75rem;
+}
+
+.lede { color: var(--fg-muted); font-size: 1.05rem; max-width: 60ch; }
+
+/* ---------- hero ---------- */
+
+.hero {
+  padding: 4.5rem 0 3.5rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Soft glow behind the hero. Pure decoration, so it is hidden from AT. */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -30%; left: 50%;
+  width: 700px; height: 700px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(139,92,246,.16), transparent 62%);
+  pointer-events: none;
+}
+
+.hero .wrap { position: relative; }
+
+.hero h1 {
+  font-size: clamp(2.1rem, 6vw, 3.4rem);
+  margin-bottom: 1rem;
+  max-width: 18ch;
+}
+
+.hero h1 .grad {
+  background: linear-gradient(100deg, var(--accent-lit), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero p { color: var(--fg-muted); font-size: 1.1rem; max-width: 56ch; }
+
+.hero-actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 2rem; }
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .7rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-lit);
+  background: var(--surface);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: .9rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .05s;
+}
+
+.btn:hover:not(:disabled) { border-color: var(--accent); background: var(--surface-2); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-lit); border-color: var(--accent-lit); }
+
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-block { width: 100%; }
+.btn-sm { padding: .45rem .8rem; font-size: .8rem; }
+
+/* ---------- cards ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .15s, transform .15s;
+}
+
+.card:hover { border-color: var(--border-lit); }
+
+.grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+/* ---------- tags / chips ---------- */
+
+.chips { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+.chip {
+  font-family: var(--mono);
+  font-size: .7rem;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.chip-accent { border-color: var(--accent-dim); color: var(--accent-lit); }
+.chip-live   { border-color: var(--good); color: var(--good); }
+
+/* ---------- status text ---------- */
+
+.status { font-family: var(--mono); font-size: .8rem; }
+.status.in   { color: var(--good); }
+.status.low  { color: var(--amber); }
+.status.out  { color: var(--bad); }
+
+/* ---------- notices ---------- */
+
+.notice {
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: .9rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-size: .92rem;
+}
+
+.notice.warn    { border-left-color: var(--amber); }
+.notice.error   { border-left-color: var(--bad); }
+.notice.success { border-left-color: var(--good); }
+.notice.info    { border-left-color: var(--accent); }
+
+/* ---------- forms ---------- */
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: .9rem;
+  padding: .55rem .7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--fg);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+label { font-family: var(--mono); font-size: .78rem; color: var(--fg-muted); }
+
+/* Keyboard users must always be able to see where they are. */
+:focus-visible { outline: 2px solid var(--accent-lit); outline-offset: 2px; }
+
+/* ---------- empty state ---------- */
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--fg-muted);
+}
+
+/* ---------- footer ---------- */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 2.5rem 0;
+  color: var(--fg-dim);
+  font-size: .85rem;
+}
+
+.site-footer .wrap {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.site-footer nav { margin-left: auto; display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.site-footer a { color: var(--fg-muted); text-decoration: none; font-family: var(--mono); }
+.site-footer a:hover { color: var(--accent-lit); }
+
+/* ---------- utilities ---------- */
+
+.mono { font-family: var(--mono); }
+.muted { color: var(--fg-muted); }
+.dim { color: var(--fg-dim); font-size: .85rem; }
+.center { text-align: center; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Respect a reduced-motion preference across the whole site. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -3,23 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cart — Store</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <link rel="stylesheet" href="assets/store.css" />
-  <script type="module">
-    import { renderCart } from "./assets/store.js";
-    window.addEventListener("DOMContentLoaded", renderCart);
-  </script>
+  <title>Cart — dhole.dev</title>
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <script type="module" src="/assets/entry/cart.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Your Cart</h1>
-    <nav class="store-nav">
-      <a href="index.html">🏠 Home</a>
-      <a href="store.html">← Keep shopping</a>
-      <a class="cart-link" href="cart.html">Cart <span class="cart-badge" data-cart-count></span></a>
-    </nav>
-  </header>
-  <main id="cart-main"></main>
+  <section class="demo-header">
+    <div class="wrap">
+      <p class="eyebrow"><a href="/store.html">← Keep shopping</a></p>
+      <h1>Your cart</h1>
+    </div>
+  </section>
+  <main>
+    <div class="wrap" id="cart-main"></div>
+  </main>
 </body>
 </html>

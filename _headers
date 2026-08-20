@@ -1,0 +1,18 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), interest-cohort=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+
+# Hashed-by-content assets could be cached harder, but nothing here is
+# fingerprinted yet, so keep it short and let the CDN revalidate.
+/assets/*
+  Cache-Control: public, max-age=600, must-revalidate
+
+/assets/store/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# Never cache the checkout endpoint.
+/api/*
+  Cache-Control: no-store

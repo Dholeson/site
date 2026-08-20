@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controller Drift Tester — dhole.dev</title>
+  <meta name="description" content="Plug in a gamepad and measure analogue stick drift in the browser." />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <link rel="stylesheet" href="/assets/demo.css" />
+  <script type="module" src="./drift-tester.entry.js"></script>
+</head>
+<body>
+  <section class="demo-header">
+    <div class="wrap">
+      <p class="eyebrow"><a href="/projects.html">Projects</a> / Live demo</p>
+      <h1>Controller Drift Tester</h1>
+      <p class="lede">
+        Plug a controller into this device and see exactly where its sticks sit. Every
+        controller I sell gets measured here first.
+      </p>
+    </div>
+  </section>
+
+  <main>
+    <div class="wrap">
+      <div class="notice error" id="no-support" hidden>
+        <strong>This browser does not support the Gamepad API.</strong>
+        Try a recent Chrome, Edge, or Firefox on a desktop.
+      </div>
+
+      <div class="demo-stage" id="stage">
+        <div class="pad-status">
+          <span class="status low" id="status">Waiting for a controller</span>
+          <span class="dim" id="pad-name">Plug one in, then press any button on it.</span>
+        </div>
+
+        <div class="stick-grid">
+          <figure class="stick">
+            <figcaption>Left stick</figcaption>
+            <canvas id="stick-0" aria-label="Left stick position plot"></canvas>
+            <div class="readout">
+              <div><span class="k">X</span><div class="v" id="r0-x">0.000</div></div>
+              <div><span class="k">Y</span><div class="v" id="r0-y">0.000</div></div>
+              <div><span class="k">Magnitude</span><div class="v" id="r0-mag">0.000</div></div>
+              <div><span class="k">Peak</span><div class="v" id="r0-peak">0.000</div></div>
+              <div><span class="k">Rest</span><div class="v" id="r0-rest">—</div></div>
+            </div>
+          </figure>
+
+          <figure class="stick">
+            <figcaption>Right stick</figcaption>
+            <canvas id="stick-1" aria-label="Right stick position plot"></canvas>
+            <div class="readout">
+              <div><span class="k">X</span><div class="v" id="r1-x">0.000</div></div>
+              <div><span class="k">Y</span><div class="v" id="r1-y">0.000</div></div>
+              <div><span class="k">Magnitude</span><div class="v" id="r1-mag">0.000</div></div>
+              <div><span class="k">Peak</span><div class="v" id="r1-peak">0.000</div></div>
+              <div><span class="k">Rest</span><div class="v" id="r1-rest">—</div></div>
+            </div>
+          </figure>
+        </div>
+
+        <div class="demo-controls">
+          <button class="btn btn-primary" id="measure-btn" disabled>Measure rest (2s)</button>
+          <button class="btn" id="reset-btn">Reset</button>
+          <p class="demo-note" style="margin:0">
+            Let go of both sticks before measuring. The dot turns green inside the
+            deadzone and purple outside it.
+          </p>
+        </div>
+
+        <div id="verdict"></div>
+      </div>
+
+      <section class="section">
+        <h2>How it works</h2>
+        <p class="muted" style="max-width:68ch">
+          The browser exposes each stick as a pair of axes from −1 to 1. This page polls
+          them once per animation frame, plots the position, and keeps a trail so
+          intermittent glitches are visible rather than flashing past. "Measure rest"
+          samples for two seconds while the sticks are untouched and reports the mean
+          distance from centre alongside the spread — a stick that reads 0.02 steady is
+          healthy; one that reads 0.15, or swings wildly, is worn.
+        </p>
+        <p class="muted" style="max-width:68ch">
+          Nothing is uploaded. It all runs in your browser.
+        </p>
+        <a class="btn btn-sm" href="/store.html">See tested controllers in the shop →</a>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

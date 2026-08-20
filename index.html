@@ -3,26 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weekly Projects – Home</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <link rel="stylesheet" href="assets/store.css" />
-  <script type="module">
-    import { weeks } from "./data/weeks.js";
-    import { renderHome } from "./assets/current.js";
-    window.addEventListener("DOMContentLoaded", () => renderHome(weeks));
-  </script>
+  <title>dhole.dev — projects and retro consoles</title>
+  <meta name="description" content="Browser-playable side projects, and tested retro game consoles and accessories for sale." />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <script type="module" src="/assets/entry/home.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Weekly Builds 2026</h1>
-    <nav>
-      <a href="archive.html">📆 Archive</a>
-      <a href="projects.html">📂 Projects</a>
-      <a href="store.html">🛒 Store</a>
-    </nav>
-  </header>
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Projects &amp; hardware</p>
+      <h1>Things I build, and <span class="grad">consoles I bring back</span>.</h1>
+      <p>
+        Every project here runs in your browser — no downloads, no install, just open it.
+        The shop is the other half: retro consoles and accessories, cleaned and tested
+        before they go out.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/projects.html">Try the projects</a>
+        <a class="btn" href="/store.html">Visit the shop</a>
+      </div>
+    </div>
+  </section>
+
   <main>
-    <section id="current-week"></section>
+    <div class="wrap">
+      <section class="section">
+        <div class="section-head">
+          <h2>Playable projects</h2>
+          <a class="more" href="/projects.html">All projects →</a>
+        </div>
+        <div class="grid grid-2" id="home-projects"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>In the shop</h2>
+          <a class="more" href="/store.html">Everything for sale →</a>
+        </div>
+        <div class="grid" id="home-products"></div>
+      </section>
+
+      <section class="section">
+        <div class="split-note">
+          <div>
+            <h2>Why the consoles are tested</h2>
+            <p class="muted">
+              Anything I sell gets opened, cleaned, and put through a full boot before it
+              is listed. Controller sticks get measured with the drift tester on this
+              site, so when a listing says the stick is good, that is a reading rather
+              than an opinion.
+            </p>
+            <a class="btn btn-sm" href="/projects/drift-tester.html">Try the drift tester →</a>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
 </body>
 </html>

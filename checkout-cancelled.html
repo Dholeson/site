@@ -3,27 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Checkout Cancelled — Store</title>
-  <link rel="stylesheet" href="assets/style.css" />
-  <link rel="stylesheet" href="assets/store.css" />
+  <title>Checkout cancelled — dhole.dev</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <script type="module" src="/assets/entry/checkout-cancelled.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Checkout Cancelled</h1>
-    <nav class="store-nav">
-      <a href="index.html">🏠 Home</a>
-      <a href="store.html">🛒 Store</a>
-    </nav>
-  </header>
   <main>
-    <div class="notice warn">
-      <strong>No payment was taken.</strong>
+    <div class="wrap">
+      <div class="notice warn"><strong>No payment was taken.</strong></div>
+      <h1>Checkout cancelled</h1>
+      <p class="muted">Your cart is exactly as you left it, so you can pick up where you stopped.</p>
+      <p style="margin-top:2rem">
+        <a class="btn btn-primary" href="/cart.html">Back to cart</a>
+        <a class="btn" href="/store.html">Keep shopping</a>
+      </p>
     </div>
-    <p>Your cart is exactly as you left it, so you can pick up where you stopped.</p>
-    <p style="margin-top:2rem">
-      <a class="btn btn-primary" href="cart.html">Back to cart</a>
-      <a class="btn" href="store.html">Keep shopping</a>
-    </p>
   </main>
 </body>
 </html>
