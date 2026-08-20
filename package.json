@@ -10,6 +10,6 @@
     "test": "node test/checkout.test.js"
   },
   "devDependencies": {
-    "wrangler": "^3.90.0"
+    "wrangler": "^4.124.0"
   }
 }
