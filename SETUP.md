@@ -162,6 +162,14 @@ money quietly mischarges people.
 Drop its `stock` and deploy. At `stock: 0` it shows as sold out and the
 checkout function refuses it even if it is sitting in someone's old cart.
 
+### Branding
+
+The favicon and the link-preview card live in `assets/brand/`. The preview card
+(`og.png`, 1200x630) is what shows up when someone pastes a dhole.dev link into
+a chat or a post — worth regenerating if you change the tagline. It was rendered
+from a plain HTML page, so it can be rebuilt the same way rather than opening a
+design tool.
+
 ### Add a project
 
 1. Drop `projects/my-thing.html` and `projects/my-thing.js` in.
