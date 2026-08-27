@@ -123,3 +123,88 @@
   flex-direction: column;
   gap: .35rem;
 }
+
+/* ── Gen I Save Reader ───────────────────────────────────────────────────── */
+
+.dex-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  padding: 2.5rem 1.5rem;
+  border: 2px dashed var(--border-lit);
+  border-radius: var(--radius-lg);
+  background: var(--bg-soft);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .15s, background .15s;
+}
+.dex-dropzone:hover,
+.dex-dropzone:focus-visible { border-color: var(--accent); background: var(--surface); }
+.dex-dropzone.over { border-color: var(--accent-lit); background: var(--surface-2); }
+.dex-dropzone code { color: var(--fg); }
+
+.dex-trainer, .dex-counts { margin-bottom: 1rem; }
+
+.dex-badges { display: flex; flex-wrap: wrap; gap: .4rem; }
+.dex-badge {
+  font-size: .75rem; font-weight: 700; letter-spacing: .03em;
+  padding: .2rem .6rem; border-radius: 20px;
+  border: 1px solid var(--border); color: var(--fg-dim); background: var(--bg-soft);
+}
+.dex-badge.on { color: var(--bg); background: var(--amber); border-color: var(--amber); }
+
+/* Completion bars — one per denominator. */
+.dex-bar-row { margin: .75rem 0; }
+.dex-bar-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .3rem; }
+.dex-bar-num { color: var(--fg-muted); font-size: .85rem; }
+.dex-bar {
+  height: 8px; border-radius: 20px; background: var(--surface-2); overflow: hidden;
+}
+.dex-bar > span {
+  display: block; height: 100%; border-radius: 20px;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent-lit));
+}
+
+/* The 151. Fixed-width cells so the grid reads as a progress picture at a glance. */
+.dex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 4px;
+  margin-top: .75rem;
+}
+.dex-cell {
+  display: flex; align-items: baseline; gap: .35rem;
+  font-size: .72rem; padding: .3rem .45rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg-soft); color: var(--fg-dim);
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.dex-cell b { color: inherit; opacity: .65; font-size: .68rem; }
+.dex-cell.owned  { background: rgba(52,211,153,.14); border-color: rgba(52,211,153,.45); color: var(--good); }
+.dex-cell.seen   { background: rgba(251,191,36,.12); border-color: rgba(251,191,36,.4);  color: var(--amber); }
+.dex-cell.missing { opacity: .72; }
+/* Why an unowned species is unreachable — a left rule rather than another colour,
+   so it composes with the caught/seen state instead of fighting it. */
+.dex-cell.mark-trade         { box-shadow: inset 3px 0 0 var(--cyan); }
+.dex-cell.mark-other-version { box-shadow: inset 3px 0 0 var(--accent); }
+.dex-cell.mark-event         { box-shadow: inset 3px 0 0 var(--bad); }
+
+.dex-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: .6rem 0; }
+.dex-legend .dex-cell { flex: none; }
+
+.dex-bucket { margin-bottom: 1.5rem; }
+.dex-bucket h3 { font-size: 1rem; margin-bottom: .2rem; }
+.dex-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+
+.dex-party { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .6rem; }
+.dex-party-card {
+  padding: .7rem .85rem;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface);
+}
+.dex-party-nick { font-weight: 700; }
+
+@media (max-width: 560px) {
+  .dex-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
+}

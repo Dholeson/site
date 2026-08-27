@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gen I Save Reader — dhole.dev</title>
+  <meta name="description" content="Drop a Pokémon Red, Blue, or Yellow .sav file and read the whole save: dex completion, badges, party, and what is still missing. Nothing is uploaded." />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <link rel="stylesheet" href="/assets/demo.css" />
+  <script type="module" src="./gen1-save-reader.entry.js"></script>
+</head>
+<body>
+  <section class="demo-header">
+    <div class="wrap">
+      <p class="eyebrow"><a href="/projects.html">Projects</a> / Live demo</p>
+      <h1>Gen I Save Reader</h1>
+      <p class="lede">
+        Drop a Pokémon Red, Blue, or Yellow save file and read everything in it — dex
+        completion, badges, money, party, boxes, and exactly what is still missing.
+        I use it to check a cartridge's save is intact before it goes in the shop.
+      </p>
+    </div>
+  </section>
+
+  <main>
+    <div class="wrap">
+      <div class="notice" id="load-error" hidden></div>
+
+      <div class="demo-stage">
+        <div class="dex-dropzone" id="dropzone" tabindex="0" role="button"
+             aria-label="Choose or drop a Gen I save file">
+          <strong>Drop a <code>.sav</code> here</strong>
+          <span class="muted">or click to choose one — 32 KB, from a cartridge dump or an emulator</span>
+          <span class="mono dim" id="file-name"></span>
+          <input type="file" id="file-input" accept=".sav,.srm,application/octet-stream" hidden />
+        </div>
+
+        <p class="demo-note" style="text-align:center">
+          The file is read in your browser and never sent anywhere. There is no server
+          on this page to send it to.
+        </p>
+      </div>
+
+      <div id="results" hidden>
+        <div class="notice error" id="checksum" hidden></div>
+
+        <section class="section">
+          <h2>Trainer</h2>
+          <div id="trainer"></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Dex progress</h2>
+            <div class="demo-controls" id="version-picker" hidden>
+              <span class="k">Cartridge</span>
+              <button class="btn btn-sm" data-version="red">Red</button>
+              <button class="btn btn-sm" data-version="blue">Blue</button>
+            </div>
+          </div>
+          <div id="progress"></div>
+        </section>
+
+        <section class="section">
+          <h2>All 151</h2>
+          <p class="muted">Caught, seen but not caught, or never encountered. Hover a cell for detail.</p>
+          <div class="dex-legend">
+            <span class="dex-cell owned">caught</span>
+            <span class="dex-cell seen">seen</span>
+            <span class="dex-cell missing">unseen</span>
+            <span class="dex-cell missing mark-trade">needs trade</span>
+            <span class="dex-cell missing mark-other-version">other version</span>
+            <span class="dex-cell missing mark-event">event only</span>
+          </div>
+          <div class="dex-grid" id="dex-grid"></div>
+        </section>
+
+        <section class="section">
+          <h2>What is left</h2>
+          <div id="missing"></div>
+        </section>
+
+        <section class="section">
+          <h2>Party</h2>
+          <div id="party"></div>
+        </section>
+      </div>
+
+      <section class="section">
+        <h2>How it works</h2>
+        <p class="muted" style="max-width:68ch">
+          A Gen I save is a raw 32 KB SRAM dump with no container format — every field
+          sits at a fixed offset. The Pokédex is two 19-byte bitfields at
+          <code>0x25A3</code> (owned) and <code>0x25B6</code> (seen), one bit per species.
+          Money is binary-coded decimal. Names use a bespoke character map that is not
+          ASCII. The checksum at <code>0x3523</code> is 255 minus the sum of every byte
+          from <code>0x2598</code> to <code>0x3522</code>, so a single flipped bit anywhere
+          in the main block shows up immediately — which is how you spot a save battery
+          on its way out.
+        </p>
+        <p class="muted" style="max-width:68ch">
+          Offsets were taken from Bulbapedia and cross-checked against Rhydon, because
+          the summarised version of that page puts the player name and the dex bitfield
+          at the same offset, which cannot both be true. The parser this page runs on is
+          the same one from my <code>dex</code> project, compiled to plain JavaScript and
+          shipped as-is — it is pure byte arithmetic, so it does not care whether it is
+          running on a server or in your tab.
+        </p>
+        <p class="muted" style="max-width:68ch">
+          Three completion figures are shown rather than one, because Gen I has three
+          honest answers: what one cartridge can reach alone, what trading adds, and the
+          full 151 — which needs a Mew that was never legitimately distributed on a US
+          cart.
+        </p>
+        <a class="btn btn-sm" href="/store.html">See tested consoles in the shop →</a>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

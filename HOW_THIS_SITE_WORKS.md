@@ -27,4 +27,26 @@ Prices live in `data/products.js` and are read by *both* the site and the
 checkout function. The browser only ever sends an id and a quantity — never a
 price — so nobody can talk the store into selling them a console for a dollar.
 
+## The one piece of vendored code
+
+`projects/gen1/parser/` is not written here. It is `server/src/parser/` from the
+`dex` repo, compiled to plain ESM and committed, because this site has no build
+step and a browser cannot import TypeScript from a sibling checkout.
+
+Resync it after changing the parser in `dex`:
+
+```bash
+npm run sync:gen1            # assumes ../dex
+npm run sync:gen1 -- ../path/to/dex
+npm test
+```
+
+Two things to know before touching it:
+
+- **Do not hand-edit files in that directory.** The sync overwrites them.
+- The parser's *read* side is pure byte arithmetic and runs anywhere. Its
+  *write* side (`encodeText`, `encodeBCD`) allocates a Node `Buffer` and will
+  throw in a browser. The demo page never calls those — `test/gen1-parser.test.js`
+  parses a save with `globalThis.Buffer` deleted to keep it that way.
+
 Full setup: `SETUP.md`.

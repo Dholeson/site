@@ -21,6 +21,18 @@ export const projects = [
     accent: "#22d3ee"
   },
   {
+    id: "gen1-save-reader",
+    title: "Gen I Save Reader",
+    tagline: "Drop a Pokémon Red, Blue, or Yellow save and read every byte of it.",
+    description:
+      "A Gen I save is a raw 32 KB SRAM dump with no container format — the Pokédex is two bitfields, money is binary-coded decimal, and names use a character map that isn't ASCII. This reads all of it and reports dex completion three ways, because Gen I has three honest answers to \"what is 100%?\". I use it to check a cartridge's save is intact before it goes in the shop; a failing checksum usually means the save battery is on its way out. The file is parsed in your browser and never uploaded.",
+    demo: "/projects/gen1-save-reader.html",
+    tags: ["File API", "Binary parsing", "No dependencies"],
+    status: "live",
+    year: 2026,
+    accent: "#34d399"
+  },
+  {
     id: "chiptune",
     title: "Chiptune Sequencer",
     tagline: "A five-track step sequencer built on raw Web Audio oscillators.",

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "wrangler pages dev .",
     "deploy": "wrangler pages deploy .",
-    "test": "node test/checkout.test.js"
+    "test": "node test/checkout.test.js && node test/gen1-parser.test.js",
+    "sync:gen1": "node scripts/sync-gen1.mjs"
   },
   "devDependencies": {
     "wrangler": "^3.90.0"

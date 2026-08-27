@@ -1,0 +1,1059 @@
+[
+  {
+    "id": 1,
+    "name": "Bulbasaur",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 2,
+    "name": "Ivysaur",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 3,
+    "name": "Venusaur",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 4,
+    "name": "Charmander",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 5,
+    "name": "Charmeleon",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 6,
+    "name": "Charizard",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 7,
+    "name": "Squirtle",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 8,
+    "name": "Wartortle",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 9,
+    "name": "Blastoise",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 10,
+    "name": "Caterpie",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 11,
+    "name": "Metapod",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 12,
+    "name": "Butterfree",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 13,
+    "name": "Weedle",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 14,
+    "name": "Kakuna",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 15,
+    "name": "Beedrill",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 16,
+    "name": "Pidgey",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 17,
+    "name": "Pidgeotto",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 18,
+    "name": "Pidgeot",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 19,
+    "name": "Rattata",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 20,
+    "name": "Raticate",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 21,
+    "name": "Spearow",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 22,
+    "name": "Fearow",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 23,
+    "name": "Ekans",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 24,
+    "name": "Arbok",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 25,
+    "name": "Pikachu",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 26,
+    "name": "Raichu",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 27,
+    "name": "Sandshrew",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 28,
+    "name": "Sandslash",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 29,
+    "name": "Nidoran♀",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 30,
+    "name": "Nidorina",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 31,
+    "name": "Nidoqueen",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 32,
+    "name": "Nidoran♂",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 33,
+    "name": "Nidorino",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 34,
+    "name": "Nidoking",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 35,
+    "name": "Clefairy",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 36,
+    "name": "Clefable",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 37,
+    "name": "Vulpix",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 38,
+    "name": "Ninetales",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 39,
+    "name": "Jigglypuff",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 40,
+    "name": "Wigglytuff",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 41,
+    "name": "Zubat",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 42,
+    "name": "Golbat",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 43,
+    "name": "Oddish",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 44,
+    "name": "Gloom",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 45,
+    "name": "Vileplume",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 46,
+    "name": "Paras",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 47,
+    "name": "Parasect",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 48,
+    "name": "Venonat",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 49,
+    "name": "Venomoth",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 50,
+    "name": "Diglett",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 51,
+    "name": "Dugtrio",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 52,
+    "name": "Meowth",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 53,
+    "name": "Persian",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 54,
+    "name": "Psyduck",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 55,
+    "name": "Golduck",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 56,
+    "name": "Mankey",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 57,
+    "name": "Primeape",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 58,
+    "name": "Growlithe",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 59,
+    "name": "Arcanine",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 60,
+    "name": "Poliwag",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 61,
+    "name": "Poliwhirl",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 62,
+    "name": "Poliwrath",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 63,
+    "name": "Abra",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 64,
+    "name": "Kadabra",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 65,
+    "name": "Alakazam",
+    "versionExclusive": null,
+    "requiresTrade": true,
+    "eventOnly": false
+  },
+  {
+    "id": 66,
+    "name": "Machop",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 67,
+    "name": "Machoke",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 68,
+    "name": "Machamp",
+    "versionExclusive": null,
+    "requiresTrade": true,
+    "eventOnly": false
+  },
+  {
+    "id": 69,
+    "name": "Bellsprout",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 70,
+    "name": "Weepinbell",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 71,
+    "name": "Victreebel",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 72,
+    "name": "Tentacool",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 73,
+    "name": "Tentacruel",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 74,
+    "name": "Geodude",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 75,
+    "name": "Graveler",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 76,
+    "name": "Golem",
+    "versionExclusive": null,
+    "requiresTrade": true,
+    "eventOnly": false
+  },
+  {
+    "id": 77,
+    "name": "Ponyta",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 78,
+    "name": "Rapidash",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 79,
+    "name": "Slowpoke",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 80,
+    "name": "Slowbro",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 81,
+    "name": "Magnemite",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 82,
+    "name": "Magneton",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 83,
+    "name": "Farfetch'd",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 84,
+    "name": "Doduo",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 85,
+    "name": "Dodrio",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 86,
+    "name": "Seel",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 87,
+    "name": "Dewgong",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 88,
+    "name": "Grimer",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 89,
+    "name": "Muk",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 90,
+    "name": "Shellder",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 91,
+    "name": "Cloyster",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 92,
+    "name": "Gastly",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 93,
+    "name": "Haunter",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 94,
+    "name": "Gengar",
+    "versionExclusive": null,
+    "requiresTrade": true,
+    "eventOnly": false
+  },
+  {
+    "id": 95,
+    "name": "Onix",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 96,
+    "name": "Drowzee",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 97,
+    "name": "Hypno",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 98,
+    "name": "Krabby",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 99,
+    "name": "Kingler",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 100,
+    "name": "Voltorb",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 101,
+    "name": "Electrode",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 102,
+    "name": "Exeggcute",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 103,
+    "name": "Exeggutor",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 104,
+    "name": "Cubone",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 105,
+    "name": "Marowak",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 106,
+    "name": "Hitmonlee",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 107,
+    "name": "Hitmonchan",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 108,
+    "name": "Lickitung",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 109,
+    "name": "Koffing",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 110,
+    "name": "Weezing",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 111,
+    "name": "Rhyhorn",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 112,
+    "name": "Rhydon",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 113,
+    "name": "Chansey",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 114,
+    "name": "Tangela",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 115,
+    "name": "Kangaskhan",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 116,
+    "name": "Horsea",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 117,
+    "name": "Seadra",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 118,
+    "name": "Goldeen",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 119,
+    "name": "Seaking",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 120,
+    "name": "Staryu",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 121,
+    "name": "Starmie",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 122,
+    "name": "Mr. Mime",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 123,
+    "name": "Scyther",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 124,
+    "name": "Jynx",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 125,
+    "name": "Electabuzz",
+    "versionExclusive": "red",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 126,
+    "name": "Magmar",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 127,
+    "name": "Pinsir",
+    "versionExclusive": "blue",
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 128,
+    "name": "Tauros",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 129,
+    "name": "Magikarp",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 130,
+    "name": "Gyarados",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 131,
+    "name": "Lapras",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 132,
+    "name": "Ditto",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 133,
+    "name": "Eevee",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 134,
+    "name": "Vaporeon",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 135,
+    "name": "Jolteon",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 136,
+    "name": "Flareon",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 137,
+    "name": "Porygon",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 138,
+    "name": "Omanyte",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 139,
+    "name": "Omastar",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 140,
+    "name": "Kabuto",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 141,
+    "name": "Kabutops",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 142,
+    "name": "Aerodactyl",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 143,
+    "name": "Snorlax",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 144,
+    "name": "Articuno",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 145,
+    "name": "Zapdos",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 146,
+    "name": "Moltres",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 147,
+    "name": "Dratini",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 148,
+    "name": "Dragonair",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 149,
+    "name": "Dragonite",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 150,
+    "name": "Mewtwo",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": false
+  },
+  {
+    "id": 151,
+    "name": "Mew",
+    "versionExclusive": null,
+    "requiresTrade": false,
+    "eventOnly": true
+  }
+]
