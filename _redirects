@@ -1,6 +1,0 @@
-/archive.html    /log.html         301
-/weeks.html      /log.html         301
-/admin.html      /log.html         301
-/shop            /store.html       301
-/shop/*          /store.html       301
-/projects/       /projects.html    301

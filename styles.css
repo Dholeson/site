@@ -1,0 +1,261 @@
+/* tide pool — one stylesheet, by hand */
+
+:root {
+  --paper: #f5efe3;
+  --ink: #2a2420;
+  --faded: #6f6557;
+  --glass: #1f6e60;
+  --line: rgba(42, 36, 32, 0.22);
+  --pool: #ece4d2;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0e1417;
+    --ink: #e6dfd0;
+    --faded: #97906f;
+    --glass: #72c5b4;
+    --line: rgba(230, 223, 208, 0.2);
+    --pool: #131c21;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Charter, "Iowan Old Style", "Palatino Linotype", Palatino,
+    Georgia, serif;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  -webkit-text-size-adjust: 100%;
+}
+
+main {
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 5rem;
+}
+
+/* ---- masthead ---- */
+
+header.tide {
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: 2.25rem 1.25rem 0;
+}
+
+header.tide .mark {
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faded);
+}
+
+header.tide .mark a {
+  color: inherit;
+  text-decoration: none;
+}
+
+header.tide .mark a:hover {
+  color: var(--glass);
+}
+
+nav.shore {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+
+nav.shore a {
+  color: var(--faded);
+  text-decoration: none;
+  margin-right: 1.1rem;
+}
+
+nav.shore a:hover {
+  color: var(--glass);
+}
+
+nav.shore a[aria-current="page"] {
+  color: var(--ink);
+  border-bottom: 1px solid var(--glass);
+}
+
+/* ---- text ---- */
+
+h1 {
+  font-size: 1.9rem;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 2.2rem 0 0.4rem;
+}
+
+h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faded);
+  margin: 3rem 0 1rem;
+}
+
+p {
+  margin: 1.1rem 0;
+}
+
+.subtitle {
+  color: var(--faded);
+  font-style: italic;
+  margin-top: 0;
+}
+
+a {
+  color: var(--glass);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration-style: wavy;
+}
+
+hr {
+  border: none;
+  margin: 3rem 0;
+  text-align: center;
+}
+
+hr::before {
+  content: "~ ~ ~";
+  color: var(--faded);
+  letter-spacing: 0.6em;
+  font-size: 0.9rem;
+}
+
+/* ---- index: the three doors ---- */
+
+ul.doors {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0;
+}
+
+ul.doors li {
+  margin: 1.3rem 0;
+}
+
+ul.doors .where {
+  font-size: 1.15rem;
+}
+
+ul.doors .what {
+  color: var(--faded);
+  font-size: 0.95rem;
+}
+
+/* ---- shelf ---- */
+
+dl.kept dt {
+  font-weight: 700;
+  margin-top: 1.6rem;
+}
+
+dl.kept dt .kind {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--faded);
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+}
+
+dl.kept dd {
+  margin: 0.15rem 0 0;
+}
+
+/* ---- pool ---- */
+
+.water {
+  position: relative;
+  margin: 2rem 0 1rem;
+}
+
+canvas#pool {
+  display: block;
+  width: 100%;
+  height: 420px;
+  border-radius: 6px;
+  background: var(--pool);
+  border: 1px solid var(--line);
+}
+
+form.offering {
+  display: flex;
+  gap: 0.6rem;
+  margin: 1rem 0 0.4rem;
+}
+
+form.offering input {
+  flex: 1;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  padding: 0.35rem 0.1rem;
+  outline: none;
+}
+
+form.offering input:focus {
+  border-bottom-color: var(--glass);
+}
+
+form.offering input::placeholder {
+  color: var(--faded);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+form.offering button {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--glass);
+  background: none;
+  border: 1px solid var(--glass);
+  border-radius: 999px;
+  padding: 0.25rem 1rem;
+  cursor: pointer;
+}
+
+form.offering button:hover {
+  background: var(--glass);
+  color: var(--paper);
+}
+
+.smallprint {
+  font-size: 0.85rem;
+  color: var(--faded);
+}
+
+/* ---- footer ---- */
+
+footer.wrack {
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+  font-size: 0.8rem;
+  color: var(--faded);
+  letter-spacing: 0.04em;
+}
