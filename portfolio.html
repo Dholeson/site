@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Portfolio — dhole.dev</title>
-  <meta name="description" content="Selected work: two browser tools built on raw web APIs, and a storefront with server-side checkout. Every link opens the real thing." />
+  <meta name="description" content="Selected work: web apps, tools, games and client sites. Every project links to the real, working thing." />
   <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
   <link rel="canonical" href="https://dhole.dev/portfolio.html" />
@@ -13,13 +13,13 @@
   <meta property="og:site_name" content="dhole.dev" />
   <meta property="og:url" content="https://dhole.dev/portfolio.html" />
   <meta property="og:title" content="Portfolio — dhole.dev" />
-  <meta property="og:description" content="Selected work: browser tools built on raw web APIs, and a storefront with server-side checkout. Every link opens the real thing." />
+  <meta property="og:description" content="Selected work: web apps, tools, games and client sites. Every project links to the real, working thing." />
   <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Portfolio — dhole.dev" />
-  <meta name="twitter:description" content="Selected work: browser tools built on raw web APIs, and a storefront with server-side checkout. Every link opens the real thing." />
+  <meta name="twitter:description" content="Selected work: web apps, tools, games and client sites. Every project links to the real, working thing." />
   <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
   <link rel="stylesheet" href="/assets/site.css" />
   <link rel="stylesheet" href="/assets/pages.css" />
@@ -31,126 +31,17 @@
       <p class="eyebrow">Portfolio</p>
       <h1>Selected work</h1>
       <p class="lede">
-        Three things I designed and built, all running on this site. Every link
-        below opens the real, working thing — not a screenshot.
+        Web apps, tools, games and sites I've designed and built. Each one has a
+        short case study, and a link to the real, working thing wherever there is one.
       </p>
+      <div class="pf-contact" id="pf-contact"></div>
     </div>
   </section>
 
   <main>
-    <div class="wrap" style="padding-top:2rem">
-
-      <article class="card case">
-        <div>
-          <h2>Controller Drift Tester</h2>
-          <p class="case-tagline">Plug in a gamepad and get a measured number for how far its sticks have wandered.</p>
-
-          <h3>Problem</h3>
-          <p>
-            Used controllers get sold as "no drift" based on someone wiggling the
-            stick and shrugging. I wanted a reading I could put in a product listing.
-          </p>
-
-          <h3>What I built</h3>
-          <ul>
-            <li>Live plot of both analogue sticks via the browser Gamepad API, drawn on canvas.</li>
-            <li>A two-second rest measurement: let go of the sticks and it samples the resting offset and jitter, then gives a verdict against a typical in-game deadzone.</li>
-            <li>Used for real — every controller in the shop is checked with it before listing.</li>
-          </ul>
-        </div>
-        <div class="case-side">
-          <a class="btn btn-primary" href="/projects/drift-tester.html">Open it →</a>
-          <div class="chips">
-            <span class="chip">Gamepad API</span>
-            <span class="chip">Canvas</span>
-            <span class="chip">Vanilla JS</span>
-            <span class="chip">No dependencies</span>
-          </div>
-          <p class="dim">Needs a controller plugged in.</p>
-        </div>
-      </article>
-
-      <article class="card case">
-        <div>
-          <h2>Chiptune Sequencer</h2>
-          <p class="case-tagline">A six-track step sequencer where every sound is synthesised at runtime.</p>
-
-          <h3>Problem</h3>
-          <p>
-            Make retro-console-style music in the browser without samples or an
-            audio library — just oscillators and a noise buffer.
-          </p>
-
-          <h3>The interesting part</h3>
-          <ul>
-            <li>
-              Driving a sequencer straight off <code>setInterval</code> drifts audibly, because
-              timers aren't sample-accurate. Instead a short timer acts as a
-              <em>lookahead</em>, scheduling upcoming notes directly on the
-              <code>AudioContext</code> clock, which is.
-            </li>
-            <li>Square, triangle and noise voices; adjustable tempo, waveform and volume.</li>
-          </ul>
-        </div>
-        <div class="case-side">
-          <a class="btn btn-primary" href="/projects/chiptune.html">Open it →</a>
-          <div class="chips">
-            <span class="chip">Web Audio API</span>
-            <span class="chip">Audio scheduling</span>
-            <span class="chip">No dependencies</span>
-          </div>
-          <p class="dim">Turn your sound on.</p>
-        </div>
-      </article>
-
-      <article class="card case">
-        <div>
-          <h2>The Shop: storefront and checkout</h2>
-          <p class="case-tagline">A store for refurbished retro consoles, on a static site with one serverless function.</p>
-
-          <h3>Problem</h3>
-          <p>
-            Take card payments without running a server, and without letting the
-            browser decide what anything costs.
-          </p>
-
-          <h3>Decisions worth looking at</h3>
-          <ul>
-            <li><strong>The browser never sends a price.</strong> The cart sends product ids and quantities only; a Cloudflare Pages Function prices the order from the catalogue and creates the Stripe Checkout session.</li>
-            <li><strong>One source of truth.</strong> The same catalogue file renders the store and prices the checkout, so they can't disagree.</li>
-            <li><strong>Money is integer cents</strong>, never floats.</li>
-            <li><strong>Tested where it matters:</strong> 16 tests on the pricing path — including one proving a client-supplied price is ignored, plus stock limits and malformed or hostile carts.</li>
-            <li><strong>Strict Content Security Policy</strong> with no inline scripts anywhere on the site.</li>
-          </ul>
-        </div>
-        <div class="case-side">
-          <a class="btn btn-primary" href="/store.html">See the store →</a>
-          <div class="chips">
-            <span class="chip">Cloudflare Pages Functions</span>
-            <span class="chip">Stripe Checkout</span>
-            <span class="chip">ES modules</span>
-            <span class="chip">Node tests</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="card case">
-        <div>
-          <h2>This site</h2>
-          <p class="case-tagline">Designed, built and deployed by me. No framework, no build step.</p>
-          <ul style="margin-top:.9rem">
-            <li>Plain HTML, CSS and ES modules, deployed to Cloudflare Pages.</li>
-            <li>A shared header and footer mounted from one module, so pages can't drift apart without a templating system.</li>
-            <li>Dark theme from a small set of design tokens; responsive down to phone width.</li>
-            <li>Link previews, sitemap and a custom 404.</li>
-          </ul>
-        </div>
-        <div class="case-side">
-          <a class="btn" href="/">Homepage →</a>
-          <a class="btn" href="/projects.html">All projects →</a>
-        </div>
-      </article>
-
+    <div class="wrap">
+      <div class="pf-filters" id="pf-filters" role="group" aria-label="Filter by type"></div>
+      <div class="grid pf-grid" id="pf-grid"></div>
     </div>
   </main>
 </body>
