@@ -258,6 +258,44 @@ export const work = [
   },
 
   {
+    id: "osrs-skills",
+    title: "OSRS Skills Rebuild",
+    pitch: "Twelve Old School RuneScape skills rebuilt on an open-source server emulator, by directing a team of parallel AI coding agents and playtesting their work.",
+    kind: "Games",
+    year: 2026,
+    role: "Lead: direction, playtesting and debugging. AI coding agents wrote the Kotlin.",
+    status: "Paused; 27 features verified in-game",
+    access: "Private, local only",
+    accent: "#a3e635",
+    monogram: "RS",
+    tags: ["Kotlin", "rsmod", "RuneLite plugin", "Git worktrees", "Agent orchestration"],
+    links: [],
+    problem:
+      "rsmod, the open-source OSRS server emulator, ships the engine but no skills. I wanted a private sandbox to practise boss fights and skilling, which meant building the game content.",
+    built: [
+      "Twelve skills: woodcutting, mining, firemaking, cooking, fishing, smithing, fletching, thieving, crafting, prayer, runecrafting and agility (the Draynor rooftop course).",
+      "Equipment requirements, drop tables, NPC aggression timers, and in-game test commands for setting up any scenario fast.",
+      "A coordination system for parallel agents: each one worked in its own git worktree under a written protocol, with a live dashboard of progress.",
+      "A RuneLite plugin that shows the current test steps inside the game client, so playtesting and sign-off happened in-game. 27 features passed."
+    ],
+    hard: [
+      {
+        title: "Bugs you only find by playing",
+        body: "Harpoon and bait fishing had never worked, because they were wired to the wrong menu option. The XP curve had been copied from the wrong codebase, so 'set mining to 99' produced level 73. A character I spotted standing six feet above a wall traced back to a 480-unit height fault."
+      },
+      {
+        title: "Failures that left no trace",
+        body: "A menu call left a dialog open, which silently cancelled the next action with nothing in the logs. Finding it meant reproducing it in-game and narrowing it down by hand."
+      },
+      {
+        title: "Matching the real game's numbers",
+        body: "Skill success rates come from the community wiki's raw page data, which uses the same out-of-256 form as the engine's own formula, so no conversion step could introduce errors."
+      }
+    ],
+    note: "A private, local experiment: nothing hosted or distributed, no connection to official servers. Built on the open-source rsmod emulator. Old School RuneScape is © Jagex; this project is not affiliated with Jagex."
+  },
+
+  {
     id: "spotify-discover-cleaner",
     title: "Spotify Discover Cleaner",
     pitch: "Turns a 1,000-song \"to listen\" playlist into a queue that shrinks itself as you actually listen.",
