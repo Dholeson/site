@@ -63,10 +63,11 @@ change rendering.
 
 These are why a local session is more useful than a cloud one:
 
-1. **Cloudflare production branch is wrong.** It is set to
-   `claude/dhole-dev-store-setup-zy5lp7`, so deploys from `main` land as
-   previews rather than production. Fix in the dashboard:
-   Workers & Pages → dhole-dev → Settings → Build & deployments.
+1. **Cloudflare is not connected to GitHub.** The Pages project is Direct
+   Upload: merging to `main` deploys nothing. A deploy only happens when
+   someone runs `npx wrangler pages deploy .` (production branch is `main`,
+   fixed 2026-11-16, so deploy from a `main` checkout). Connecting the repo in
+   Settings → Build → Git repository would make merges deploy automatically.
 2. **The deployed site is stale.** It predates the favicon, link previews,
    404 page, and the wrangler 4 upgrade. Needs a redeploy.
 3. **Stripe is not connected.** `SETUP.md` step 3 onward. Until
