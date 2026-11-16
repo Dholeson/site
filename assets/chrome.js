@@ -38,6 +38,7 @@ export function mountChrome(current = "") {
         <a href="/projects.html">Projects</a>
         <a href="/store.html">Store</a>
         <a href="/log.html">Log</a>
+        <a href="/portfolio.html">Portfolio</a>
       </nav>
     </div>`;
   document.body.append(footer);

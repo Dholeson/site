@@ -24,6 +24,8 @@ There is no build step. Edit files, deploy.
 | `projects.html`, `projects/` | Project index and the playable demos |
 | `store.html`, `product.html`, `cart.html` | Shop |
 | `log.html` | Week-by-week build log |
+| `portfolio.html`, `case.html` | Portfolio grid, and one templated case-study page (`case.html?id=`) for job applications |
+| `data/portfolio.js` | Portfolio content — one block per project, drives both pages |
 | `data/products.js` | Catalogue — prices, stock, copy |
 | `data/projects.js` | Project list |
 | `functions/api/checkout.js` | Stripe Checkout, as a Pages Function |
@@ -61,10 +63,11 @@ change rendering.
 
 These are why a local session is more useful than a cloud one:
 
-1. **Cloudflare production branch is wrong.** It is set to
-   `claude/dhole-dev-store-setup-zy5lp7`, so deploys from `main` land as
-   previews rather than production. Fix in the dashboard:
-   Workers & Pages → dhole-dev → Settings → Build & deployments.
+1. **Cloudflare is not connected to GitHub.** The Pages project is Direct
+   Upload: merging to `main` deploys nothing. A deploy only happens when
+   someone runs `npx wrangler pages deploy .` (production branch is `main`,
+   fixed 2026-11-16, so deploy from a `main` checkout). Connecting the repo in
+   Settings → Build → Git repository would make merges deploy automatically.
 2. **The deployed site is stale.** It predates the favicon, link previews,
    404 page, and the wrangler 4 upgrade. Needs a redeploy.
 3. **Stripe is not connected.** `SETUP.md` step 3 onward. Until
