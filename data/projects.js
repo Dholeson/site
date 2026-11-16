@@ -23,7 +23,7 @@ export const projects = [
   {
     id: "chiptune",
     title: "Chiptune Sequencer",
-    tagline: "A five-track step sequencer built on raw Web Audio oscillators.",
+    tagline: "A six-track step sequencer built on raw Web Audio oscillators.",
     description:
       "No samples and no audio library — every sound is a square, triangle, or noise generator wired up at runtime, which is roughly how the consoles downstairs made noise too. Draw a pattern, change the tempo and waveform, and listen.",
     demo: "/projects/chiptune.html",

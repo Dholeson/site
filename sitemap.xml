@@ -5,5 +5,6 @@
   <url><loc>https://dhole.dev/projects.html</loc><priority>0.8</priority></url>
   <url><loc>https://dhole.dev/projects/drift-tester.html</loc><priority>0.7</priority></url>
   <url><loc>https://dhole.dev/projects/chiptune.html</loc><priority>0.7</priority></url>
+  <url><loc>https://dhole.dev/portfolio.html</loc><priority>0.6</priority></url>
   <url><loc>https://dhole.dev/log.html</loc><priority>0.4</priority></url>
 </urlset>

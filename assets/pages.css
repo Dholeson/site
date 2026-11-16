@@ -296,3 +296,35 @@
 @media (max-width: 560px) {
   .day-log li { grid-template-columns: 1fr; gap: .2rem; }
 }
+
+/* ---------- portfolio ---------- */
+
+.case {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
+  gap: 2rem;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+}
+.case:hover { border-color: var(--border); }
+.case h2 { font-size: 1.3rem; margin-bottom: .35rem; }
+.case h3 {
+  font-family: var(--mono);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--fg-dim);
+  margin: 1.2rem 0 .45rem;
+}
+.case p, .case li { color: var(--fg-muted); font-size: .95rem; max-width: 66ch; }
+.case ul { padding-left: 1.1rem; margin: 0; }
+.case li { margin-bottom: .4rem; }
+.case code { font-family: var(--mono); font-size: .85em; color: var(--fg); }
+.case-tagline { color: var(--fg) !important; font-size: 1.02rem !important; }
+.case-side { display: flex; flex-direction: column; gap: .75rem; align-items: stretch; }
+.case-side .btn { justify-content: center; text-align: center; }
+.case-side .chips { margin-top: .25rem; }
+
+@media (max-width: 760px) {
+  .case { grid-template-columns: 1fr; gap: 1.25rem; padding: 1.25rem; }
+}
