@@ -69,7 +69,6 @@ function card(w) {
       <p class="pf-meta">${esc(w.kind)} · ${esc(w.year)}</p>
       <h3><a href="${caseHref}">${esc(w.title)}</a></h3>
       <p class="muted">${esc(w.pitch)}</p>
-      <div class="chips">${w.tags.slice(0, 4).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
       <div class="pf-actions">
         <a class="btn btn-sm" href="${caseHref}">Case study</a>
         ${primary ? `<a class="btn btn-sm btn-primary" href="${esc(primary.href)}"${external(primary.href)}>${esc(primary.label)} →</a>` : ""}
@@ -120,18 +119,20 @@ export function renderCase() {
     ${w.image ? `<img class="case-hero" src="${esc(w.image)}" alt="${esc(w.imageAlt || w.title)}" />` : ""}
 
     <dl class="case-facts">
-      <div><dt>Role</dt><dd>${esc(w.role)}</dd></div>
+      <div class="case-wide"><dt>My role</dt><dd>${esc(w.role)}</dd></div>
+      ${w.users ? `<div class="case-wide"><dt>Who it's for</dt><dd>${esc(w.users)}</dd></div>` : ""}
       <div><dt>Status</dt><dd>${esc(w.status)}</dd></div>
       ${w.access ? `<div><dt>How to see it</dt><dd>${esc(w.access)}</dd></div>` : ""}
-      <div class="case-stack"><dt>Stack</dt><dd><div class="chips">${w.tags.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div></dd></div>
     </dl>
 
     <div class="case-body">
       ${section("The problem", w.problem && `<p>${esc(w.problem)}</p>`)}
-      ${section("What I built", list(w.built))}
-      ${section("The hard parts", w.hard && w.hard.map(h =>
-        `<div class="case-hard"><h3>${esc(h.title)}</h3><p>${esc(h.body)}</p></div>`).join(""))}
+      ${section("What shipped", list(w.shipped))}
+      ${section("Key decisions", w.decisions && w.decisions.map(d =>
+        `<div class="case-hard"><h3>${esc(d.title)}</h3><p>${esc(d.body)}</p></div>`).join(""))}
       ${section("Outcome", w.outcome && `<p>${esc(w.outcome)}</p>`)}
+      ${section("What's next", w.next && `<p>${esc(w.next)}</p>`)}
+      ${w.tags && w.tags.length ? `<section class="case-built"><h2>Built with</h2><div class="chips">${w.tags.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div></section>` : ""}
       ${w.note ? `<div class="notice info">${esc(w.note)}</div>` : ""}
     </div>
 
