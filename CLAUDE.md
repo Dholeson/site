@@ -24,6 +24,8 @@ There is no build step. Edit files, deploy.
 | `projects.html`, `projects/` | Project index and the playable demos |
 | `store.html`, `product.html`, `cart.html` | Shop |
 | `log.html` | Week-by-week build log |
+| `portfolio.html`, `case.html` | Portfolio grid, and one templated case-study page (`case.html?id=`) for job applications |
+| `data/portfolio.js` | Portfolio content — one block per project, drives both pages |
 | `data/products.js` | Catalogue — prices, stock, copy |
 | `data/projects.js` | Project list |
 | `functions/api/checkout.js` | Stripe Checkout, as a Pages Function |
