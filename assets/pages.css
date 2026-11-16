@@ -299,6 +299,38 @@
 
 /* ---------- portfolio index ---------- */
 
+.pf-process {
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: .75rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+.pf-process li {
+  counter-increment: step;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  color: var(--fg-muted);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+.pf-process b {
+  display: block;
+  font-family: var(--mono);
+  font-size: .8rem;
+  color: var(--fg);
+  margin-bottom: .25rem;
+}
+@media (max-width: 560px) {
+  .pf-process { grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .pf-process li { padding: .7rem .75rem; font-size: .8rem; }
+}
+.pf-process b::before { content: "0" counter(step) "  "; color: var(--accent-lit); white-space: pre; }
+
 .pf-contact { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.25rem; }
 .pf-contact:empty { display: none; }
 
