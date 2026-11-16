@@ -4,4 +4,3 @@
 /shop            /store.html       301
 /shop/*          /store.html       301
 /projects/       /projects.html    301
-/portfolio       /portfolio.html   301

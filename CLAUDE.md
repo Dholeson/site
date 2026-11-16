@@ -50,6 +50,12 @@ by trusting the cart.
 `assets/entry/` instead. A new page with an inline script will be blocked at
 runtime, silently, in production but not in a plain local file server.
 
+**Cloudflare strips `.html` itself.** `/foo.html` is 308-redirected to `/foo`,
+and `/foo` serves `foo.html`. Never add a `_redirects` rule from `/foo` to
+`/foo.html`: the two redirect into each other forever (this took
+`/portfolio` down once). Test redirects with `npm run dev`, not a plain
+file server, which doesn't do either.
+
 **Stock does not decrement itself.** It is a number in `data/products.js`.
 Two people buying the last console minutes apart both succeed. Known and
 documented in `SETUP.md`; Cloudflare KV is the upgrade path.
