@@ -5,10 +5,12 @@
   Permissions-Policy: geolocation=(), camera=(), microphone=(), interest-cohort=()
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
 
-# Hashed-by-content assets could be cached harder, but nothing here is
-# fingerprinted yet, so keep it short and let the CDN revalidate.
+# Nothing here is fingerprinted (no build step, filenames never change), so
+# browsers must re-check on every load. A max-age here means a visitor who
+# came back within that window gets new HTML with old CSS/JS after a deploy.
+# Re-checking an unchanged file is a cheap 304.
 /assets/*
-  Cache-Control: public, max-age=600, must-revalidate
+  Cache-Control: public, max-age=0, must-revalidate
 
 /assets/store/*
   Cache-Control: public, max-age=86400, must-revalidate
