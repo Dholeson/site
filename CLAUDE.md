@@ -11,10 +11,12 @@ Most shop traffic arrives by direct link rather than through the homepage.
 ```bash
 npm test                          # 16 checkout tests
 npm run dev                       # wrangler pages dev . (runs the Function too)
-npx wrangler pages deploy .       # deploy
+npx wrangler pages deploy .       # manual deploy (rarely needed)
 ```
 
-There is no build step. Edit files, deploy.
+There is no build step. Cloudflare Pages is connected to this repo: merging to
+`main` deploys production automatically, and other branches get preview URLs
+(`<branch>.dhole-dev.pages.dev`).
 
 ## Layout
 
@@ -63,20 +65,13 @@ change rendering.
 
 These are why a local session is more useful than a cloud one:
 
-1. **Cloudflare is not connected to GitHub.** The Pages project is Direct
-   Upload: merging to `main` deploys nothing. A deploy only happens when
-   someone runs `npx wrangler pages deploy .` (production branch is `main`,
-   fixed 2026-11-16, so deploy from a `main` checkout). Connecting the repo in
-   Settings → Build → Git repository would make merges deploy automatically.
-2. **The deployed site is stale.** It predates the favicon, link previews,
-   404 page, and the wrangler 4 upgrade. Needs a redeploy.
-3. **Stripe is not connected.** `SETUP.md` step 3 onward. Until
+1. **Stripe is not connected.** `SETUP.md` step 3 onward. Until
    `STRIPE_SECRET_KEY` is set as a Pages secret, checkout returns a clear
    "not configured" error rather than failing silently.
-4. **`SSL_ERROR_NO_CYPHER_OVERLAP`** was seen on a `*.pages.dev` preview URL in
+2. **`SSL_ERROR_NO_CYPHER_OVERLAP`** was seen on a `*.pages.dev` preview URL in
    Firefox. Untriaged — most likely antivirus TLS scanning or a Firefox TLS
    setting, but nobody has actually loaded the production URL to check.
-5. **Product images are illustrations, not photographs** of the real units.
+3. **Product images are illustrations, not photographs** of the real units.
    Buyers of used hardware expect real photos. Swap before taking real money.
 
 ## Deploying
