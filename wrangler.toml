@@ -1,5 +1,9 @@
 name = "dhole-dev"
 compatibility_date = "2025-01-01"
+# league-ify's API Function (functions/api/league-ify) uses AsyncLocalStorage
+# for its per-request user and profile context, which needs the Node.js
+# compatibility runtime. Harmless for the checkout function.
+compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "."
 
 # Public, non-secret configuration. The Stripe key is NOT here -- set it with:
@@ -13,3 +17,25 @@ SHIP_TO_COUNTRIES = "US"
 # Leave "false" until Stripe Tax is configured (origin address plus tax
 # registrations). Turning it on before that makes Stripe reject every session.
 ENABLE_AUTOMATIC_TAX = "false"
+
+# The workshop database: pipeline units, live stock, requests, admin sessions.
+# Bound as env.DB inside every Pages Function.
+#
+# No [env.preview] section anywhere in this file, deliberately: Pages treats
+# non-inheritable keys as all-or-nothing, so adding one would silently drop the
+# [vars] above and this binding from preview deployments.
+#
+# Local workflow (remote D1 development is not possible on Pages):
+#   npx wrangler d1 execute dhole-workshop --local --file=schema.sql
+#   npx wrangler d1 execute dhole-workshop --local --file=scripts/seed.sql
+#   npm run dev
+# If you pass --persist-to, pass the SAME value to every command or you will
+# seed one database and query another.
+[[d1_databases]]
+binding = "DB"
+database_name = "dhole-workshop"
+database_id = "7f733c72-d6b6-4555-a49c-8c706ac506a8"
+# Required for Pages local development; the local emulator never reaches the
+# real preview database, so this is a placeholder, not an id.
+preview_database_id = "DB"
+migrations_dir = "migrations"

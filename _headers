@@ -5,16 +5,26 @@
   Permissions-Policy: geolocation=(), camera=(), microphone=(), interest-cohort=()
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
 
-# The one CSP exception: the Discover Cleaner demo (vendored from the app's
-# repo by `npm run sync:discover-cleaner`) shows album covers, which load from
-# Spotify's image CDN. Same policy as above plus https://i.scdn.co in img-src.
-# Matching rules stack, and a header set twice is comma-joined -- the browser
-# would then enforce both policies and block the covers. "! " detaches the
-# global value first; it only removes what earlier rules added, so this block
-# must stay below /*.
+# CSP exceptions -- one per vendored app whose images come from a CDN. Each is
+# the policy above plus that one CDN, nothing else. Matching rules stack, and a
+# header set twice is comma-joined -- the browser would then enforce both
+# policies and block the images. "! " detaches the global value first; it only
+# removes what earlier rules added, so these blocks must stay below /*.
+
+# The Discover Cleaner demo (vendored from the app's repo by
+# `npm run sync:discover-cleaner`) shows album covers, which load from
+# Spotify's image CDN: https://i.scdn.co in img-src.
 /projects/discover-cleaner-demo/*
   ! Content-Security-Policy
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.scdn.co; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+
+# league-ify (vendored from Dholeson/league-ify by its scripts/build-site.mjs)
+# shows champion, item and spell art from Riot's Data Dragon CDN, and fetches
+# Data Dragon's versions.json to pick the art version: the CDN in img-src and
+# connect-src. test/league-ify.test.js checks this rule.
+/projects/league-ify/*
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://ddragon.leagueoflegends.com; font-src 'self'; connect-src 'self' https://ddragon.leagueoflegends.com; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
 
 # Hashed-by-content assets could be cached harder, but nothing here is
 # fingerprinted yet, so keep it short and let the CDN revalidate.

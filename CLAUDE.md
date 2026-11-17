@@ -9,7 +9,7 @@ Most shop traffic arrives by direct link rather than through the homepage.
 ## Commands
 
 ```bash
-npm test                          # 16 checkout tests + the Discover Cleaner demo checks
+npm test                          # 16 checkout tests + the Discover Cleaner and league-ify checks
 npm run dev                       # wrangler pages dev . (runs the Function too)
 npm run sync:discover-cleaner     # re-vendor the Discover Cleaner demo (see below)
 npx wrangler pages deploy .       # manual deploy (rarely needed)
@@ -36,6 +36,15 @@ There is no build step. Cloudflare Pages is connected to this repo: merging to
 | `functions/api/checkout.js` | Stripe Checkout, as a Pages Function |
 | `lib/checkout-core.js` | Order pricing, shared with the tests |
 | `assets/entry/` | Per-page entry modules |
+| `projects/league-ify/` | league-ify SPA — **built output, vendored** (see below) |
+| `functions/api/league-ify/[[path]].js` | league-ify API (accounts + data), one bundled Pages Function — **vendored** |
+| `migrations/0001_league_ify.sql` | league-ify's D1 tables (`documents`, `matches`, `lu_users`, `lu_sessions`) |
+
+**league-ify is vendored, not written here.** Its source is the
+`Dholeson/league-ify` repo. Don't hand-edit `projects/league-ify/` or the
+`[[path]].js` bundle — rebuild from a league-ify checkout with
+`node scripts/build-site.mjs <path-to-this-site>` and commit the result. It
+needs `nodejs_compat` and the `DB` (D1) binding in `wrangler.toml`.
 
 ## Conventions that will bite you
 
@@ -53,15 +62,23 @@ by trusting the cart.
 `assets/entry/` instead. A new page with an inline script will be blocked at
 runtime, silently, in production but not in a plain local file server.
 
-**One path has its own CSP: `/projects/discover-cleaner-demo/*`.** That demo
-shows album covers from Spotify's image CDN, so its policy is the global one
-plus `https://i.scdn.co` in `img-src`, and nothing else. In `_headers` the
-rule first detaches the global header (`! Content-Security-Policy`) and then
-sets its own. Without the detach, Cloudflare comma-joins the two values and
-the browser enforces both, which blocks the covers. A detach only removes what
-*earlier* rules added, so the rule must stay below `/*`.
-`test/discover-cleaner-demo.test.js` checks all of this. Don't widen it, and
-don't add a second exception without the same reasoning.
+**Two paths have their own CSP**, each for a vendored app whose images come
+from a CDN:
+
+- `/projects/discover-cleaner-demo/*` shows album covers from Spotify's image
+  CDN, so its policy is the global one plus `https://i.scdn.co` in `img-src`.
+- `/projects/league-ify/*` shows champion art from Riot's Data Dragon and
+  fetches its `versions.json`, so its policy is the global one plus
+  `https://ddragon.leagueoflegends.com` in `img-src` and `connect-src`.
+
+Nothing else differs from the global policy. In `_headers` each rule first
+detaches the global header (`! Content-Security-Policy`) and then sets its
+own. Without the detach, Cloudflare comma-joins the two values and the browser
+enforces both, which blocks the images. A detach only removes what *earlier*
+rules added, so these rules must stay below `/*`.
+`test/discover-cleaner-demo.test.js` and `test/league-ify.test.js` check all
+of this. Don't widen them, and don't add another exception without the same
+reasoning.
 
 **The Discover Cleaner demo is vendored, not written here.** It is built in
 the app's repo (github.com/Dholeson/spotify-discover-cleaner,
@@ -87,9 +104,10 @@ documented in `SETUP.md`; Cloudflare KV is the upgrade path.
 
 ## Testing
 
-`npm test` covers the money path, the demo's CSP rule in `_headers`, and the
-vendored demo bundle. Its bundle checks skip, with a note, while
-`projects/discover-cleaner-demo/` is missing. There is also a Playwright suite that has
+`npm test` covers the money path, both CSP exceptions in `_headers`, the
+vendored demo bundle, and the vendored league-ify build and its config
+(`nodejs_compat`, the `DB` binding, the migration). The demo's bundle checks
+skip, with a note, while `projects/discover-cleaner-demo/` is missing. There is also a Playwright suite that has
 been run against the site (39 checks: both demos driven for real, cart totals,
 mobile overflow, link previews) but it is not committed — reproduce it if you
 change rendering.
