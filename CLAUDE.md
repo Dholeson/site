@@ -62,6 +62,18 @@ by trusting the cart.
 `assets/entry/` instead. A new page with an inline script will be blocked at
 runtime, silently, in production but not in a plain local file server.
 
+**The global CSP allows Cloudflare Web Analytics, and nothing else
+off-site.** Web Analytics is on for the Pages project, and Cloudflare injects
+its beacon into every HTML page on the production domain (not on
+`*.pages.dev` previews or `npm run dev`). The beacon is a script from
+`https://static.cloudflareinsights.com`, so that host is in `script-src`, and
+it reports to `https://cloudflareinsights.com/cdn-cgi/rum`, so that host is in
+`connect-src`. Without them the CSP blocks the beacon and Web Analytics
+silently records nothing. If Web Analytics is ever turned off in
+the dashboard, take both hosts out of every rule. The tag Cloudflare injects is
+an external script with a `data-cf-beacon` attribute, not an inline script,
+so it doesn't need `unsafe-inline`.
+
 **Two paths have their own CSP**, each for a vendored app whose images come
 from a CDN:
 
@@ -71,7 +83,8 @@ from a CDN:
   fetches its `versions.json`, so its policy is the global one plus
   `https://ddragon.leagueoflegends.com` in `img-src` and `connect-src`.
 
-Nothing else differs from the global policy. In `_headers` each rule first
+Nothing else differs from the global policy (each restates the analytics
+hosts too, since it replaces the global header). In `_headers` each rule first
 detaches the global header (`! Content-Security-Policy`) and then sets its
 own. Without the detach, Cloudflare comma-joins the two values and the browser
 enforces both, which blocks the images. A detach only removes what *earlier*
@@ -104,7 +117,7 @@ documented in `SETUP.md`; Cloudflare KV is the upgrade path.
 
 ## Testing
 
-`npm test` covers the money path, both CSP exceptions in `_headers`, the
+`npm test` covers the money path, the global CSP and both exceptions in `_headers`, the
 vendored demo bundle, and the vendored league-ify build and its config
 (`nodejs_compat`, the `DB` binding, the migration). The demo's bundle checks
 skip, with a note, while `projects/discover-cleaner-demo/` is missing. There is also a Playwright suite that has
