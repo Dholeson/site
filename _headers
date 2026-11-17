@@ -3,7 +3,13 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: geolocation=(), camera=(), microphone=(), interest-cohort=()
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://ddragon.leagueoflegends.com; font-src 'self'; connect-src 'self' https://ddragon.leagueoflegends.com; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+
+# Data Dragon (ddragon.leagueoflegends.com) is allowed in img-src and
+# connect-src above so league-ify (projects/league-ify/) can load champion icons
+# and the champion list. Pages _headers rules are additive, not overriding: a
+# looser CSP on a sub-path is intersected with this one, not substituted, so the
+# allowance has to live in this site-wide rule. script-src stays 'self'.
 
 # The one CSP exception: the Discover Cleaner demo (vendored from the app's
 # repo by `npm run sync:discover-cleaner`) shows album covers, which load from
