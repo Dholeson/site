@@ -1,0 +1,58 @@
+/* Styleguide view (#/styleguide), scoped under .view-styleguide. Only layout for the demo page;
+ * every component shown here is styled by base.css (and charts.css for the CHARTS section). */
+
+.view-styleguide .sg-toc {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: 0 calc(-1 * var(--content-pad)) var(--sp-5); padding: var(--sp-3) var(--content-pad);
+  background: linear-gradient(var(--surface-1) 78%, rgba(22, 22, 21, 0));
+}
+.view-styleguide .sg-section { scroll-margin-top: 64px; }
+.view-styleguide .sg-section + .sg-section { margin-top: var(--sp-7); }
+.view-styleguide .sg-h3 { font-size: var(--fs-13); font-weight: var(--fw-semibold); color: var(--muted); margin-bottom: var(--sp-3); }
+.view-styleguide .sg-section > .card + .card { margin-top: var(--sp-3); }
+
+/* colors */
+.view-styleguide .sg-swatch-groups { display: grid; gap: var(--sp-5); }
+.view-styleguide .sg-swatches { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(min(132px, 100%), 1fr)); }
+.view-styleguide .sg-swatch { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.view-styleguide .sg-chip {
+  display: block; height: 56px; border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.view-styleguide .sg-swatch code { font: var(--fs-12)/1.3 var(--font-mono); color: var(--text-2); overflow-wrap: anywhere; }
+
+/* type scale */
+.view-styleguide .sg-type { display: flex; flex-direction: column; gap: var(--sp-3); }
+.view-styleguide .sg-type-row { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: baseline; gap: var(--sp-4); }
+.view-styleguide .sg-type-row + .sg-type-row { padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+.view-styleguide .sg-t32 { font-size: var(--fs-32); font-weight: var(--fw-bold); letter-spacing: -.015em; line-height: 1.15; }
+.view-styleguide .sg-t24 { font-size: var(--fs-24); font-weight: var(--fw-bold); letter-spacing: -.01em; line-height: 1.2; }
+.view-styleguide .sg-t20 { font-size: var(--fs-20); font-weight: var(--fw-bold); }
+.view-styleguide .sg-t16 { font-size: var(--fs-16); font-weight: var(--fw-semibold); }
+.view-styleguide .sg-t14 { font-size: var(--fs-14); }
+.view-styleguide .sg-t13 { font-size: var(--fs-13); color: var(--text-2); }
+.view-styleguide .sg-t12 { font-size: var(--fs-12); color: var(--muted); }
+
+/* buttons / hero / meters / states */
+.view-styleguide .sg-play { flex: none; }
+.view-styleguide .sg-hero { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: 6px; }
+.view-styleguide .sg-meters { display: grid; gap: var(--sp-5); grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); }
+.view-styleguide .sg-grid-3 { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
+.view-styleguide .sg-grid-3 > .card { padding: var(--sp-2); display: flex; align-items: center; justify-content: center; }
+.view-styleguide .sg-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--text-2); }
+.view-styleguide .sg-inline .artist-link { color: var(--text); }
+.view-styleguide .sg-forms { display: grid; gap: var(--sp-5); max-width: 560px; }
+.view-styleguide .sg-list-card { padding: var(--sp-4) var(--sp-3); }
+.view-styleguide .sg-list-card .section-head { padding: 0 var(--sp-3); }
+.sg-pop { max-width: 280px; display: flex; flex-direction: column; gap: var(--sp-2); align-items: flex-start; }
+
+/* charts (filled by core/charts.js chartsDemo) */
+.view-styleguide .sg-charts { min-height: 120px; }
+
+@media (max-width: 699.98px) {
+  .view-styleguide .sg-toc { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .view-styleguide .sg-toc::-webkit-scrollbar { display: none; }
+  .view-styleguide .sg-type-row { grid-template-columns: 40px minmax(0, 1fr); gap: var(--sp-3); }
+  .view-styleguide .hero-figure { font-size: 40px; }
+}

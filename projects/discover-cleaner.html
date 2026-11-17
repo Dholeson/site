@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Discover Cleaner — dhole.dev</title>
+  <meta name="description" content="A Spotify and Last.fm companion that clears songs from your to-listen playlist once you've heard them. Try the real interface in your browser." />
+  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+  <link rel="canonical" href="https://dhole.dev/projects/discover-cleaner.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="dhole.dev" />
+  <meta property="og:url" content="https://dhole.dev/projects/discover-cleaner.html" />
+  <meta property="og:title" content="Discover Cleaner — dhole.dev" />
+  <meta property="og:description" content="Clears songs from your Spotify to-listen playlist once you've heard them, and turns your listening history into reports. Live demo, no account needed." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Discover Cleaner — dhole.dev" />
+  <meta name="twitter:description" content="Clears songs from your Spotify to-listen playlist once you've heard them, and turns your listening history into reports. Live demo, no account needed." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <link rel="stylesheet" href="/assets/demo.css" />
+  <script type="module" src="./discover-cleaner.entry.js"></script>
+</head>
+<body>
+  <section class="demo-header dc-header">
+    <div class="wrap">
+      <p class="eyebrow"><a href="/projects.html">Projects</a> / Live demo</p>
+      <h1>Discover Cleaner</h1>
+      <p class="lede">
+        A companion for Spotify and Last.fm. It clears songs from your "to listen"
+        playlist once you've actually heard them, and turns your listening history
+        into reports and artist pages.
+      </p>
+      <div class="hero-actions dc-actions">
+        <a class="btn btn-primary dc-cta" href="/projects/discover-cleaner-demo/">Open the live demo →</a>
+        <a class="btn" href="https://github.com/Dholeson/spotify-discover-cleaner" target="_blank" rel="noopener">Source on GitHub</a>
+      </div>
+      <p class="dim dc-cta-note">Runs in your browser: no account, nothing to install. Spotify is simulated.</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="wrap">
+      <div class="demo-stage dc-stage">
+        <div class="dc-shots-top">
+          <figure class="dc-shot">
+            <img src="/assets/projects/discover-cleaner/now.webp" width="1440" height="900"
+              alt="The Now page: the song playing, a countdown to when it clears from the backlog, and Like, Keep and Clear now buttons" />
+            <figcaption><b>Now</b>What's playing and what happens to it: when it leaves the backlog, with keep, clear now, like and undo one tap away.</figcaption>
+          </figure>
+          <figure class="dc-shot dc-shot-phone">
+            <img src="/assets/projects/discover-cleaner/now-phone.webp" width="390" height="844"
+              alt="The Now page on a phone, with the countdown and the player bar" />
+            <figcaption><b>On a phone</b>The same app, laid out for a small screen.</figcaption>
+          </figure>
+        </div>
+
+        <div class="dc-shots-row" tabindex="0" aria-label="More screenshots">
+          <figure class="dc-shot">
+            <img src="/assets/projects/discover-cleaner/insights-report.webp" width="1440" height="900" loading="lazy"
+              alt="A monthly Insights report: plays per day and the month's totals against the month before" />
+            <figcaption><b>Insights</b>Reports for any week, month, year or all time, compared with the period before.</figcaption>
+          </figure>
+          <figure class="dc-shot">
+            <img src="/assets/projects/discover-cleaner/artist.webp" width="1440" height="900" loading="lazy"
+              alt="The artist page for Dance Gavin Dance: plays, rank, first and last listen, longest streak" />
+            <figcaption><b>Artist page</b>Your plays, rank, first and last listen, and streaks for every artist.</figcaption>
+          </figure>
+          <figure class="dc-shot">
+            <img src="/assets/projects/discover-cleaner/library-backlog.webp" width="1440" height="900" loading="lazy"
+              alt="The backlog list in Library, with the song playing now and its countdown" />
+            <figcaption><b>Library</b>The backlog itself: searchable, with the song playing now at the top.</figcaption>
+          </figure>
+        </div>
+
+        <div class="demo-controls dc-stage-foot">
+          <a class="btn btn-primary" href="/projects/discover-cleaner-demo/">Open the live demo →</a>
+          <p class="demo-note">
+            The demo is the real interface running in your browser, on my own listening
+            history (Last.fm scrobbles plus the app's own plays) frozen on Oct 4, 2026.
+            Spotify is simulated: let a backlog song play for 15 seconds, watch it clear,
+            then undo it. Lyrics and Spotify's discographies aren't included, and the demo
+            says so where they'd appear. Album covers load from Spotify's image server;
+            everything else comes from this site.
+          </p>
+        </div>
+      </div>
+
+      <section class="section">
+        <div class="section-head"><h2>Three jobs</h2></div>
+        <ol class="dc-jobs">
+          <li>
+            <h3>Clears your backlog as you listen</h3>
+            <p>
+              Point it at a playlist, say the one your Discover Weekly finds pile up in.
+              Once a song from it has really played for a few seconds, it's removed, so
+              the backlog shrinks by itself. You always see what will happen to the song
+              playing and when, and you can keep it, clear it now, like it or undo a clear.
+            </p>
+          </li>
+          <li>
+            <h3>Shows your listening like Last.fm Pro</h3>
+            <p>
+              Reports for any week, month, year or all time, built from your whole Last.fm
+              history plus what the app hears: top artists, albums and tracks with change
+              against the period before, how much was new, your listening clock, streaks,
+              and a year-in-music page.
+            </p>
+          </li>
+          <li>
+            <h3>Gives every artist a page</h3>
+            <p>
+              Your plays, rank, first and last listen, plays per year, top tracks and
+              albums, what you haven't heard yet, how much of their discography you've
+              explored, and similar artists with your own play counts next to them.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2>Run it yourself</h2></div>
+        <div class="dc-run">
+          <article class="card">
+            <div class="card-body">
+              <h3>Offline, in about a minute</h3>
+              <p class="muted">
+                The whole app on your computer with a simulated Spotify, so you need
+                neither a Spotify account nor Premium. You need Python 3.10 or newer.
+              </p>
+              <pre class="dc-code"><code>git clone https://github.com/Dholeson/spotify-discover-cleaner.git
+cd spotify-discover-cleaner
+run.bat --demo     <span class="dc-code-note"># Windows</span>
+./run.sh --demo    <span class="dc-code-note"># macOS / Linux</span></code></pre>
+              <p class="muted">Then open <span class="mono">http://127.0.0.1:8888</span>.</p>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-body">
+              <h3>With your own Spotify</h3>
+              <ul class="dc-list">
+                <li><b>Spotify Premium</b> on the account that creates the developer app. That's Spotify's rule, not mine.</li>
+                <li><b>Your own Spotify developer app.</b> It's free and takes about five minutes; the app's Setup screen walks you through it.</li>
+                <li><b>Up to 5 users per app.</b> A developer app in Development Mode is limited to 5 users, so friends either get added to yours or make their own.</li>
+                <li><b>Last.fm is optional</b> but recommended: your whole scrobble history feeds the reports.</li>
+              </ul>
+              <p class="muted">
+                Everything stays on your computer. The app talks to Spotify, Last.fm and
+                LRCLIB (for lyrics) directly; there's no server of mine in between.
+              </p>
+              <a class="btn btn-sm dc-card-link" href="https://github.com/Dholeson/spotify-discover-cleaner#use-it-with-your-spotify" target="_blank" rel="noopener">Setup guide on GitHub →</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2>How it works</h2></div>
+        <div class="dc-how">
+          <div>
+            <h3>One ledger for every listen</h3>
+            <p>
+              Reports and artist pages all read from one table with a row per listen. It
+              merges Last.fm scrobbles with the plays the app sees itself, and a listen that
+              shows up in both is counted once. Mine holds 49,548 plays going back to
+              August 2021, and its April 2026 total is within 2 plays of Last.fm's own
+              report for that month (661 vs 659).
+            </p>
+          </div>
+          <div>
+            <h3>Clearing that fails safe</h3>
+            <p>
+              A song is removed only after it has really played past the threshold (15–30
+              seconds by default): pausing stops the count and skipping ahead adds nothing.
+              Nothing is removed until the app has read the whole playlist, a removal
+              Spotify refuses is queued and retried, and every clear can be undone for 30
+              minutes, back in its original position.
+            </p>
+          </div>
+          <div>
+            <h3>Why there's no "Log in with Spotify"</h3>
+            <p>
+              Spotify's developer rules changed in February 2026: an app in Development
+              Mode is limited to 5 users, its owner needs Premium, and wider access is only
+              for registered businesses with 250,000 monthly users. A hosted version anyone
+              could sign in to isn't possible, so this page runs a simulated demo and the
+              real thing is something you run yourself.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div class="split-note dc-outro">
+        <div>
+          <h2>Source and write-up</h2>
+          <p class="muted">
+            The code is on GitHub under the MIT licence, with an architecture guide and
+            automated tests. The case study covers how it was rebuilt: an audit by about 20
+            AI agents, with every bug they reported checked by a separate verifier before
+            anything was fixed.
+          </p>
+          <div class="dc-outro-actions">
+            <a class="btn btn-sm btn-primary" href="https://github.com/Dholeson/spotify-discover-cleaner" target="_blank" rel="noopener">Source on GitHub →</a>
+            <a class="btn btn-sm" href="/case.html?id=discover-cleaner">Read the case study</a>
+            <a class="btn btn-sm" href="/projects/discover-cleaner-demo/">Open the live demo</a>
+          </div>
+          <p class="dim dc-disclaimer">A personal project. Not affiliated with or endorsed by Spotify or Last.fm.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

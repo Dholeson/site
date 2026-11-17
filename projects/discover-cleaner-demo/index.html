@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d0d0d">
+<title>Discover Cleaner</title>
+<link rel="icon" type="image/svg+xml" href="static/favicon.svg?v=fba0701169">
+<link rel="stylesheet" href="static/css/tokens.css?v=1bd20d9bf0">
+<link rel="stylesheet" href="static/css/base.css?v=c1bd4a287d">
+<link rel="stylesheet" href="static/css/charts.css?v=1fda4ef38a">
+<link rel="stylesheet" href="static/css/views/now.css?v=27ab73ecd8">
+<link rel="stylesheet" href="static/css/views/insights.css?v=c50087454a">
+<link rel="stylesheet" href="static/css/views/artist.css?v=af9e9fb832">
+<link rel="stylesheet" href="static/css/views/artists.css?v=3a028225d1">
+<link rel="stylesheet" href="static/css/views/library.css?v=8b82a3cbf3">
+<link rel="stylesheet" href="static/css/views/search.css?v=c71f9ce723">
+<link rel="stylesheet" href="static/css/views/settings.css?v=babc9342d9">
+<link rel="stylesheet" href="static/css/views/styleguide.css?v=5b4e4dbbf0">
+<link rel="stylesheet" href="static/css/views/setup.css?v=6b5c0d1da2">
+<script type="application/json" id="app-config">{"pollIntervalMs":3000,"demo":true,"webDemo":{"now":1791164460000,"frozenOn":"2026-10-04","timeZone":"America/Denver","user":"Dholeson","simSeconds":45,"about":"../discover-cleaner","repo":"https://github.com/Dholeson/spotify-discover-cleaner","fixtures":"fixtures/","version":"792ac956f00f"}}</script>
+<link rel="stylesheet" href="static/css/demo.css?v=b6b65f70c0">
+<meta name="description" content="Live demo of Discover Cleaner: a Spotify backlog cleaner and Last.fm-style listening reports, running in your browser on real listening history.">
+</head>
+<body data-js-errors="0">
+<button type="button" class="skip-link" data-action="skip-to-content">Skip to content</button>
+
+<div class="app" id="app">
+  <nav class="rail" aria-label="Main">
+    <a class="rail-brand" href="#/now" aria-label="Discover Cleaner home">
+      <img src="static/favicon.svg?v=fba0701169" alt="" width="32" height="32">
+      <span class="rail-brand-name">Discover Cleaner</span>
+    </a>
+    <ul class="rail-nav" role="list">
+      <li><a class="rail-link" href="#/now" data-nav="now"><span data-icon="now" aria-hidden="true"></span><span class="rail-label">Now</span></a></li>
+      <li><a class="rail-link" href="#/insights" data-nav="insights"><span data-icon="insights" aria-hidden="true"></span><span class="rail-label">Insights</span></a></li>
+      <li><a class="rail-link" href="#/artists" data-nav="artists"><span data-icon="artists" aria-hidden="true"></span><span class="rail-label">Artists</span></a></li>
+      <li><a class="rail-link" href="#/library" data-nav="library"><span data-icon="library" aria-hidden="true"></span><span class="rail-label">Library</span></a></li>
+      <li class="rail-end"><a class="rail-link" href="#/settings" data-nav="settings"><span data-icon="settings" aria-hidden="true"></span><span class="rail-label">Settings</span></a></li>
+    </ul>
+  </nav>
+
+  <header class="topbar">
+    <div class="search" role="search">
+      <div class="search-field">
+        <span data-icon="search" aria-hidden="true"></span>
+        <input id="global-search" class="search-input" type="search" placeholder="Search artists, songs, albums"
+               autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+               role="combobox" aria-expanded="false" aria-controls="search-panel" aria-autocomplete="list"
+               aria-label="Search your library and Spotify">
+        <kbd class="search-hint" aria-hidden="true">/</kbd>
+        <button type="button" class="search-clear" aria-label="Clear search" hidden><span data-icon="close" aria-hidden="true"></span></button>
+      </div>
+      <div id="search-panel" class="search-panel" role="listbox" aria-label="Search suggestions" hidden></div>
+    </div>
+    <div class="topbar-right">
+      <div id="spotify-status" class="status-slot"></div>
+      <button type="button" class="btn btn-icon shortcuts-btn" data-action="show-shortcuts" aria-label="Keyboard shortcuts" data-tip="Keyboard shortcuts (?)" data-tip-placement="bottom"><span data-icon="keyboard" aria-hidden="true"></span></button>
+      <div id="user-chip" class="user-chip" hidden><span class="avatar" aria-hidden="true"></span><span class="user-name truncate"></span></div>
+    </div>
+  </header>
+
+  <main id="view" tabindex="-1">
+    <div class="view"><div class="state" role="status"><div class="spinner" aria-hidden="true"></div><div class="state-body">Loading…</div></div></div>
+  </main>
+
+  <section id="player" class="player" aria-label="Player"></section>
+</div>
+
+<div id="toast-region" class="toast-region" aria-live="polite"></div>
+<div id="modal-root"></div>
+<noscript><p style="padding:24px;color:#fff">Discover Cleaner needs JavaScript.</p></noscript>
+
+<script src="static/js/demo/clock.js?v=551e3cf004"></script>
+<script src="static/js/boot.js?v=879a08c2a9"></script>
+<script type="module" src="static/js/demo/main.js?v=8f3a7b056f"></script>
+</body>
+</html>

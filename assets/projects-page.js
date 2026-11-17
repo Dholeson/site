@@ -41,6 +41,18 @@ export function renderProjects() {
 }
 
 function glyph(id) {
+  if (id === "discover-cleaner") {
+    return `<svg viewBox="0 0 64 64" width="76" height="76" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+      <rect x="6" y="10" width="11" height="11" rx="2.5" fill="currentColor" stroke="none" opacity=".3"/>
+      <path d="M24 15.5 H38" opacity=".3"/>
+      <rect x="6" y="26.5" width="11" height="11" rx="2.5" fill="currentColor" stroke="none"/>
+      <path d="M24 32 H44"/>
+      <rect x="6" y="43" width="11" height="11" rx="2.5" fill="currentColor" stroke="none" opacity=".6"/>
+      <path d="M24 48.5 H37" opacity=".6"/>
+      <circle cx="51" cy="15.5" r="8" opacity=".3"/>
+      <path d="M51 7.5 A8 8 0 1 1 43 15.5"/>
+    </svg>`;
+  }
   if (id === "drift-tester") {
     return `<svg viewBox="0 0 64 64" width="76" height="76" fill="none" stroke="currentColor" stroke-width="2.5">
       <circle cx="32" cy="32" r="22" opacity=".35"/>

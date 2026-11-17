@@ -9,6 +9,18 @@
 
 export const projects = [
   {
+    id: "discover-cleaner",
+    title: "Discover Cleaner",
+    tagline: "Clears songs from your Spotify \"to listen\" playlist once you've actually heard them.",
+    description:
+      "A Spotify and Last.fm companion: it removes backlog songs once they've really played, and turns your listening history into reports and artist pages. The demo runs the real interface in your browser on my own listening history, with Spotify simulated.",
+    demo: "/projects/discover-cleaner.html",
+    tags: ["Python", "Spotify API", "Last.fm", "SQLite"],
+    status: "live",
+    year: 2026,
+    accent: "#1ed760"
+  },
+  {
     id: "drift-tester",
     title: "Controller Drift Tester",
     tagline: "Plug in a gamepad and see exactly how far its sticks have wandered.",

@@ -12,6 +12,14 @@ No local server. No Apache. No FileZilla.
 **Projects** (`projects.html`, `projects/`) — everything listed is meant to run
 in a browser. Add a page under `projects/` and an entry in `data/projects.js`.
 
+One project is different. The **Discover Cleaner** demo
+(`projects/discover-cleaner-demo/`) is a whole app built in its own repo and
+copied in, not written here. To update it, rebuild it in the app repo, then
+run `npm run sync:discover-cleaner` and `npm test`. Never edit the copy by
+hand: the next sync overwrites it. It is also the only path with a different
+security policy. `_headers` lets it load album covers from Spotify's image
+server (`https://i.scdn.co`), and every other page keeps the strict default.
+
 **Store** (`store.html`, `product.html`, `cart.html`) — reads `data/products.js`.
 Change a price or a stock count there and deploy.
 

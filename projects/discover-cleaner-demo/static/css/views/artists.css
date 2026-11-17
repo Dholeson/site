@@ -1,0 +1,71 @@
+/* Your artists (#/artists), scoped under .view-artists. */
+
+.view-artists .as-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.view-artists .as-search { position: relative; flex: 1 1 260px; max-width: 380px; min-width: 0; }
+.view-artists .as-search > .icon { position: absolute; left: 12px; top: 50%; width: 18px; height: 18px; margin-top: -9px; color: var(--muted); pointer-events: none; }
+.view-artists .as-search-input { padding-left: 38px; border-radius: var(--radius-pill); background: var(--surface-2); }
+.view-artists .as-search-input::-webkit-search-cancel-button { filter: invert(.7); }
+.view-artists .as-sort { min-width: 0; max-width: 100%; }
+.view-artists .as-hidden-toggle { margin-left: auto; }
+.view-artists .as-count { color: var(--muted); font-weight: var(--fw-regular); }
+.view-artists .as-count:empty { display: none; }
+.view-artists .as-hidden-toggle[aria-pressed="true"] .as-count { color: inherit; }
+.view-artists .as-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-height: 20px; margin: 0 0 var(--sp-3); color: var(--text-2); font-size: var(--fs-13); }
+.view-artists .as-summary strong { color: var(--text); }
+.view-artists .as-dot { color: var(--muted); }
+
+.view-artists .as-card { padding: var(--sp-2) var(--sp-3); }
+.view-artists .as-table { table-layout: fixed; }
+.view-artists .as-table th { vertical-align: bottom; }
+.view-artists .as-th { display: inline-flex; align-items: center; gap: 2px; }
+.view-artists .as-table th.num .as-th { justify-content: flex-end; }
+.view-artists .as-col-rank { width: 72px; }
+.view-artists .as-col-plays { width: 30%; }
+.view-artists .as-col-date { width: 128px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.view-artists .as-table td { padding-top: 8px; padding-bottom: 8px; vertical-align: middle; }
+.view-artists .as-table tbody tr { cursor: pointer; }
+.view-artists .as-table tbody tr:hover td { background: var(--hover); }
+.view-artists .as-table tbody tr:hover .as-name { text-decoration: underline; text-underline-offset: 2px; }
+.view-artists .as-name:focus-visible { border-radius: var(--radius-sm); }
+.view-artists .as-table tr.is-hidden .as-name { color: var(--text-2); }
+.view-artists .as-name-cell { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.view-artists .as-avatar { font-size: var(--fs-12); }
+.view-artists .as-name-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.view-artists .as-name { color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.view-artists .as-sub { display: none; align-items: center; gap: 6px; font-size: var(--fs-12); color: var(--muted); min-width: 0; }
+.view-artists .as-sub-dates { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.view-artists tr.is-hidden .as-sub { display: flex; }
+.view-artists tr.is-hidden .as-sub-dates { display: none; }
+.view-artists .as-hidden-chip { display: inline-flex; align-items: center; gap: 4px; color: var(--text-2); }
+.view-artists .as-hidden-chip .icon { width: 13px; height: 13px; color: var(--warning); }
+.view-artists .as-unhide { flex: none; }
+.view-artists .as-plays { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.view-artists .as-bar { flex: 1; min-width: 0; height: 8px; }
+.view-artists .as-bar span { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--series-1); }
+.view-artists .as-plays-num { flex: none; min-width: 5ch; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+
+.view-artists .as-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-4); color: var(--text-2); font-size: var(--fs-13); }
+.view-artists .as-pager:empty { display: none; }
+.view-artists .as-range { font-variant-numeric: tabular-nums; }
+.view-artists .as-pageno { color: var(--muted); font-variant-numeric: tabular-nums; padding: 0 var(--sp-2); }
+
+@media (max-width: 1099.98px) {
+  .view-artists .as-hidden-toggle { margin-left: 0; }
+  .view-artists .as-search { max-width: none; flex-basis: 100%; }
+  .view-artists .as-col-date { width: 112px; }
+}
+
+@media (max-width: 699.98px) {
+  .view-artists .as-card { padding: var(--sp-1) var(--sp-2); }
+  .view-artists .as-col-date { display: none; }
+  .view-artists .as-col-rank { width: 58px; }
+  .view-artists .as-col-plays { width: 34%; }
+  .view-artists .as-avatar { display: none; }
+  .view-artists .as-sub { display: flex; }
+  .view-artists tr.is-hidden .as-sub-dates { display: none; }
+  .view-artists .as-unhide { display: none; }
+  .view-artists .as-table td, .view-artists .as-table th { padding-left: 6px; padding-right: 6px; }
+  .view-artists .as-pageno { display: none; }
+  .view-artists .as-pager { justify-content: center; }
+  .view-artists .as-pager .as-range { flex-basis: 100%; text-align: center; }
+}

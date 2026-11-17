@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "wrangler pages dev .",
     "deploy": "wrangler pages deploy .",
-    "test": "node test/checkout.test.js"
+    "test": "node test/checkout.test.js && node test/discover-cleaner-demo.test.js",
+    "sync:discover-cleaner": "node scripts/sync-discover-cleaner.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.124.0"
