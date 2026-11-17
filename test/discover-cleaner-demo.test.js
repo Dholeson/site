@@ -1,5 +1,5 @@
-// Checks on the vendored Discover Cleaner demo (projects/discover-cleaner-demo/)
-// and on the one CSP exception that serves it.
+// Checks on the vendored Discover Cleaner demo (projects/discover-cleaner-demo/),
+// on the one CSP exception that serves it, and on the global CSP it restates.
 //
 // The demo is built in the app's repo and copied in by
 // `npm run sync:discover-cleaner`. Everything checked here fails silently in
@@ -76,6 +76,26 @@ const OTHER_EXCEPTIONS = ["/projects/league-ify/*"];
 
 test("only the global rule, the demo rule and the known exceptions set a CSP", () => {
   assert.deepEqual(cspSetters.map(r => r.pattern).sort(), ["/*", DEMO_RULE, ...OTHER_EXCEPTIONS].sort());
+});
+
+// The global policy's only off-site sources are Cloudflare Web Analytics' beacon
+// (a script) and the endpoint it reports to. Each exception restates them,
+// because the checks below compare every exception to this policy.
+const ANALYTICS = {
+  "script-src": ["https://static.cloudflareinsights.com"],
+  "connect-src": ["https://cloudflareinsights.com"],
+};
+
+test("the global CSP is 'self' plus Cloudflare Web Analytics' two hosts, nothing else", () => {
+  const g = directives(cspOf(globalRule));
+  for (const name of ["default-src", "script-src", "font-src", "connect-src", "form-action", "base-uri"]) {
+    assert.deepEqual(g.get(name), ["'self'", ...(ANALYTICS[name] ?? [])], `${name} differs`);
+  }
+  assert.deepEqual(g.get("img-src"), ["'self'", "data:"]);
+  assert.deepEqual(g.get("style-src"), ["'self'", "'unsafe-inline'"]);
+  assert.deepEqual(g.get("frame-ancestors"), ["'none'"]);
+  assert.deepEqual(g.get("object-src"), ["'none'"]);
+  assert.equal(g.size, 10, "unexpected directives");
 });
 
 test("the demo rule detaches the global CSP before setting its own, below /*", () => {
