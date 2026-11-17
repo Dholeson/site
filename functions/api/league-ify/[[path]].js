@@ -5074,6 +5074,9 @@ var coerce = {
 };
 var NEVER = INVALID;
 
+// server/storage/index.ts
+import { AsyncLocalStorage } from "node:async_hooks";
+
 // server/storage/fsStore.ts
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -5258,20 +5261,19 @@ function profileDocKey(key) {
 
 // server/storage/index.ts
 var active = null;
-function useDocumentStore(store2) {
-  active = store2;
-  return store2;
-}
-function useD1(db, opts) {
-  return useDocumentStore(createD1Store(db, opts?.tenant));
+var requestStore = new AsyncLocalStorage();
+function runWithDocumentStore(store2, fn) {
+  return requestStore.run(store2, fn);
 }
 function docs() {
+  const scoped2 = requestStore.getStore();
+  if (scoped2) return scoped2;
   if (!active) active = createFsStore();
   return active;
 }
 
 // server/activeProfile.ts
-import { AsyncLocalStorage } from "node:async_hooks";
+import { AsyncLocalStorage as AsyncLocalStorage2 } from "node:async_hooks";
 var SEASON_WINDOW_DAYS = 150;
 var seasonCutoffMs = () => Date.now() - SEASON_WINDOW_DAYS * 864e5;
 var SELF_PROFILE = {
@@ -5281,7 +5283,7 @@ var SELF_PROFILE = {
   tagLine: null,
   platform: null
 };
-var als = new AsyncLocalStorage();
+var als = new AsyncLocalStorage2();
 function runWithProfile(p, fn) {
   return als.run(p, fn);
 }
@@ -5355,7 +5357,6 @@ var LIVE_KEY = "live";
 var DEMO_KEY = "demo";
 var PROFILE_KEY = "profile";
 var META_KEY = "meta";
-var profileDbCache = /* @__PURE__ */ new Map();
 var DEFAULT_PROFILE = {
   mainRole: null,
   primaryRole: null,
@@ -5388,16 +5389,15 @@ var DEFAULT_DB = {
 var DEFAULT_META = {
   demoMode: false
 };
-var liveCache = null;
-var demoCache = null;
-var profileCache = null;
-var metaCache = null;
-function resetStoreCaches() {
-  liveCache = null;
-  demoCache = null;
-  profileCache = null;
-  metaCache = null;
-  profileDbCache.clear();
+var cachesByStore = /* @__PURE__ */ new WeakMap();
+function docCaches() {
+  const store2 = docs();
+  let c = cachesByStore.get(store2);
+  if (!c) {
+    c = { live: null, demo: null, profile: null, meta: null, profileDbs: /* @__PURE__ */ new Map() };
+    cachesByStore.set(store2, c);
+  }
+  return c;
 }
 function readJson(key) {
   return docs().read(key);
@@ -5427,56 +5427,59 @@ function hydrateDb(parsed) {
   };
 }
 function loadMeta() {
-  if (metaCache) return metaCache;
-  metaCache = { ...DEFAULT_META, ...readJson(META_KEY) ?? {} };
-  persistJson(META_KEY, metaCache);
-  return metaCache;
+  const c = docCaches();
+  if (c.meta) return c.meta;
+  c.meta = { ...DEFAULT_META, ...readJson(META_KEY) ?? {} };
+  persistJson(META_KEY, c.meta);
+  return c.meta;
 }
 function persistMeta() {
-  persistJson(META_KEY, metaCache ?? DEFAULT_META);
+  persistJson(META_KEY, docCaches().meta ?? DEFAULT_META);
 }
 function loadProfile() {
-  if (profileCache) return profileCache;
+  const c = docCaches();
+  if (c.profile) return c.profile;
   const parsed = readJson(PROFILE_KEY);
   if (parsed) {
-    profileCache = { ...DEFAULT_PROFILE, ...parsed };
-    return profileCache;
+    c.profile = { ...DEFAULT_PROFILE, ...parsed };
+    return c.profile;
   }
   const legacy = readJson(LIVE_KEY);
-  profileCache = { ...DEFAULT_PROFILE, ...legacy?.profile ?? {} };
-  persistJson(PROFILE_KEY, profileCache);
-  return profileCache;
+  c.profile = { ...DEFAULT_PROFILE, ...legacy?.profile ?? {} };
+  persistJson(PROFILE_KEY, c.profile);
+  return c.profile;
 }
 function persistProfile() {
-  persistJson(PROFILE_KEY, profileCache ?? DEFAULT_PROFILE);
+  persistJson(PROFILE_KEY, docCaches().profile ?? DEFAULT_PROFILE);
 }
 function loadDb(kind) {
-  const cache6 = kind === "live" ? liveCache : demoCache;
-  if (cache6) return cache6;
+  const c = docCaches();
+  const cached = kind === "live" ? c.live : c.demo;
+  if (cached) return cached;
   const key = kind === "live" ? LIVE_KEY : DEMO_KEY;
   const parsed = hydrateDb(readJson(key));
-  if (kind === "live") liveCache = parsed;
-  else demoCache = parsed;
+  if (kind === "live") c.live = parsed;
+  else c.demo = parsed;
   if (!docExists(key)) persistJson(key, parsed);
   return parsed;
 }
 function persistDb(kind) {
   const key = kind === "live" ? LIVE_KEY : DEMO_KEY;
-  persistJson(key, kind === "live" ? liveCache ?? DEFAULT_DB : demoCache ?? DEFAULT_DB);
+  persistJson(key, kind === "live" ? docCaches().live ?? DEFAULT_DB : docCaches().demo ?? DEFAULT_DB);
 }
 function profileFile(key) {
   return profileDocKey(key);
 }
 function loadProfileDb(key) {
-  const cached = profileDbCache.get(key);
+  const cached = docCaches().profileDbs.get(key);
   if (cached) return cached;
   const parsed = hydrateDb(readJson(profileFile(key)));
-  profileDbCache.set(key, parsed);
+  docCaches().profileDbs.set(key, parsed);
   if (!docExists(profileFile(key))) persistJson(profileFile(key), parsed);
   return parsed;
 }
 function persistProfileDb(key) {
-  const db = profileDbCache.get(key);
+  const db = docCaches().profileDbs.get(key);
   if (!db) return;
   persistJson(profileFile(key), db);
 }
@@ -5488,7 +5491,7 @@ function currentDb() {
   if (!ap.isSelf && ap.key) return loadProfileDb(ap.key);
   const kind = currentKind();
   if (kind === "demo" && !docExists(DEMO_KEY)) {
-    demoCache = seedDemoDb();
+    docCaches().demo = seedDemoDb();
     persistDb("demo");
   }
   return loadDb(kind);
@@ -5959,15 +5962,15 @@ var store = {
   setDemoMode(enabled) {
     const meta = loadMeta();
     meta.demoMode = enabled;
-    metaCache = meta;
+    docCaches().meta = meta;
     if (enabled && !docExists(DEMO_KEY)) {
-      demoCache = seedDemoDb();
+      docCaches().demo = seedDemoDb();
       persistDb("demo");
     }
     persistMeta();
   },
   resetDemo() {
-    demoCache = seedDemoDb();
+    docCaches().demo = seedDemoDb();
     persistDb("demo");
   },
   activeSeason() {
@@ -6117,13 +6120,13 @@ var store = {
     const p = loadProfile();
     const favs = p.favorites ?? [];
     if (!favs.some((x) => favKey(x.gameName, x.tagLine) === favKey(f.gameName, f.tagLine))) {
-      profileCache = { ...p, favorites: [...favs, f] };
+      docCaches().profile = { ...p, favorites: [...favs, f] };
       persistProfile();
     }
   },
   removeFavorite(gameName, tagLine) {
     const p = loadProfile();
-    profileCache = {
+    docCaches().profile = {
       ...p,
       favorites: (p.favorites ?? []).filter((x) => favKey(x.gameName, x.tagLine) !== favKey(gameName, tagLine))
     };
@@ -6131,7 +6134,7 @@ var store = {
   },
   updateProfile(patch) {
     const profile = loadProfile();
-    profileCache = {
+    docCaches().profile = {
       ...profile,
       ...patch,
       championPool: patch.championPool ?? profile.championPool,
@@ -6195,11 +6198,11 @@ var store = {
         }
       }
     };
-    if (currentKind() === "live") liveCache = merged;
-    else demoCache = merged;
+    if (currentKind() === "live") docCaches().live = merged;
+    else docCaches().demo = merged;
     saveCurrent();
     if (incoming.profile) {
-      profileCache = { ...DEFAULT_PROFILE, ...incoming.profile };
+      docCaches().profile = { ...DEFAULT_PROFILE, ...incoming.profile };
       persistProfile();
     }
   },
@@ -6233,8 +6236,8 @@ var store = {
 };
 
 // server/userContext.ts
-import { AsyncLocalStorage as AsyncLocalStorage2 } from "node:async_hooks";
-var als2 = new AsyncLocalStorage2();
+import { AsyncLocalStorage as AsyncLocalStorage3 } from "node:async_hooks";
+var als2 = new AsyncLocalStorage3();
 function runWithUser(user, fn) {
   return als2.run(user, fn);
 }
@@ -10298,14 +10301,14 @@ async function buildNextGameBriefing(champion, detail, pool, recommendation, mai
 }
 
 // server/dashboard.ts
-var liveCache2 = /* @__PURE__ */ new Map();
+var liveCache = /* @__PURE__ */ new Map();
 var LIVE_TTL = 5 * 60 * 1e3;
 async function liveProfile() {
   const ap = activeProfile();
   const riot = ap.isSelf ? riotFromEnv() : riotForAccount(ap.gameName, ap.tagLine, ap.platform);
   if (!riot || store.isDemo()) return null;
   const cacheKey = ap.isSelf ? "self" : ap.key ?? "unknown";
-  const hit = liveCache2.get(cacheKey);
+  const hit = liveCache.get(cacheKey);
   if (hit && Date.now() - hit.at < LIVE_TTL) return hit.data;
   try {
     const puuid = await riot.getPuuid();
@@ -10332,7 +10335,7 @@ async function liveProfile() {
       topChampion,
       masteryTitle
     };
-    liveCache2.set(cacheKey, { at: Date.now(), data });
+    liveCache.set(cacheKey, { at: Date.now(), data });
     return data;
   } catch {
     return null;
@@ -23953,17 +23956,19 @@ var onRequest = async (context) => {
     }
     const user = await resolveSession(env.DB, sessionId);
     if (!user) return jsonResponse({ error: "Not signed in." }, 401);
-    useD1(env.DB, { tenant: `u/${user.userId}` });
-    resetStoreCaches();
+    const store2 = createD1Store(env.DB, `u/${user.userId}`);
     const ctx = profileContextFor(logicalPath, getHeader);
     const keys = ["meta", "profile", "live", "demo"];
     if (!ctx.isSelf && ctx.key) keys.push(profileDocKey(ctx.key));
-    await docs().hydrate(keys);
-    const result = await runWithUser(
-      user,
-      () => runWithProfile(ctx, () => dispatch(method, logicalPath, query, body, getHeader))
+    await store2.hydrate(keys);
+    const result = await runWithDocumentStore(
+      store2,
+      () => runWithUser(
+        user,
+        () => runWithProfile(ctx, () => dispatch(method, logicalPath, query, body, getHeader))
+      )
     );
-    await docs().flush();
+    await store2.flush();
     return jsonResponse(result.body, result.status);
   } catch (e) {
     return jsonResponse({ error: String(e?.message ?? e) }, 500);
