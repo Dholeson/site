@@ -9,8 +9,9 @@ Most shop traffic arrives by direct link rather than through the homepage.
 ## Commands
 
 ```bash
-npm test                          # 16 checkout tests
+npm test                          # 16 checkout tests + the Discover Cleaner demo checks
 npm run dev                       # wrangler pages dev . (runs the Function too)
+npm run sync:discover-cleaner     # re-vendor the Discover Cleaner demo (see below)
 npx wrangler pages deploy .       # manual deploy (rarely needed)
 ```
 
@@ -24,6 +25,8 @@ There is no build step. Cloudflare Pages is connected to this repo: merging to
 |---|---|
 | `index.html` | Homepage hub |
 | `projects.html`, `projects/` | Project index and the playable demos |
+| `projects/discover-cleaner-demo/` | **Generated — don't edit.** The Discover Cleaner web demo, copied from the app's repo by `npm run sync:discover-cleaner` |
+| `scripts/` | `sync-discover-cleaner.mjs`, the one vendoring script |
 | `store.html`, `product.html`, `cart.html` | Shop |
 | `log.html` | Week-by-week build log |
 | `portfolio.html`, `case.html` | Portfolio grid, and one templated case-study page (`case.html?id=`) for job applications |
@@ -50,6 +53,28 @@ by trusting the cart.
 `assets/entry/` instead. A new page with an inline script will be blocked at
 runtime, silently, in production but not in a plain local file server.
 
+**One path has its own CSP: `/projects/discover-cleaner-demo/*`.** That demo
+shows album covers from Spotify's image CDN, so its policy is the global one
+plus `https://i.scdn.co` in `img-src`, and nothing else. In `_headers` the
+rule first detaches the global header (`! Content-Security-Policy`) and then
+sets its own. Without the detach, Cloudflare comma-joins the two values and
+the browser enforces both, which blocks the covers. A detach only removes what
+*earlier* rules added, so the rule must stay below `/*`.
+`test/discover-cleaner-demo.test.js` checks all of this. Don't widen it, and
+don't add a second exception without the same reasoning.
+
+**The Discover Cleaner demo is vendored, not written here.** It is built in
+the app's repo (github.com/Dholeson/spotify-discover-cleaner,
+`python dev/build_web_demo.py` → `dist/web-demo/`). `npm run
+sync:discover-cleaner` replaces `projects/discover-cleaner-demo/` with that
+build (pass a path to use another build), and `npm test` then checks the
+copy. No executable inline scripts: its one `<script type="application/json">`
+config block is data, which the CSP never runs. It also checks that every
+referenced file is present, that the gzipped fixtures parse and match
+`fixtures/manifest.json`, and the size budget. To change the demo, change the app and resync. Hand edits get
+overwritten. The landing page that introduces it,
+`projects/discover-cleaner.html`, is ordinary site code.
+
 **Cloudflare strips `.html` itself.** `/foo.html` is 308-redirected to `/foo`,
 and `/foo` serves `foo.html`. Never add a `_redirects` rule from `/foo` to
 `/foo.html`: the two redirect into each other forever (this took
@@ -62,7 +87,9 @@ documented in `SETUP.md`; Cloudflare KV is the upgrade path.
 
 ## Testing
 
-`npm test` covers the money path. There is also a Playwright suite that has
+`npm test` covers the money path, the demo's CSP rule in `_headers`, and the
+vendored demo bundle. Its bundle checks skip, with a note, while
+`projects/discover-cleaner-demo/` is missing. There is also a Playwright suite that has
 been run against the site (39 checks: both demos driven for real, cart totals,
 mobile overflow, link previews) but it is not committed — reproduce it if you
 change rendering.

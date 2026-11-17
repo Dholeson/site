@@ -10,6 +10,7 @@
 //   users      who it's for (one line)        access  how a reviewer can see it
 //   accent     hex colour for the card        monogram  two letters if no image
 //   image      optional screenshot path (put files in /assets/portfolio/)
+//   imageAlt   alt text for it               aliases  old ids that still resolve
 //   tags       "Built with" chips             links   [{label, href, primary}]
 //   problem    one paragraph                  shipped bullet list
 //   decisions  [{title, body}] -- the calls I made and why
@@ -71,6 +72,57 @@ export const work = [
     ],
     outcome:
       "Live on the club's website, refreshing itself twice a day with no ongoing upkeep."
+  },
+
+  {
+    id: "discover-cleaner",
+    aliases: ["spotify-discover-cleaner"],
+    title: "Discover Cleaner",
+    pitch: "Clears songs from a Spotify \"to listen\" playlist once you've actually heard them, so a backlog that only ever grew finally shrinks.",
+    kind: "Tools",
+    year: 2026,
+    role: "Solo: product design, direction and testing." + AI,
+    users: "Anyone whose save-for-later playlist only ever grows. Me first.",
+    status: "Live demo; open source",
+    access: "Demo in your browser",
+    accent: "#1ed760",
+    monogram: "Dc",
+    image: "/assets/portfolio/discover-cleaner.webp",
+    imageAlt: "Discover Cleaner's Now page: the song playing, a countdown to when it clears from the backlog, and Like, Keep and Clear now buttons.",
+    tags: ["Python", "Flask", "SQLite", "Vanilla JS", "Spotify API", "Last.fm API", "Agent orchestration"],
+    links: [
+      { label: "Open the demo", href: "/projects/discover-cleaner-demo/", primary: true },
+      { label: "Source on GitHub", href: "https://github.com/Dholeson/spotify-discover-cleaner" }
+    ],
+    problem:
+      "My backlog playlist of Discover Weekly finds had grown to 1,187 tracks. About 30 new songs arrive every week, and nothing removed the ones I'd already heard, so the list only grew. An earlier version of this app was meant to fix that; the rebuild started by finding out why it hadn't.",
+    shipped: [
+      "Clears a song from the backlog once it has really played, and always shows what will happen to the song playing and when. Keep, clear now, like and undo are one tap away.",
+      "Reports for any week, month, year or all time, and a page for every artist, from one ledger of 49,548 plays going back to 2021.",
+      "Three ways to try it: a live demo of the real interface that runs in the browser, an offline mode, and a guided setup for your own Spotify developer app.",
+      "444 automated tests, and the source on GitHub."
+    ],
+    decisions: [
+      {
+        title: "Audit before rebuilding",
+        body: "About 20 AI agents audited the existing app in parallel: code readers, a data analyst and a hands-on UX reviewer. Every bug they claimed went to an adversarial verifier before anything was fixed: 171 were confirmed and 5 refuted. Among them: the app could only ever see 500 of the 1,187 backlog tracks, so 58% of them could never be cleared; the Last.fm sync had silently stopped in May; and the settings API returned secrets to the browser."
+      },
+      {
+        title: "Earn trust in the numbers",
+        body: "The audit found 29% of scrobbles filed under the wrong day (UTC instead of local time) and removals counted twice. Reports now read from one ledger that merges Last.fm scrobbles with the app's own plays and counts each listen once. Its April 2026 total is within 2 plays of Last.fm's own report for that month (661 vs 659)."
+      },
+      {
+        title: "Fail safe on anything destructive",
+        body: "Removing songs from someone's playlist is the one thing it must not get wrong. Nothing is removed until the app has read the whole playlist, a removal that fails is queued and retried, and every clear can be undone for 30 minutes, back in its original position. Testing runs against a simulated Spotify, so a test can never delete a song from a real playlist."
+      },
+      {
+        title: "Design around the platform's rules",
+        body: "Spotify's February 2026 rules allow 5 users per developer app, require the app's owner to have Premium, and reserve wider access for large businesses. That rules out a hosted 'log in with Spotify' site, so it ships three ways in instead: a static demo that runs in the browser, an offline mode, and a guided setup for your own Spotify app."
+      }
+    ],
+    outcome:
+      "Rebuilt and open source, with 444 automated tests. Anyone can try the real interface in the browser, with no account and nothing to install.",
+    note: "Not affiliated with or endorsed by Spotify. The demo's listening history is my own, frozen on Oct 4, 2026."
   },
 
   {
@@ -331,44 +383,6 @@ export const work = [
   },
 
   {
-    id: "spotify-discover-cleaner",
-    title: "Spotify Discover Cleaner",
-    pitch: "Turns a 1,000-song \"to listen\" playlist into a queue that shrinks itself as you actually listen.",
-    kind: "Tools",
-    year: 2026,
-    role: "Solo: product design and direction." + AI,
-    users: "Anyone whose save-for-later playlist only ever grows. Me first.",
-    status: "Working; runs locally",
-    access: "Runs locally, demo on request",
-    accent: "#1ed760",
-    monogram: "Sp",
-    tags: ["Python", "Flask", "Spotify API", "SQLite"],
-    links: [],
-    problem:
-      "Saving music for later is easy. Getting through it isn't. The backlog only grows, and you end up skipping past songs you've already heard.",
-    shipped: [
-      "Watches what's playing and clears a track from the backlog once you've actually listened to it.",
-      "Keep, clear now, like and undo controls.",
-      "Listening reports, artist pages and a watchlist."
-    ],
-    decisions: [
-      {
-        title: "Only count real listens",
-        body: "A track only leaves the backlog once it has played past a threshold (15–30 seconds by default), so skipping a song isn't treated as hearing it."
-      },
-      {
-        title: "Make destructive actions reversible",
-        body: "Anything that removes a song can be undone, and the database is backed up automatically before every upgrade."
-      },
-      {
-        title: "Test where mistakes are free",
-        body: "It was reviewed in rounds for usability, data consistency, security and accessibility, against a fake Spotify sandbox, so testing could never delete songs from a real playlist."
-      }
-    ],
-    outcome: "Working and running locally."
-  },
-
-  {
     id: "darkroom",
     title: "Darkroom",
     pitch: "A short first-person narrative game about one night, a coastal town and a roll of film.",
@@ -469,6 +483,8 @@ export const work = [
   }
 ];
 
+// Case-study links get sent out in applications, so a renamed id stays
+// reachable through `aliases`.
 export function findWork(id) {
-  return work.find(w => w.id === id) || null;
+  return work.find(w => w.id === id || (w.aliases || []).includes(id)) || null;
 }

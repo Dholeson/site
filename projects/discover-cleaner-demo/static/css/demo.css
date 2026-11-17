@@ -1,0 +1,77 @@
+/* Web demo only (dist/web-demo): the "Live demo" banner above the app and a few demo-only
+ * touches. Loaded by the demo's index.html after the app's own styles; the app is unchanged. */
+
+body.has-demo-banner { display: flex; flex-direction: column; }
+body.has-demo-banner > .app { height: auto; flex: 1 1 auto; min-height: 0; }
+
+.demo-banner {
+  flex: none;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px;
+  padding: 7px 44px 7px 16px;
+  position: relative;
+  background: linear-gradient(90deg, rgba(29, 185, 84, .16), rgba(29, 185, 84, .07));
+  border-bottom: 1px solid var(--accent-line);
+  color: var(--text-2);
+  font-size: var(--fs-13);
+  line-height: 1.35;
+}
+.demo-banner[hidden] { display: none; }
+.demo-banner-text { margin: 0; flex: 1 1 420px; min-width: 0; }
+.demo-banner-text strong { color: var(--text); font-weight: var(--fw-semibold); }
+.demo-banner-links { display: flex; align-items: center; gap: 4px 16px; flex-wrap: wrap; }
+.demo-banner-links a,
+.demo-banner-btn {
+  color: var(--accent-text); font: inherit; font-weight: var(--fw-semibold); text-decoration: none;
+  background: none; border: 0; padding: 2px 0; cursor: pointer; white-space: nowrap;
+}
+.demo-banner-links a:hover,
+.demo-banner-btn:hover { text-decoration: underline; }
+.demo-banner-btn { color: var(--text-2); }
+.demo-banner-btn:disabled { opacity: .6; cursor: progress; }
+.demo-banner-close {
+  position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+  width: 30px; height: 30px; border: 0; border-radius: var(--radius-pill);
+  background: none; color: var(--text-2); font: 20px/1 var(--font); cursor: pointer;
+}
+.demo-banner-close:hover { background: var(--hover); color: var(--text); }
+.demo-banner a:focus-visible,
+.demo-banner button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* The badge in the top bar brings the banner back. */
+#demo-badge { cursor: pointer; }
+#demo-badge:hover { border-color: var(--accent-line); }
+
+@media (max-width: 699.98px) {
+  .demo-banner { padding: 6px 40px 6px 12px; font-size: var(--fs-12); gap: 2px 12px; }
+  .demo-banner-more { display: none; }
+  .demo-banner-text { flex-basis: 100%; }
+  /* The search panel is fixed below the top bar: keep it below the banner too. */
+  body.has-demo-banner .search-panel { top: calc(var(--topbar-h) + var(--demo-banner-h, 0px)); }
+}
+
+/* A demo note inside a view (rendered by the views when the mock marks something demo-only). */
+.demo-note {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 0 0 var(--sp-4); padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface-2); color: var(--text-2); font-size: var(--fs-13);
+}
+.demo-note .icon { flex: none; width: 16px; height: 16px; margin-top: 2px; color: var(--accent-text); }
+
+/* Library: the note under the tabs on tabs that show simulated data. */
+.view-library .lib-demo-note:not(:empty) { padding-top: var(--sp-4); }
+
+/* Album art that couldn't load (blocked by a CSP or offline): an empty cover, not a broken image. */
+img.demo-img-failed { background: var(--surface-3); color: transparent; font-size: 0; }
+
+/* Settings: the read-only note above the sections. */
+.view-settings .st-demo-note { margin-bottom: var(--sp-5); }
+
+/* Phones: the banner already says "Live demo", so the top bar keeps room for search: the demo
+ * badge (which re-opens the banner) and the simulated Spotify status shrink to their icons. */
+@media (max-width: 699.98px) {
+  #demo-badge { padding: 0 8px; }
+  #demo-badge > span { display: none; }
+  body[data-demo] .status-pill .short { display: none; }
+  body[data-demo] .status-pill { padding: 0 8px; }
+}
