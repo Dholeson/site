@@ -71,8 +71,11 @@ const cspOf = rule => rule.lines.find(l => l.name === "content-security-policy")
 
 console.log("\n_headers: the demo's CSP exception\n");
 
-test("only the global rule and the demo rule set a CSP", () => {
-  assert.deepEqual(cspSetters.map(r => r.pattern).sort(), ["/*", DEMO_RULE].sort());
+// league-ify has the only other exception; test/league-ify.test.js checks it.
+const OTHER_EXCEPTIONS = ["/projects/league-ify/*"];
+
+test("only the global rule, the demo rule and the known exceptions set a CSP", () => {
+  assert.deepEqual(cspSetters.map(r => r.pattern).sort(), ["/*", DEMO_RULE, ...OTHER_EXCEPTIONS].sort());
 });
 
 test("the demo rule detaches the global CSP before setting its own, below /*", () => {
