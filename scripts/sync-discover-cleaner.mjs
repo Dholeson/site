@@ -29,9 +29,17 @@ if (!existsSync(join(src, "index.html"))) {
   console.error("Build it in the app repo first: python dev/build_web_demo.py");
   process.exit(1);
 }
-const fromDest = relative(dest, src);
-if (fromDest === "" || (!fromDest.startsWith("..") && !isAbsolute(fromDest))) {
-  console.error("The source must be the app's build, not the vendored copy.");
+// True when `inner` is `outer` itself or somewhere beneath it.
+const within = (inner, outer) => {
+  const rel = relative(outer, inner);
+  return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+};
+// The destination is deleted before copying, so the two folders must not
+// overlap in either direction: a source inside the vendored copy is gone by
+// the time cpSync runs, and a source containing it (e.g. the site root) would
+// be copied into its own descendant.
+if (within(src, dest) || within(dest, src)) {
+  console.error(`The source (${src}) overlaps ${dest}. Pass the app's dist/web-demo build, not the site or the vendored copy.`);
   process.exit(1);
 }
 
