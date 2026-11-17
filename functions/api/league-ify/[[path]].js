@@ -23896,14 +23896,17 @@ async function resolveSession(db, sessionId) {
 var { app, dispatch } = createRouter();
 registerRoutes(app);
 var CONFIG_KEYS = ["RIOT_API_KEY", "RIOT_PLATFORM", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"];
-function jsonResponse(body, status) {
-  return new Response(JSON.stringify(body ?? null), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" }
+function apiHeaders() {
+  return new Headers({
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store"
   });
 }
+function jsonResponse(body, status) {
+  return new Response(JSON.stringify(body ?? null), { status, headers: apiHeaders() });
+}
 function authResponse(result) {
-  const headers = new Headers({ "content-type": "application/json; charset=utf-8" });
+  const headers = apiHeaders();
   if (result.setCookie) headers.append("Set-Cookie", result.setCookie);
   return new Response(JSON.stringify(result.body ?? null), { status: result.status, headers });
 }
