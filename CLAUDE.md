@@ -62,17 +62,19 @@ by trusting the cart.
 `assets/entry/` instead. A new page with an inline script will be blocked at
 runtime, silently, in production but not in a plain local file server.
 
-**The global CSP allows Cloudflare Web Analytics, and nothing else
+**The global CSP allows Cloudflare Web Analytics' script, and nothing else
 off-site.** Web Analytics is on for the Pages project, and Cloudflare injects
 its beacon into every HTML page on the production domain (not on
 `*.pages.dev` previews or `npm run dev`). The beacon is a script from
-`https://static.cloudflareinsights.com`, so that host is in `script-src`, and
-it reports to `https://cloudflareinsights.com/cdn-cgi/rum`, so that host is in
-`connect-src`. Without them the CSP blocks the beacon and Web Analytics
-silently records nothing. If Web Analytics is ever turned off in
-the dashboard, take both hosts out of every rule. The tag Cloudflare injects is
-an external script with a `data-cf-beacon` attribute, not an inline script,
-so it doesn't need `unsafe-inline`.
+`https://static.cloudflareinsights.com`, so that host is in `script-src`.
+Without it the CSP blocks the beacon and Web Analytics silently records
+nothing. The beacon reports to `/cdn-cgi/rum` on dhole.dev itself (a
+same-origin POST, so `connect-src 'self'` covers it). Don't add
+`cloudflareinsights.com` to `connect-src`: that endpoint is only for sites
+that aren't proxied through Cloudflare. If Web Analytics is ever turned off in
+the dashboard, take the script host out of every rule. The tag Cloudflare
+injects is an external script with a `data-cf-beacon` attribute, not an
+inline script, so it doesn't need `unsafe-inline`.
 
 **Two paths have their own CSP**, each for a vendored app whose images come
 from a CDN:
@@ -84,7 +86,7 @@ from a CDN:
   `https://ddragon.leagueoflegends.com` in `img-src` and `connect-src`.
 
 Nothing else differs from the global policy (each restates the analytics
-hosts too, since it replaces the global header). In `_headers` each rule first
+script host too, since it replaces the global header). In `_headers` each rule first
 detaches the global header (`! Content-Security-Policy`) and then sets its
 own. Without the detach, Cloudflare comma-joins the two values and the browser
 enforces both, which blocks the images. A detach only removes what *earlier*

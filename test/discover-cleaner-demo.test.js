@@ -78,15 +78,15 @@ test("only the global rule, the demo rule and the known exceptions set a CSP", (
   assert.deepEqual(cspSetters.map(r => r.pattern).sort(), ["/*", DEMO_RULE, ...OTHER_EXCEPTIONS].sort());
 });
 
-// The global policy's only off-site sources are Cloudflare Web Analytics' beacon
-// (a script) and the endpoint it reports to. Each exception restates them,
-// because the checks below compare every exception to this policy.
+// The global policy's only off-site source is Cloudflare Web Analytics' beacon
+// script. It reports to /cdn-cgi/rum on this domain, so connect-src stays
+// 'self'. Each exception restates the script host, because the checks below
+// compare every exception to this policy.
 const ANALYTICS = {
   "script-src": ["https://static.cloudflareinsights.com"],
-  "connect-src": ["https://cloudflareinsights.com"],
 };
 
-test("the global CSP is 'self' plus Cloudflare Web Analytics' two hosts, nothing else", () => {
+test("the global CSP is 'self' plus Cloudflare Web Analytics' script host, nothing else", () => {
   const g = directives(cspOf(globalRule));
   for (const name of ["default-src", "script-src", "font-src", "connect-src", "form-action", "base-uri"]) {
     assert.deepEqual(g.get(name), ["'self'", ...(ANALYTICS[name] ?? [])], `${name} differs`);
