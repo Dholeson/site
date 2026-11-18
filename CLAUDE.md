@@ -9,7 +9,7 @@ Most shop traffic arrives by direct link rather than through the homepage.
 ## Commands
 
 ```bash
-npm test                          # 16 checkout tests + the Discover Cleaner and league-ify checks
+npm test                          # 16 checkout tests + the Discover Cleaner, league-ify and Projects page checks
 npm run dev                       # wrangler pages dev . (runs the Function too)
 npm run sync:discover-cleaner     # re-vendor the Discover Cleaner demo (see below)
 npx wrangler pages deploy .       # manual deploy (rarely needed)
@@ -24,15 +24,14 @@ There is no build step. Cloudflare Pages is connected to this repo: merging to
 | Path | What |
 |---|---|
 | `index.html` | Homepage hub |
-| `projects.html`, `projects/` | Project index and the playable demos |
+| `projects/` | The playable demos and apps. Every page here is linked from `data/portfolio.js` |
 | `projects/discover-cleaner-demo/` | **Generated — don't edit.** The Discover Cleaner web demo, copied from the app's repo by `npm run sync:discover-cleaner` |
 | `scripts/` | `sync-discover-cleaner.mjs`, the one vendoring script |
 | `store.html`, `product.html`, `cart.html` | Shop |
 | `log.html` | Week-by-week build log |
-| `portfolio.html`, `case.html` | Portfolio grid, and one templated case-study page (`case.html?id=`) for job applications |
-| `data/portfolio.js` | Portfolio content — one block per project, drives both pages |
+| `portfolio.html`, `case.html` | The **Projects** page (served at `/portfolio`, labelled Projects everywhere), and one templated case-study page (`case.html?id=`) for job applications |
+| `data/portfolio.js` | The one project list — one block per project; drives the Projects page, the case studies and the homepage's featured pair (`featured: true`) |
 | `data/products.js` | Catalogue — prices, stock, copy |
-| `data/projects.js` | Project list |
 | `functions/api/checkout.js` | Stripe Checkout, as a Pages Function |
 | `lib/checkout-core.js` | Order pricing, shared with the tests |
 | `assets/entry/` | Per-page entry modules |
@@ -113,6 +112,17 @@ and `/foo` serves `foo.html`. Never add a `_redirects` rule from `/foo` to
 `/portfolio` down once). Test redirects with `npm run dev`, not a plain
 file server, which doesn't do either.
 
+**There is one Projects page, and its file is `portfolio.html`.** The site
+used to have a Projects page and a Portfolio page with two separate lists, and
+they drifted: league-ify went live with no link on either. Now
+`data/portfolio.js` is the only list. The page is served at `/portfolio`
+because case-study links have already gone out in job applications, but every
+label says Projects. `/projects`, `/projects/` and `/projects.html` redirect to
+`/portfolio`. The demos themselves stay under `/projects/` (league-ify's build
+and both CSP rules depend on those paths). Link to the page as
+`/portfolio.html`, and link every page under `projects/` from a block in
+`data/portfolio.js`. `test/projects-page.test.js` checks both.
+
 **Stock does not decrement itself.** It is a number in `data/products.js`.
 Two people buying the last console minutes apart both succeed. Known and
 documented in `SETUP.md`; Cloudflare KV is the upgrade path.
@@ -121,7 +131,8 @@ documented in `SETUP.md`; Cloudflare KV is the upgrade path.
 
 `npm test` covers the money path, the global CSP and both exceptions in `_headers`, the
 vendored demo bundle, and the vendored league-ify build and its config
-(`nodejs_compat`, the `DB` binding, the migration). The demo's bundle checks
+(`nodejs_compat`, the `DB` binding, the migration), and the Projects page's
+links and redirects. The demo's bundle checks
 skip, with a note, while `projects/discover-cleaner-demo/` is missing. There is also a Playwright suite that has
 been run against the site (39 checks: both demos driven for real, cart totals,
 mobile overflow, link previews) but it is not committed — reproduce it if you
