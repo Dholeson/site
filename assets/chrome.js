@@ -7,7 +7,9 @@
 import { mountCartBadge } from "./cart.js";
 
 const NAV = [
-  { key: "projects", href: "/projects.html", label: "Projects" },
+  // The page is portfolio.html (case-study links already sent out point at it),
+  // but the section is called Projects. /projects redirects here.
+  { key: "projects", href: "/portfolio.html", label: "Projects" },
   { key: "store",    href: "/store.html",    label: "Store" },
   { key: "log",      href: "/log.html",      label: "Log" }
 ];
@@ -35,10 +37,9 @@ export function mountChrome(current = "") {
     <div class="wrap">
       <span>© ${new Date().getFullYear()} dhole.dev</span>
       <nav aria-label="Footer">
-        <a href="/projects.html">Projects</a>
+        <a href="/portfolio.html">Projects</a>
         <a href="/store.html">Store</a>
         <a href="/log.html">Log</a>
-        <a href="/portfolio.html">Portfolio</a>
       </nav>
     </div>`;
   document.body.append(footer);
