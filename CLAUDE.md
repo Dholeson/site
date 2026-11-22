@@ -38,13 +38,15 @@ There is no build step. Cloudflare Pages is connected to this repo: merging to
 | `assets/entry/` | Per-page entry modules |
 | `projects/league-ify/` | league-ify SPA — **built output, vendored** (see below) |
 | `functions/api/league-ify/[[path]].js` | league-ify API (accounts + data), one bundled Pages Function — **vendored** |
-| `migrations/0001_league_ify.sql` | league-ify's D1 tables (`documents`, `matches`, `lu_users`, `lu_sessions`) |
+| `migrations/0001_league_ify.sql` | league-ify's D1 tables (`documents`, `matches`, `lu_users`, `lu_sessions`) — **vendored** |
 
 **league-ify is vendored, not written here.** Its source is the
-`Dholeson/league-ify` repo. Don't hand-edit `projects/league-ify/` or the
-`[[path]].js` bundle — rebuild from a league-ify checkout with
-`node scripts/build-site.mjs <path-to-this-site>` and commit the result. It
-needs `nodejs_compat` and the `DB` (D1) binding in `wrangler.toml`.
+`Dholeson/league-ify` repo. Don't hand-edit `projects/league-ify/`, the
+`[[path]].js` bundle or `migrations/0001_league_ify.sql` — rebuild from a
+league-ify checkout with `node scripts/build-site.mjs <path-to-this-site>` and
+commit the result. It needs `nodejs_compat` and the `DB` (D1) binding in
+`wrangler.toml`. Apply the migration with `npx wrangler d1 migrations apply
+dhole-workshop --local` (or `--remote`), not `d1 execute`.
 
 ## Conventions that will bite you
 
