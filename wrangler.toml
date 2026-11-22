@@ -18,7 +18,7 @@ SHIP_TO_COUNTRIES = "US"
 # registrations). Turning it on before that makes Stripe reject every session.
 ENABLE_AUTOMATIC_TAX = "false"
 
-# league-ify's D1 database. Its only tables are the ones in
+# league-ify's D1 database. The only schema this repo creates in it is
 # migrations/0001_league_ify.sql: documents, matches, lu_users, lu_sessions.
 # Bound as env.DB inside every Pages Function, but only the league-ify API
 # (functions/api/league-ify) uses it. Checkout and stock don't touch it.
