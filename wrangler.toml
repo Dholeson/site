@@ -18,19 +18,22 @@ SHIP_TO_COUNTRIES = "US"
 # registrations). Turning it on before that makes Stripe reject every session.
 ENABLE_AUTOMATIC_TAX = "false"
 
-# The workshop database: pipeline units, live stock, requests, admin sessions.
-# Bound as env.DB inside every Pages Function.
+# league-ify's D1 database. The only schema this repo creates in it is
+# migrations/0001_league_ify.sql: documents, matches, lu_users, lu_sessions.
+# Bound as env.DB inside every Pages Function, but only the league-ify API
+# (functions/api/league-ify) uses it. Checkout and stock don't touch it.
 #
 # No [env.preview] section anywhere in this file, deliberately: Pages treats
 # non-inheritable keys as all-or-nothing, so adding one would silently drop the
 # [vars] above and this binding from preview deployments.
 #
 # Local workflow (remote D1 development is not possible on Pages):
-#   npx wrangler d1 execute dhole-workshop --local --file=schema.sql
-#   npx wrangler d1 execute dhole-workshop --local --file=scripts/seed.sql
+#   npx wrangler d1 migrations apply dhole-workshop --local
 #   npm run dev
-# If you pass --persist-to, pass the SAME value to every command or you will
-# seed one database and query another.
+# Without the first step, league-ify sign-up fails with "no such table". Use
+# `migrations apply`, not `d1 execute --file`: it records what ran, so later
+# migrations apply in order. If you pass --persist-to, pass the SAME value to
+# both commands or you will migrate one database and query another.
 [[d1_databases]]
 binding = "DB"
 database_name = "dhole-workshop"
