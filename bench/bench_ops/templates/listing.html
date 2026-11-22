@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, when %}
+{% block title %}Listing {{ code(unit) }}{% endblock %}
+{% block content %}
+<section class="card head">
+  <h1>Listing · <a href="/units/{{ unit.id }}">{{ code(unit) }}</a> {{ badge(unit.status) }}</h1>
+  <p class="muted small">Produces a product for <code>data/products.js</code> in the store's own shape. Price is integer cents.
+    Nothing is written to the site: you commit the snippet.</p>
+</section>
+
+{% if draft %}
+<section class="card">
+  <h2>Draft</h2>
+  {% if actor %}
+  <form method="post" action="/units/{{ unit.id }}/listing" class="stack">
+    <label>Name <input name="name" value="{{ draft.name }}" required maxlength="120"></label>
+    <label>Price (USD) <input name="price" value="{{ format_cents(draft.price_cents)[1:] if draft.price_cents else '' }}" inputmode="decimal" placeholder="145 or 145.00"></label>
+    {% if draft.price_cents %}<p class="muted small">Stored as <code>priceCents: {{ draft.price_cents }}</code></p>{% endif %}
+    <label>Condition
+      <select name="condition">{% for c in conditions %}<option value="{{ c }}"{% if c == draft.condition %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    </label>
+    <label>Blurb <textarea name="blurb" rows="3">{{ draft.blurb }}</textarea></label>
+    <label>Details, one per line <textarea name="details" rows="8">{{ draft.details }}</textarea></label>
+    <button>Save draft</button>
+  </form>
+  <form method="post" action="/units/{{ unit.id }}/listing/regenerate"><button class="link">Regenerate copy from the record (keeps price)</button></form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Export</h2>
+  {% if photo %}<img class="thumb" src="/media/{{ photo.id }}" alt="Front photo used as the product image">{% endif %}
+  {% if problems %}<p><strong>Not exportable yet:</strong></p><ul class="problems">{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+  {% for w in warns %}<p class="warn-tag">{{ w }}</p>{% endfor %}
+  {% if js %}
+    <label>JS — paste into the <code>products</code> array<textarea readonly rows="16" class="code" wrap="off">{{ js }}</textarea></label>
+    <label>JSON<textarea readonly rows="10" class="code" wrap="off">{{ json_text }}</textarea></label>
+    {% if unit.status == "listable" and actor %}
+    <form method="post" action="/units/{{ unit.id }}/listing/export"><button>Export &amp; mark listed</button></form>
+    {% elif unit.status != "listable" %}<p class="muted">Preview only: the unit has to be listable to export.</p>{% endif %}
+  {% endif %}
+</section>
+{% endif %}
+
+{% if exported %}
+<section class="card">
+  <h2>Last export</h2>
+  <p><code>{{ exported.product_id }}</code> at {{ format_cents(exported.price_cents) }}, {{ when(exported.exported_at) }}</p>
+  <p><a class="button" href="/units/{{ unit.id }}/listing.zip">Download bundle (.zip with photo)</a>
+     <a href="/units/{{ unit.id }}/listing.js">.js</a> · <a href="/units/{{ unit.id }}/listing.json">.json</a></p>
+  <label>JS<textarea readonly rows="16" class="code" wrap="off">{{ snap_js }}</textarea></label>
+  <label>JSON<textarea readonly rows="10" class="code" wrap="off">{{ snap_json }}</textarea></label>
+</section>
+{% endif %}
+{% endblock %}

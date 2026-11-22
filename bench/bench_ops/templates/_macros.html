@@ -1,0 +1,15 @@
+{% macro badge(status) -%}
+<span class="badge s-{{ status }}">{{ status }}</span>
+{%- endmacro %}
+
+{% macro when(ts) -%}
+{% if ts %}<time datetime="{{ ts }}">{{ ts[:10] }} {{ ts[11:16] }}Z</time>{% else %}—{% endif %}
+{%- endmacro %}
+
+{% macro unit_row(u) -%}
+<li class="unit-row">
+  <a href="/units/{{ u.id }}"><strong>{{ code(u) }}</strong></a>
+  <span>{{ family_name(u.console_family) }}{% if u.model_revision %} · {{ u.model_revision }}{% endif %}</span>
+  {{ badge(u.status) }}
+</li>
+{%- endmacro %}

@@ -1,0 +1,21 @@
+# Runtime, pinned to the versions the test suite ran against. Python >= 3.11
+# (Raspberry Pi OS Bookworm ships 3.11). Install once with internet; the
+# appliance itself runs offline. For a fully offline install:
+#   pip download -r requirements.txt -d wheels   (on a machine with internet, same arch)
+#   pip install --no-index --find-links wheels -r requirements.txt
+fastapi==0.165.0
+starlette==1.10.0
+pydantic==2.14.4
+pydantic_core==2.50.5
+uvicorn==0.54.0
+Jinja2==3.1.6
+MarkupSafe==3.0.4
+python-multipart==0.0.34
+annotated-doc==0.0.7
+annotated-types==0.8.0
+anyio==4.16.0
+click==8.5.1
+h11==0.16.0
+idna==3.20
+typing-inspection==0.4.5
+typing_extensions==4.16.0

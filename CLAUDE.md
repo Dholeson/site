@@ -39,6 +39,21 @@ There is no build step. Cloudflare Pages is connected to this repo: merging to
 | `projects/league-ify/` | league-ify SPA — **built output, vendored** (see below) |
 | `functions/api/league-ify/[[path]].js` | league-ify API (accounts + data), one bundled Pages Function — **vendored** |
 | `migrations/0001_league_ify.sql` | league-ify's D1 tables (`documents`, `matches`, `lu_users`, `lu_sessions`) |
+| `bench/` | **Not part of the site.** The Bench Ops appliance (Python/FastAPI + SQLite) that runs on the shop's Pi: intake, QC, provenance, and listing export. See `bench/README.md` |
+
+**`bench/` gets published anyway.** `pages_build_output_dir = "."` means Pages
+serves every file in the repo, so merging `bench/` to `main` puts its source
+and raw Jinja templates on dhole.dev. Nothing in it is secret, but it doesn't
+belong there. It should move to its own repo. Until it does, don't merge it to
+`main`.
+
+The appliance's listing export emits a `data/products.js` entry. If you change
+the product shape here (rename a key, add a required one), update
+`bench/bench_ops/listing.py` `PRODUCT_KEYS` too. `bench/tests/test_listing.py`
+pastes a generated entry into a copy of this repo's `products.js` and runs the
+real checkout pricing on it, so it fails if the two drift. Run it with
+`cd bench && python -m pytest` (needs `pip install -r requirements-dev.txt`).
+It is not part of `npm test`.
 
 **league-ify is vendored, not written here.** Its source is the
 `Dholeson/league-ify` repo. Don't hand-edit `projects/league-ify/` or the

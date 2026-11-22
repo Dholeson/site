@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import unit_row %}
+{% block title %}Units{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Units</h1>
+  <form method="get" action="/units" class="inline">
+    <select name="status" aria-label="Status">
+      <option value="">Any status</option>
+      {% for s in statuses %}<option value="{{ s }}"{% if s == status %} selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+    <input name="q" value="{{ q }}" placeholder="Barcode, serial, model, listing id" aria-label="Search">
+    <button>Filter</button>
+  </form>
+  <ul class="units">{% for u in rows %}{{ unit_row(u) }}{% else %}<li class="muted">No units.</li>{% endfor %}</ul>
+</section>
+{% endblock %}

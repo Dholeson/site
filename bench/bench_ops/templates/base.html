@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Bench{% endblock %} · Bench Ops</title>
+<link rel="stylesheet" href="/static/bench.css">
+{% block head %}{% endblock %}
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">Bench</a>
+  <nav>
+    <a href="/units"{% if request_path.startswith('/units') %} aria-current="page"{% endif %}>Units</a>
+    <a href="/network"{% if request_path.startswith('/network') %} aria-current="page"{% endif %}>Network</a>
+    <a href="/qc-templates"{% if request_path.startswith('/qc-templates') %} aria-current="page"{% endif %}>QC</a>
+  </nav>
+  <a class="who" href="/who">{{ actor.name if actor else "Sign in" }}</a>
+</header>
+<main>
+{% if msg %}<p class="flash ok" role="status">{{ msg }}</p>{% endif %}
+{% if err %}<p class="flash err" role="alert">{{ err }}</p>{% endif %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bench intake</title>
+<link rel="stylesheet" href="/static/bench.css">
+</head>
+<body class="console">
+{# Shown to the console's own browser. Plain HTML: no scripts, no forms,
+   no downloads, no links anywhere else. It reads what the console announces
+   (its User-Agent) and nothing more. #}
+<h1>Bench intake</h1>
+<p>Recorded. Tell the tech this code:</p>
+<p class="code">{{ device.code }}</p>
+<table>
+  <tr><th>Console</th><td>{{ fam.name if fam else "not recognised" }}</td></tr>
+  <tr><th>Firmware</th><td>{{ parsed.firmware or "not shown by this browser" }}{% if parsed.firmware %} (tech confirms){% endif %}</td></tr>
+  <tr><th>Address</th><td>{{ device.ip or "unknown" }}{% if device.mac %} · {{ device.mac }}{% endif %}</td></tr>
+  {% if unit %}<tr><th>Unit</th><td>{{ code(unit) }}</td></tr>{% endif %}
+</table>
+<p class="small">You can close the browser now.</p>
+</body>
+</html>

@@ -1,0 +1,9 @@
+[project]
+name = "bench-ops"
+version = "0.1.0"
+description = "Bench appliance: intake, QC and provenance for refurbished retro consoles"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore:Using `httpx`"]

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_macros.html" import when %}
+{% block title %}QC templates{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>QC templates</h1>
+  <p class="muted small">One checklist per console family. Edits apply to runs started afterwards; past runs keep their own copy.</p>
+  <ul class="units">
+  {% for t in rows %}
+    <li class="unit-row"><a href="/qc-templates/{{ t.id }}"><strong>{{ t.name }}</strong></a><span>{{ t.n }} items</span><span class="muted small">edited {{ when(t.updated_at) }}</span></li>
+  {% endfor %}
+  </ul>
+</section>
+{% endblock %}

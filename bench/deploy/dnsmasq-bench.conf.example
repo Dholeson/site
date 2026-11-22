@@ -1,0 +1,16 @@
+# /etc/dnsmasq.d/bench.conf -- ONLY if the Pi is the bench LAN's DHCP server.
+# If a separate router/AP hands out addresses, skip this file: the watcher is
+# passive and sees consoles' DHCP broadcasts either way.
+#
+# Assumes the Pi has a static 10.42.0.1/24 on eth0, e.g. on Bookworm:
+#   nmcli con mod "Wired connection 1" ipv4.method manual ipv4.addresses 10.42.0.1/24
+interface=eth0
+bind-interfaces
+dhcp-range=10.42.0.50,10.42.0.200,12h
+dhcp-option=option:router,10.42.0.1
+
+# Consoles type http://bench.lan/c (or just the IP) to reach the intake page.
+address=/bench.lan/10.42.0.1
+
+# Offline LAN: no upstream DNS.
+no-resolv

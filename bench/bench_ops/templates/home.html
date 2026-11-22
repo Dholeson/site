@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_macros.html" import unit_row, when %}
+{% block title %}Intake{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Intake</h1>
+  <form method="post" action="/scan" class="scan">
+    <label for="barcode">Scan or type the intake barcode</label>
+    <input id="barcode" name="barcode" autofocus autocomplete="off" autocapitalize="characters" inputmode="text" required>
+    <button>Open record</button>
+  </form>
+  <p class="muted">A known barcode opens its unit; a new one opens a fresh record.
+  Scanner on the Pi instead? Watch <a href="/monitor">the monitor</a>.</p>
+</section>
+
+{% if pending %}
+<section class="card">
+  <h2>New on the bench LAN</h2>
+  <ul class="devices">
+  {% for d in pending %}
+    <li>
+      <strong>{{ d.code }}</strong>
+      {% if d.family_hint %}<span class="hint">{{ family_name(d.family_hint) }}?</span>{% endif %}
+      <span class="muted">{{ d.vendor_org or ("randomised MAC (phone/tablet?)" if d.randomized_mac else "unknown vendor") }}
+        {% if d.hostname %} · {{ d.hostname }}{% endif %}{% if d.ua_firmware %} · fw {{ d.ua_firmware }}{% endif %}</span>
+      {% if actor %}
+      <form method="post" action="/network/{{ d.id }}/attach" class="inline">
+        <select name="unit_id" aria-label="Attach to">
+          <option value="">Open a new unit</option>
+          {% for u in open_units %}<option value="{{ u.id }}">{{ code(u) }} · {{ family_name(u.console_family) }}</option>{% endfor %}
+        </select>
+        <button>Attach</button>
+      </form>
+      {% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+  <p class="muted"><a href="/network">All devices</a></p>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>In progress</h2>
+  {% if in_progress %}
+  <ul class="units">{% for u in in_progress %}{{ unit_row(u) }}{% endfor %}</ul>
+  {% else %}<p class="muted">Nothing on the bench.</p>{% endif %}
+  {% if actor %}
+  <details>
+    <summary>Open a unit without a barcode</summary>
+    <form method="post" action="/units" class="stack">
+      <label>Console family
+        <select name="family"><option value="">Not sure yet</option>
+        {% for k, n in families.choices() %}<option value="{{ k }}">{{ n }}</option>{% endfor %}</select>
+      </label>
+      <button>Open record</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+
+<p class="muted small">Network watcher: {{ threads.get("dhcp", "off") }} · Pi scanner: {{ threads.get("scanner", "off") }}</p>
+{% endblock %}

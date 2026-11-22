@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Who's on the bench{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Who's on the bench?</h1>
+  <p class="muted">Every change, QC result and attestation is signed with this name.</p>
+  {% if techs %}
+  <form method="post" action="/who" class="choices">
+    <input type="hidden" name="next" value="{{ next }}">
+    {% for t in techs %}<button name="tech_id" value="{{ t.id }}"{% if actor and actor.tech_id == t.id %} class="on"{% endif %}>{{ t.name }}</button>{% endfor %}
+  </form>
+  {% endif %}
+  <form method="post" action="/who" class="stack">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>New tech <input name="new_name" autocomplete="name" maxlength="60"></label>
+    <button>Add and sign in</button>
+  </form>
+  {% if actor %}
+  <form method="post" action="/who/clear"><button class="link">Sign out</button></form>
+  {% endif %}
+</section>
+{% endblock %}

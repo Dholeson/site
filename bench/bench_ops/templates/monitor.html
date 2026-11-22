@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import when %}
+{% block title %}Monitor{% endblock %}
+{# Refreshes itself with a meta tag (not a script). No inputs here, so a
+   refresh never eats anything being typed. #}
+{% block head %}<meta http-equiv="refresh" content="5">{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Monitor</h1>
+  <p class="muted">Refreshes every 5 seconds. Scans from a scanner wired to the Pi land here.</p>
+  <ul class="units">
+  {% for e in recent %}
+    <li class="unit-row"><a href="/units/{{ e.unit_id }}"><strong>{{ e.intake_barcode or ("U%05d" % e.unit_id) }}</strong></a>
+      <span>{{ e.kind.replace("_", " ") }} by {{ e.actor }}</span> {{ when(e.at) }}</li>
+  {% else %}<li class="muted">No scans yet.</li>{% endfor %}
+  </ul>
+</section>
+{% if pending %}
+<section class="card">
+  <h2>New on the bench LAN</h2>
+  <ul>{% for d in pending %}<li><strong>{{ d.code }}</strong> {{ family_name(d.family_hint) if d.family_hint else (d.vendor_org or "unknown") }}</li>{% endfor %}</ul>
+  <p><a href="/">Attach from the intake page</a></p>
+</section>
+{% endif %}
+{% endblock %}

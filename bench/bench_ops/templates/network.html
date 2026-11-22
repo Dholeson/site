@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import when %}
+{% block title %}Network{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Bench LAN</h1>
+  <p class="muted small">Watcher: {{ threads.get("dhcp", "off (set BENCH_WATCH_IFACE)") }}.
+    Vendor comes from the MAC's OUI (maker only, never the model). Hints are advisory; the tech confirms on the unit.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Code</th><th>Device</th><th>Seen</th><th>Unit</th><th></th></tr></thead>
+    <tbody>
+    {% for d in rows %}
+    <tr class="{{ 'ignored' if d.ignored else '' }}">
+      <td><strong>{{ d.code }}</strong></td>
+      <td>{{ d.vendor_org or ("randomised MAC" if d.randomized_mac else "unknown vendor") }}
+        {% if d.family_hint %}<span class="hint">{{ family_name(d.family_hint) }}?</span>{% endif %}<br>
+        <span class="muted small">{{ d.mac or "no MAC" }} · {{ d.ip or "no IP" }}{% if d.hostname %} · {{ d.hostname }}{% endif %}
+        {% if d.dhcp_fingerprint %}<br>opt55 {{ d.dhcp_fingerprint }}{% endif %}{% if d.dhcp_vendor_class %} · {{ d.dhcp_vendor_class }}{% endif %}
+        {% if d.ua_family %}<br>browser: {{ family_name(d.ua_family) }}{% if d.ua_firmware %} fw {{ d.ua_firmware }}{% endif %}{% endif %}</span></td>
+      <td class="small">{{ when(d.last_seen) }}<br><span class="muted">{{ d.source }}</span></td>
+      <td>{% if d.unit_id %}<a href="/units/{{ d.unit_id }}">#{{ d.unit_id }}</a>{% elif actor and not d.ignored %}
+        <form method="post" action="/network/{{ d.id }}/attach" class="inline">
+          <select name="unit_id" aria-label="Attach to"><option value="">New unit</option>
+          {% for u in open_units %}<option value="{{ u.id }}">{{ code(u) }}</option>{% endfor %}</select>
+          <button>Attach</button>
+        </form>{% endif %}</td>
+      <td>{% if actor and not d.unit_id %}
+        <form method="post" action="/network/{{ d.id }}/ignore"><input type="hidden" name="ignored" value="{{ '0' if d.ignored else '1' }}">
+          <button class="link">{{ "Unignore" if d.ignored else "Ignore" }}</button></form>{% endif %}</td>
+    </tr>
+    {% else %}<tr><td colspan="5" class="muted">Nothing seen yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ tpl.name }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ tpl.name }}</h1>
+  <p class="muted small">Order by position (lower first). "Blocking" means a fail stops the unit reaching refurbished.
+    Past runs aren't affected by anything here.</p>
+  {% if not actor %}<p class="flash err">Sign in to edit.</p>{% endif %}
+</section>
+{% for it in items %}
+<article class="card item" id="tpl-item-{{ it.id }}">
+  <form method="post" action="/qc-template-items/{{ it.id }}" class="grid">
+    <label>Position <input name="position" value="{{ it.position }}" inputmode="numeric" size="4"></label>
+    <label>Section <input name="section" value="{{ it.section }}" required></label>
+    <label class="wide">Label <input name="label" value="{{ it.label }}" required></label>
+    <label class="wide">Guidance <textarea name="guidance" rows="2">{{ it.guidance }}</textarea></label>
+    <label class="check"><input type="checkbox" name="blocking" value="1"{% if it.blocking %} checked{% endif %}> Blocking</label>
+    <label>Photo slot
+      <select name="photo_slot"><option value="">none</option>{% for s in photo_slots %}<option value="{{ s }}"{% if s == it.photo_slot %} selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+    </label>
+    {% if actor %}<button>Save</button>{% endif %}
+  </form>
+  {% if actor %}<form method="post" action="/qc-template-items/{{ it.id }}/delete"><button class="link danger">Remove</button></form>{% endif %}
+</article>
+{% endfor %}
+{% if actor %}
+<section class="card">
+  <h2>Add an item</h2>
+  <form method="post" action="/qc-templates/{{ tpl.id }}/items" class="grid">
+    <label>Section <input name="section" required list="sections"></label>
+    <datalist id="sections">{% for s in items|map(attribute="section")|unique %}<option value="{{ s }}">{% endfor %}</datalist>
+    <label class="wide">Label <input name="label" required></label>
+    <label class="wide">Guidance <textarea name="guidance" rows="2"></textarea></label>
+    <label class="check"><input type="checkbox" name="blocking" value="1" checked> Blocking</label>
+    <label>Photo slot <select name="photo_slot"><option value="">none</option>{% for s in photo_slots %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></label>
+    <button>Add</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

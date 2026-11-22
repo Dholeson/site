@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import when %}
+{% block title %}QC {{ code(unit) }}{% endblock %}
+{% block content %}
+<section class="card head">
+  <h1>QC run #{{ run.id }} · <a href="/units/{{ unit.id }}">{{ code(unit) }}</a></h1>
+  <p>{{ family_name(run.console_family) }} · {{ summary.answered }}/{{ summary.total }} answered ·
+    {{ summary.pass }} pass · {{ summary.fail }} fail · {{ summary.na }} N/A
+    {% if run.completed_at %} · <span class="ok-tag">complete {{ when(run.completed_at) }}</span>{% endif %}</p>
+  {% if summary.blocking_fails %}<p class="bad">Blocking fails: {{ summary.blocking_fails|map(attribute="label")|join(", ") }}</p>{% endif %}
+  <p class="muted small">Top to bottom. One tap records the result; you land on the next open item.
+    A fail needs a note. Blocking items stop the unit reaching refurbished.</p>
+</section>
+
+{% set ns = namespace(section=None) %}
+{% for r in rows %}
+  {% if r.section != ns.section %}{% set ns.section = r.section %}<h2 class="section">{{ r.section }}</h2>{% endif %}
+  <article class="card item r-{{ r.result or 'open' }}" id="item-{{ r.id }}">
+    <h3>{{ r.label }} {% if r.blocking %}<span class="tag">blocking</span>{% endif %}</h3>
+    {% if r.guidance %}<p class="muted small">{{ r.guidance }}</p>{% endif %}
+    {% if r.result %}<p class="result">{{ {"pass": "Pass", "fail": "Fail", "na": "N/A"}[r.result] }}
+      <span class="muted">— {{ name_of(r.recorded_by) }}, {{ when(r.recorded_at) }}</span>{% if r.note %}<br>{{ r.note }}{% endif %}</p>{% endif %}
+    {% if r.photo_slot and photos.get(r.photo_slot) %}<img class="thumb" src="/media/{{ photos[r.photo_slot].id }}" alt="{{ r.photo_slot }} photo" loading="lazy">{% endif %}
+    {% for a in files.get(r.id, []) if not r.photo_slot %}<p class="small"><a href="/media/{{ a.id }}">{{ a.original_name or a.stored_name }}</a> ({{ a.kind }})</p>{% endfor %}
+    {% if editable and actor %}
+    <form method="post" action="/units/{{ unit.id }}/qc/{{ run.id }}/items/{{ r.id }}" enctype="multipart/form-data" class="qc-form">
+      <textarea name="note" rows="1" placeholder="Note (required for a fail)" aria-label="Note">{{ r.note or '' }}</textarea>
+      {% if r.photo_slot %}
+      <input type="file" name="file" accept="image/jpeg,image/png,image/webp" capture="environment" aria-label="{{ r.photo_slot }} photo">
+      {% else %}
+      <input type="file" name="file" accept="image/*,video/*,text/plain,.txt,.log,.csv" aria-label="Photo, clip or log">
+      {% endif %}
+      <div class="buttons">
+        <button name="result" value="pass" class="pass">Pass</button>
+        <button name="result" value="fail" class="fail">Fail</button>
+        <button name="result" value="na" class="na">N/A</button>
+        <button name="result" value="" class="link">Attach only</button>
+      </div>
+    </form>
+    {% endif %}
+  </article>
+{% endfor %}
+
+<section class="card" id="finish">
+  {% if run.completed_at %}
+    <p>Complete. Results are locked; <a href="/units/{{ unit.id }}#qc">start a re-test run</a> to test again.</p>
+  {% elif editable and actor %}
+    {% if summary.open %}<p class="muted">{{ summary.open|length }} item(s) still open.</p>{% endif %}
+    <form method="post" action="/units/{{ unit.id }}/qc/{{ run.id }}/complete"><button{% if summary.open %} disabled{% endif %}>Complete QC sheet</button></form>
+  {% endif %}
+</section>
+{% endblock %}

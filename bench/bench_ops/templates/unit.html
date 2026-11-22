@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, when %}
+{% block title %}{{ code(unit) }}{% endblock %}
+{% block content %}
+<section class="card head">
+  <h1>{{ code(unit) }} {{ badge(unit.status) }}</h1>
+  <p>{{ fam.name if fam else "Family not set" }}{% if unit.model_revision %} · {{ unit.model_revision }}{% endif %}
+    · received {{ when(unit.received_at) }}</p>
+  {% if unit.status == "failed" %}<p class="flash err">Failed: {{ unit.failed_reason }}</p>{% endif %}
+  {% if unit.listing_id %}<p>Listing id <code>{{ unit.listing_id }}</code>{% if unit.sale_ref %} · sold, ref <code>{{ unit.sale_ref }}</code>{% endif %}</p>{% endif %}
+</section>
+
+<section class="card" id="status">
+  <h2>Next step</h2>
+  {% set side = ["failed"] + (["received"] if unit.status == "failed" else []) + (["refurbished"] if unit.status == "listable" else []) %}
+  {% set forward = steps|rejectattr(0, "in", side)|list %}
+  {% set other = steps|selectattr(0, "in", side)|list %}
+  {% macro step(to, problems) %}
+  <div class="step">
+    {% if to == "listed" %}
+      {% if problems %}<p><strong>listed</strong> — blocked:</p><ul class="problems">{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul>
+      {% else %}<p><a class="button" href="/units/{{ unit.id }}/listing">Draft &amp; export the listing</a> (that moves it to listed)</p>{% endif %}
+    {% elif problems %}
+      <p><strong>{{ to }}</strong> — blocked:</p>
+      <ul class="problems">{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul>
+    {% elif actor %}
+      <form method="post" action="/units/{{ unit.id }}/transition" class="inline">
+        <input type="hidden" name="to" value="{{ to }}">
+        {% if to == "failed" or (unit.status, to) in [("failed", "received"), ("listable", "refurbished")] %}
+          <input name="reason" required placeholder="{{ 'What failed' if to == 'failed' else 'Reason' }}" aria-label="Reason">
+        {% endif %}
+        {% if to == "sold" %}<input name="sale_ref" required placeholder="Order / Stripe ref" aria-label="Sale reference">{% endif %}
+        <button class="{{ 'danger' if to == 'failed' else '' }}">{{ {"received": "Reopen", "refurbished": "Pull back to refurbished" if unit.status == "listable" else "Mark refurbished"}.get(to, "Mark " ~ to) }}</button>
+      </form>
+    {% endif %}
+  </div>
+  {% endmacro %}
+  {% for to, problems in forward %}{{ step(to, problems) }}{% endfor %}
+  {% if not steps %}<p class="muted">End of the line.</p>{% endif %}
+  {% if other and actor %}
+  <details class="other-moves"{% if unit.status == "failed" %} open{% endif %}>
+    <summary>{{ "Reopen" if unit.status == "failed" else "Fail or pull back" }}</summary>
+    {% for to, problems in other %}{{ step(to, problems) }}{% endfor %}
+  </details>
+  {% endif %}
+  {% if unit.status in ("refurbished", "listable") %}<p><a href="/units/{{ unit.id }}/listing">Listing draft</a></p>
+  {% elif export %}<p><a href="/units/{{ unit.id }}/listing">Exported listing</a></p>{% endif %}
+</section>
+
+<section class="card" id="identity">
+  <h2>Identity</h2>
+  {% if editable and actor %}
+  <form method="post" action="/units/{{ unit.id }}/identity" class="grid">
+    <label>Family
+      <select name="console_family"><option value="">Not set</option>
+      {% for k, n in families.choices() %}<option value="{{ k }}"{% if k == unit.console_family %} selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+    </label>
+    <label>Model / revision <input name="model_revision" value="{{ unit.model_revision or '' }}" placeholder="e.g. SCPH-90001"></label>
+    <label>Serial no. <input name="serial_no" value="{{ unit.serial_no or '' }}"></label>
+    <label>Intake barcode <input name="intake_barcode" value="{{ unit.intake_barcode or '' }}"></label>
+    <label>MAC <input name="mac_address" value="{{ unit.mac_address or '' }}"></label>
+    <label class="check"><input type="checkbox" name="has_writable_storage" value="1"{% if unit.has_writable_storage %} checked{% endif %}> Has writable storage (HDD / internal flash)</label>
+    <label class="wide">Notes <textarea name="notes" rows="2">{{ unit.notes or '' }}</textarea></label>
+    <button>Save identity</button>
+  </form>
+  {% else %}
+  <dl class="kv">
+    <dt>Family</dt><dd>{{ fam.name if fam else "—" }}</dd>
+    <dt>Model</dt><dd>{{ unit.model_revision or "—" }}</dd>
+    <dt>Serial</dt><dd>{{ unit.serial_no or "—" }}</dd>
+    <dt>MAC</dt><dd>{{ unit.mac_address or "—" }}</dd>
+    <dt>Writable storage</dt><dd>{{ "yes" if unit.has_writable_storage else "no" }}</dd>
+  </dl>
+  {% endif %}
+
+  <h3>Firmware</h3>
+  <p>{% if unit.firmware_version %}<strong>{{ unit.firmware_version }}</strong>
+      {% if unit.firmware_confirmed_by %}<span class="ok-tag">confirmed by {{ name_of(unit.firmware_confirmed_by) }}</span>
+      {% else %}<span class="warn-tag">{{ unit.firmware_source }}, not confirmed</span>{% endif %}
+    {% else %}<span class="muted">Not known yet. Load <code>/c</code> in the console's browser to pre-fill, or type it from the system info screen.</span>{% endif %}</p>
+  {% if editable and actor %}
+  <form method="post" action="/units/{{ unit.id }}/firmware" class="inline">
+    <input name="firmware_version" value="{{ unit.firmware_version or '' }}" placeholder="As shown on the console" aria-label="Firmware version" required>
+    <button>{{ "Confirm" if unit.firmware_version and not unit.firmware_confirmed_by else "Save & confirm" }}</button>
+  </form>
+  {% endif %}
+
+  <h3>Network</h3>
+  {% for d in devices %}<p><strong>{{ d.code }}</strong> {{ d.mac or "" }} · {{ d.vendor_org or "unknown vendor" }}{% if d.hostname %} · {{ d.hostname }}{% endif %}{% if d.dhcp_fingerprint %} · <span class="muted">opt55 {{ d.dhcp_fingerprint }}</span>{% endif %}</p>
+  {% else %}<p class="muted">No device linked.</p>{% endfor %}
+  {% if editable and actor %}
+  <form method="post" action="/units/{{ unit.id }}/link-device" class="inline">
+    <input name="code" placeholder="Code shown on console" aria-label="Device code" maxlength="4" autocapitalize="characters" required>
+    <button>Link device</button>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card" id="qc">
+  <h2>QC</h2>
+  {% for r, s in runs %}
+  <p><a href="/units/{{ unit.id }}/qc/{{ r.id }}">Run #{{ r.id }}</a> · {{ family_name(r.console_family) }} ·
+    {% if r.completed_at %}complete {{ when(r.completed_at) }}{% else %}<strong>open</strong>, {{ s.answered }}/{{ s.total }} answered{% endif %}
+    · {{ s.pass }} pass, {{ s.fail }} fail{% if s.blocking_fails %} (<span class="bad">{{ s.blocking_fails|length }} blocking</span>){% endif %}, {{ s.na }} N/A
+    {% if latest and r.id == latest.id %}<span class="ok-tag">current</span>{% endif %}</p>
+  {% else %}<p class="muted">No QC run yet.</p>{% endfor %}
+  {% if editable and actor %}
+    {% if open_run %}<p><a class="button" href="/units/{{ unit.id }}/qc/{{ open_run.id }}">Continue run #{{ open_run.id }}</a></p>
+    {% else %}
+    <form method="post" action="/units/{{ unit.id }}/qc"><button>{{ "Start QC" if not runs else "Start a re-test run" }}</button></form>
+    {% endif %}
+  {% endif %}
+</section>
+
+<section class="card" id="work">
+  <h2>Refurb work</h2>
+  {% for r in repairs %}<p>{{ repair_kinds[r.kind] if r.kind != "other" else "Other" }}{% if r.description %}: {{ r.description }}{% endif %}
+    <span class="muted">— {{ r.by_name }}, {{ when(r.done_at) }}</span></p>
+  {% else %}<p class="muted">No work logged.</p>{% endfor %}
+  {% if editable and actor %}
+  <form method="post" action="/units/{{ unit.id }}/repairs" class="inline">
+    <select name="kind" aria-label="Work type" required><option value="">Work done…</option>
+      {% for k, label in repair_kinds.items() %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</select>
+    <input name="description" placeholder="Detail (optional)" aria-label="Detail">
+    <button>Log work</button>
+  </form>
+  {% endif %}
+
+  <h3>Mod record</h3>
+  <p class="muted small">Mods are done by hand on the console, following the shop's SOP. This box only records that it happened.</p>
+  {% if unit.mod_performed %}
+  <dl class="kv">
+    <dt>Type</dt><dd>{{ unit.mod_type }}</dd>
+    <dt>SOP</dt><dd>{{ unit.mod_method_ref }}</dd>
+    <dt>On firmware</dt><dd>{{ unit.mod_firmware or "—" }}</dd>
+    <dt>By</dt><dd>{{ name_of(unit.mod_by) }}, {{ when(unit.mod_at) }}</dd>
+  </dl>
+  {% else %}<p>No mod performed.</p>{% endif %}
+  {% if editable and actor %}
+  <details>
+    <summary>{{ "Correct the mod record" if unit.mod_performed else "Record a mod" }}</summary>
+    <form method="post" action="/units/{{ unit.id }}/mod" class="stack">
+      <label>Mod type <input name="mod_type" value="{{ unit.mod_type or '' }}" placeholder="e.g. homebrew enabled" required></label>
+      <label>SOP reference <input name="mod_method_ref" value="{{ unit.mod_method_ref or '' }}" placeholder="Doc name + version" required></label>
+      <label>Firmware at time of mod <input name="mod_firmware" value="{{ unit.mod_firmware or unit.firmware_version or '' }}"></label>
+      <button>Record mod</button>
+    </form>
+    {% if unit.mod_performed %}
+    <form method="post" action="/units/{{ unit.id }}/mod/clear" class="inline">
+      <input name="reason" required placeholder="Why remove it" aria-label="Reason"><button class="danger">Remove mod record</button>
+    </form>
+    {% endif %}
+  </details>
+  {% endif %}
+</section>
+
+<section class="card" id="compliance">
+  <h2>Storage &amp; attestation</h2>
+  {% if unit.has_writable_storage %}
+    {% if unit.storage_wiped %}
+    <p class="ok-tag">Wiped</p><p>{{ unit.storage_wipe_method }} — {{ name_of(unit.storage_wiped_by) }}, {{ when(unit.storage_wiped_at) }}</p>
+    {% else %}<p class="warn-tag">Not wiped yet</p>{% endif %}
+    {% if editable and actor %}
+    <form method="post" action="/units/{{ unit.id }}/wipe" class="inline">
+      <input name="method" list="wipe-methods" required placeholder="How it was wiped" aria-label="Wipe method">
+      <datalist id="wipe-methods">
+        <option value="Console factory reset / initialise">
+        <option value="Full HDD format">
+        <option value="System memory format">
+        <option value="Memory card format">
+      </datalist>
+      <button>{{ "Record a new wipe" if unit.storage_wiped else "Record wipe" }}</button>
+    </form>
+    {% endif %}
+  {% else %}<p class="muted">No writable storage recorded for this unit, so no wipe is required.</p>{% endif %}
+
+  <h3>No-preloaded-games attestation</h3>
+  {% if unit.no_preloaded_games %}
+  <p class="ok-tag">Attested</p><p>by {{ name_of(unit.no_preloaded_games_by) }}, {{ when(unit.no_preloaded_games_at) }}</p>
+  {% else %}<p class="warn-tag">Not attested. Required before listable.</p>{% endif %}
+  {% if editable and actor %}
+  <form method="post" action="/units/{{ unit.id }}/attest" class="stack">
+    <label class="check"><input type="checkbox" name="confirm" value="yes" required>
+      I checked this unit and any included storage or media: there are no games, game images or game files on it,
+      and it will be sold with none preloaded.</label>
+    <button>{{ "Re-attest" if unit.no_preloaded_games else "Attest" }} as {{ actor.name }}</button>
+  </form>
+  {% if unit.no_preloaded_games %}
+  <form method="post" action="/units/{{ unit.id }}/attest/withdraw" class="inline">
+    <input name="reason" required placeholder="Why withdraw" aria-label="Reason"><button class="danger">Withdraw</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</section>
+
+<section class="card" id="cosmetic">
+  <h2>Cosmetic</h2>
+  {% if editable and actor %}
+  <form method="post" action="/units/{{ unit.id }}/grade" class="inline">
+    {% for g in ["A", "B", "C"] %}<label class="radio"><input type="radio" name="grade" value="{{ g }}"{% if unit.cosmetic_grade == g %} checked{% endif %} required> {{ g }}</label>{% endfor %}
+    <input name="notes" value="{{ unit.cosmetic_notes or '' }}" placeholder="Scuffs, yellowing, missing feet…" aria-label="Cosmetic notes">
+    <button>Save grade</button>
+  </form>
+  {% else %}<p>Grade {{ unit.cosmetic_grade or "—" }}{% if unit.cosmetic_notes %} — {{ unit.cosmetic_notes }}{% endif %}</p>{% endif %}
+  <div class="photos">
+  {% for slot in photo_slots %}
+    <figure>
+      {% if photos.get(slot) %}<a href="/media/{{ photos[slot].id }}"><img src="/media/{{ photos[slot].id }}" alt="{{ slot }} photo" loading="lazy"></a>
+      {% else %}<div class="empty">no photo</div>{% endif %}
+      <figcaption>{{ slot }}</figcaption>
+      {% if editable and actor %}
+      <form method="post" action="/units/{{ unit.id }}/photos" enctype="multipart/form-data">
+        <input type="hidden" name="slot" value="{{ slot }}">
+        <input type="file" name="file" accept="image/jpeg,image/png,image/webp" capture="environment" required aria-label="{{ slot }} photo">
+        <button>Attach</button>
+      </form>
+      {% endif %}
+    </figure>
+  {% endfor %}
+  </div>
+</section>
+
+<section class="card" id="files">
+  <h2>Clips &amp; test artifacts</h2>
+  {% for a in files %}<p><a href="/media/{{ a.id }}">{{ a.original_name or a.stored_name }}</a> <span class="muted">{{ a.kind }}, {{ (a.size_bytes / 1024)|round|int }} KB{% if a.qc_result_id %}, QC item{% endif %}</span></p>
+  {% else %}<p class="muted">None.</p>{% endfor %}
+  {% if editable and actor %}
+  <form method="post" action="/units/{{ unit.id }}/files" enctype="multipart/form-data" class="inline">
+    <input type="file" name="file" accept="image/*,video/*,text/plain,.txt,.log,.csv" required aria-label="File">
+    <button>Attach</button>
+  </form>
+  <p class="muted small">Photos, clips (MP4/MOV/WebM) and plain-text logs only.</p>
+  {% endif %}
+</section>
+
+<section class="card" id="history">
+  <h2>History</h2>
+  <table class="events">
+    <thead><tr><th>When</th><th>Who</th><th>What</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+    <tr><td>{{ when(e.at) }}</td><td>{{ e.actor }}</td>
+      <td>{{ e.kind.replace("_", " ") }}{% if e.to_status %}: {{ e.from_status or "—" }} → {{ e.to_status }}{% endif %}
+        {% if e.detail != "{}" %}<code class="detail">{{ e.detail }}</code>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

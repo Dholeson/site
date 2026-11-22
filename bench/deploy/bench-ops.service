@@ -1,0 +1,33 @@
+# /etc/systemd/system/bench-ops.service
+# One service + the SQLite file. The DHCP watcher and the Pi-side scanner
+# reader are threads inside it.
+[Unit]
+Description=Bench Ops appliance (intake, QC, provenance)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=bench
+Group=bench
+# `input`: read a USB barcode scanner plugged into the Pi (optional).
+SupplementaryGroups=input
+WorkingDirectory=/opt/bench-ops
+EnvironmentFile=/etc/bench-ops.env
+ExecStart=/opt/bench-ops/.venv/bin/python -m bench_ops serve
+
+# Port 80 (short URL to type on a console) and passive DHCP sniffing. Nothing else.
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW
+NoNewPrivileges=true
+
+# Database and photos live in /var/lib/bench-ops (BENCH_DATA_DIR).
+StateDirectory=bench-ops
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
