@@ -9,8 +9,12 @@ No local server. No Apache. No FileZilla.
 
 ## The three halves
 
-**Projects** (`projects.html`, `projects/`) — everything listed is meant to run
-in a browser. Add a page under `projects/` and an entry in `data/projects.js`.
+**Projects** (`portfolio.html`, `case.html`, `projects/`) — one list, in
+`data/portfolio.js`, drives the Projects page, every case study and the
+homepage's featured pair. The page is `portfolio.html` (served at `/portfolio`)
+but the site calls it Projects, and `/projects` redirects there. To add a
+project, add a block to `data/portfolio.js`; if it runs on this site, put its
+page under `projects/` and link it from that block.
 
 One project is different. The **Discover Cleaner** demo
 (`projects/discover-cleaner-demo/`) is a whole app built in its own repo and

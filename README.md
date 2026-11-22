@@ -2,7 +2,8 @@
 
 Projects you can use in the browser, and a shop for retro consoles.
 
-- **Projects** — `projects.html`, demos in `projects/`
+- **Projects** — `portfolio.html` (served at `/portfolio`, called Projects; `/projects` redirects there),
+  case studies in `case.html`, list in `data/portfolio.js`, demos in `projects/`
   (the Discover Cleaner demo is vendored from its own repo: `npm run sync:discover-cleaner`)
 - **Store** — `store.html`, catalogue in `data/products.js`
 - **Checkout** — `functions/api/checkout.js` (Cloudflare Pages Function + Stripe)

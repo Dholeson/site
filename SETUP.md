@@ -11,14 +11,15 @@ Rough time: **45–60 minutes**, most of it waiting on Stripe verification.
 
 ```
 index.html            Homepage — sends people to either half
-projects.html         Project index
+portfolio.html        Projects page (served at /portfolio; /projects redirects)
+case.html             One case study per project (case.html?id=...)
 projects/             The playable demos (one .html + .js each)
 store.html            Storefront
 product.html          Product detail
 cart.html             Cart
 log.html              Build log
 data/products.js      Catalogue: prices, stock, copy
-data/projects.js      Project list
+data/portfolio.js     Project list: Projects page, case studies, homepage
 functions/api/        Checkout, as a Cloudflare Pages Function
 lib/checkout-core.js  Order pricing (shared by the function and its tests)
 test/                 16 tests for the money path

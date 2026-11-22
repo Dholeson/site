@@ -16,6 +16,13 @@
 //   decisions  [{title, body}] -- the calls I made and why
 //   outcome    one paragraph                  next    one paragraph, optional
 //   note       optional caveat box
+//   featured   true to show it under "Playable projects" on the homepage
+//              (its primary link must be a page on this site)
+//
+// This is the site's one project list: the Projects page (portfolio.html), the
+// case studies and the homepage all read it. Every page under /projects/ must
+// be linked from here (test/projects-page.test.js checks), or nothing on the
+// site leads to it.
 //
 // Order here is the order on the page: lead with the strongest work.
 // Only claim what actually happened. No invented metrics.
@@ -90,8 +97,10 @@ export const work = [
     image: "/assets/portfolio/discover-cleaner.webp",
     imageAlt: "Discover Cleaner's Now page: the song playing, a countdown to when it clears from the backlog, and Like, Keep and Clear now buttons.",
     tags: ["Python", "Flask", "SQLite", "Vanilla JS", "Spotify API", "Last.fm API", "Agent orchestration"],
+    featured: true,
     links: [
       { label: "Open the demo", href: "/projects/discover-cleaner-demo/", primary: true },
+      { label: "Screenshots and setup", href: "/projects/discover-cleaner.html" },
       { label: "Source on GitHub", href: "https://github.com/Dholeson/spotify-discover-cleaner" }
     ],
     problem:
@@ -351,17 +360,20 @@ export const work = [
     year: 2026,
     role: "Solo: product design and direction." + AI,
     users: "Ranked League players who want to improve deliberately, starting with me.",
-    status: "Working; mid-migration to the cloud",
-    access: "Private, demo on request",
+    status: "Live",
+    access: "Free account, in your browser",
     accent: "#eab308",
     monogram: "Lg",
     tags: ["TypeScript", "React", "Riot API", "Claude API", "Cloudflare D1"],
-    links: [],
+    links: [
+      { label: "Open Leagueify", href: "/projects/league-ify/", primary: true },
+      { label: "Source", href: "https://github.com/Dholeson/league-ify" }
+    ],
     problem:
       "Ranked League tells you whether you won. It doesn't tell you what to practise, or whether the thing you're practising is getting better.",
     shipped: [
       "A campaign that tracks what you're working on and measures it across your matches.",
-      "Match history from Riot's official API, plus live data from the game client while you play.",
+      "Match history from Riot's official API, plus live data from the game client while you play (local version only).",
       "An AI coach that turns your own history into specific advice."
     ],
     decisions: [
@@ -378,8 +390,8 @@ export const work = [
         body: "22 tests run the old and new storage side by side, and all 1,523 stored matches come back identical."
       }
     ],
-    outcome: "Phase 1 of 5 of the cloud migration is done and tested.",
-    next: "Open question: the live in-game features can only run on the player's own PC, so the cloud version needs a small local companion or has to ship without them."
+    outcome: "Live on dhole.dev since November 2026, open to anyone: sign up with an email and password, and each account's data is kept separate.",
+    next: "Password reset and email verification. The live in-game features can only run on the player's own PC, so bringing them to the hosted version needs a small local companion."
   },
 
   {
@@ -437,6 +449,7 @@ export const work = [
     accent: "#22d3ee",
     monogram: "◎",
     tags: ["Gamepad API", "Canvas", "No dependencies"],
+    featured: true,
     links: [{ label: "Open it", href: "/projects/drift-tester.html", primary: true }],
     problem:
       "Used controllers get sold as \"no drift\" because someone wiggled the stick and shrugged. I wanted a number I could put in a listing.",

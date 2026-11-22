@@ -59,9 +59,13 @@ function renderProfile() {
 function card(w) {
   const caseHref = `/case.html?id=${encodeURIComponent(w.id)}`;
   const primary = w.links.find(l => l.primary);
+  // The picture opens the thing itself (the demo, the app, the live site) when
+  // there is one; the title and "Case study" open the write-up. It duplicates
+  // the primary button, so it stays out of the tab order and the a11y tree.
+  const thumbHref = primary ? primary.href : caseHref;
   return `
   <article class="card pf-card">
-    <a class="pf-thumb" href="${caseHref}" style="--proj-accent:${esc(w.accent)}" tabindex="-1" aria-hidden="true">
+    <a class="pf-thumb" href="${esc(thumbHref)}"${external(thumbHref)} style="--proj-accent:${esc(w.accent)}" tabindex="-1" aria-hidden="true">
       ${thumb(w)}
       ${w.access ? `<span class="chip pf-access">${esc(w.access)}</span>` : ""}
     </a>
@@ -98,7 +102,7 @@ export function renderCase() {
     return;
   }
 
-  document.title = `${w.title} — Portfolio — dhole.dev`;
+  document.title = `${w.title} — Projects — dhole.dev`;
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.setAttribute("content", w.pitch);
 

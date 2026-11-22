@@ -2,7 +2,7 @@
 // Most shop traffic will arrive by direct link, so this page's job is to catch
 // everyone else and make it obvious there are two things here.
 
-import { projects } from "../data/projects.js";
+import { work } from "../data/portfolio.js";
 import { products, formatMoney } from "../data/products.js";
 import { esc } from "./esc.js";
 
@@ -11,9 +11,15 @@ export function renderHome() {
   renderFeaturedProducts();
 }
 
+// Same list as the Projects page (data/portfolio.js); `featured` picks the two
+// shown here, each opening its primary link.
 function renderFeaturedProjects() {
   const el = document.getElementById("home-projects");
-  const featured = projects.filter(p => p.demo).slice(0, 2);
+  const featured = work
+    .filter(w => w.featured)
+    .map(w => ({ ...w, href: w.links.find(l => l.primary)?.href }))
+    .filter(w => w.href)
+    .slice(0, 2);
 
   if (!featured.length) {
     el.innerHTML = `<p class="muted">No live projects yet.</p>`;
@@ -22,15 +28,15 @@ function renderFeaturedProjects() {
 
   el.innerHTML = featured.map(p => `
     <article class="card project-card">
-      <a class="project-preview" href="${esc(p.demo)}" style="--proj-accent:${esc(p.accent)}">
+      <a class="project-preview" href="${esc(p.href)}" style="--proj-accent:${esc(p.accent)}">
         <span class="project-preview-glyph" aria-hidden="true">${projectGlyph(p.id)}</span>
         <span class="chip chip-live">Playable</span>
       </a>
       <div class="card-body">
-        <h3><a href="${esc(p.demo)}">${esc(p.title)}</a></h3>
-        <p class="muted">${esc(p.tagline)}</p>
-        <div class="chips">${p.tags.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
-        <a class="btn btn-sm" href="${esc(p.demo)}" style="margin-top:auto">Open it →</a>
+        <h3><a href="${esc(p.href)}">${esc(p.title)}</a></h3>
+        <p class="muted">${esc(p.pitch)}</p>
+        <div class="chips">${p.tags.slice(0, 4).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
+        <a class="btn btn-sm" href="${esc(p.href)}" style="margin-top:auto">Open it →</a>
       </div>
     </article>`).join("");
 }
