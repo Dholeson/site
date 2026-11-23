@@ -1,11 +1,18 @@
 -- league-ify storage on D1 (multi-tenant).
 --
--- Applied against the site's existing `dhole-workshop` D1 database, which also
--- holds the shop/admin tables. league-ify owns the four tables below; nothing
--- here touches the rest of the schema.
+-- Applied to the site's `dhole-workshop` D1 database (bound as DB). These four
+-- tables are the only schema the site creates in it, and nothing here touches
+-- any other table.
 --
---   npx wrangler d1 execute dhole-workshop --local  --file=migrations/0001_league_ify.sql
---   npx wrangler d1 execute dhole-workshop --remote --file=migrations/0001_league_ify.sql
+-- scripts/build-site.mjs copies this file into the site's migrations/. Apply
+-- it from the site checkout, whose wrangler.toml sets migrations_dir:
+--
+--   npx wrangler d1 migrations apply dhole-workshop --local
+--   npx wrangler d1 migrations apply dhole-workshop --remote
+--
+-- Use `migrations apply`, not `d1 execute --file`: it records what ran, so later
+-- migrations apply in order. Every statement is IF NOT EXISTS, so it is safe on
+-- a database where this file was already run with `d1 execute`.
 --
 -- WHY MATCHES LIVE IN THEIR OWN TABLE
 --

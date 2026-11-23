@@ -10,12 +10,17 @@
 // JavaScript is not 0.3, and that turns into mischarged customers.
 //
 // To add a product: copy a block, give it a new unique `id`, and commit.
+//
+// Refurbished units from the bench app are NOT here: they live in D1 (see
+// lib/store-db.js) under ids like "ro-0042". Never give a product here an id
+// of that shape; test/checkout.test.js checks.
 
 export const CURRENCY = "usd";
 
 // Flat-rate shipping per class, in cents. The heaviest class in an order wins
-// (see pickShipping below) rather than summing, so a console plus three
-// controllers ships as one console-sized box.
+// (lib/checkout-core.js shippingFor, mirrored for display in assets/cart.js)
+// rather than summing, so a console plus three controllers ships as one
+// console-sized box. Bench units carry the same classes.
 export const SHIPPING = {
   small:   { label: "Standard (accessories)", cents: 600 },
   console: { label: "Standard (console box)", cents: 1800 }
@@ -179,16 +184,6 @@ export function formatMoney(cents, currency = CURRENCY) {
     style: "currency",
     currency: currency.toUpperCase()
   }).format(cents / 100);
-}
-
-// Heaviest shipping class in the order decides the rate, rather than charging
-// per item. One box, one rate.
-export function pickShipping(lines) {
-  const hasConsole = lines.some(l => {
-    const p = findProduct(l.id);
-    return p && p.shippingClass === "console";
-  });
-  return hasConsole ? SHIPPING.console : SHIPPING.small;
 }
 
 export const CONDITION_LABELS = {

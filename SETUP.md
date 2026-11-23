@@ -17,11 +17,13 @@ store.html            Storefront
 product.html          Product detail
 cart.html             Cart
 log.html              Build log
-data/products.js      Catalogue: prices, stock, copy
+data/products.js      Hand-made catalogue: prices, stock, copy
 data/projects.js      Project list
-functions/api/        Checkout, as a Cloudflare Pages Function
-lib/checkout-core.js  Order pricing (shared by the function and its tests)
-test/                 16 tests for the money path
+functions/api/        Checkout, the bench API, the public store API and the
+                      Stripe webhook, as Cloudflare Pages Functions
+lib/                  Order pricing, live bench stock (D1), Stripe signatures
+migrations/           D1 tables: league-ify's (0001) and the store's (1001)
+test/                 Tests for the money path and the live bench stock
 ```
 
 ---
@@ -129,6 +131,12 @@ full order and check:
 Also press Back on the Stripe page once and confirm you land on
 `/checkout-cancelled.html` **with the cart still intact**.
 
+Once the bench is connected ("Live bench stock" below), run one more order
+with a bench unit in it. After paying, the unit disappears from the store and
+the bench app's next sync records the sale. A checkout abandoned on Stripe's
+page holds its unit until Stripe expires the session, about half an hour, and
+then the unit is back on sale.
+
 ---
 
 ## Step 6 — Go live
@@ -146,11 +154,153 @@ know the live path works.
 
 ---
 
+## Live bench stock (the bench app, RefurbOS)
+
+The bench app on the workshop PC can put each refurbished unit on this store
+with its real photos, and take it down again when it sells elsewhere. When a
+unit sells here, the bench app picks up the sale (buyer, address, amount) on
+its next sync. The units live in the site's D1 database and the photos in an
+R2 bucket, both on your Cloudflare account.
+
+**Done on 2026-11-23:** the R2 bucket, the remote D1 migration, the
+`BENCH_TOKEN` secret and RefurbOS's `.env` (steps 1–3 below). Only the Stripe
+webhook (step 4) is left, once Stripe is connected. The bucket must exist
+before any deploy: `wrangler.toml` binds it, and a build without it fails.
+
+**Stripe still isn't connected** (steps 3–6 above). Until it is, bench units
+show on the store like everything else, but pressing Checkout says
+"Checkout is not configured." Nothing is held or charged.
+
+These are one-time steps. Run them from this folder, signed in with
+`npx wrangler login`.
+
+### 1. Create the photo bucket
+
+```bash
+npx wrangler r2 bucket create dhole-store-images
+```
+
+The name must be exactly that: `wrangler.toml` binds it as `STORE_IMAGES`. If
+Cloudflare asks you to enable R2 on the account first, do that in the
+dashboard (**R2 Object Storage**); the free allowance is far more than a few
+hundred photos.
+
+### 2. Create the store's tables
+
+```bash
+npx wrangler d1 migrations apply dhole-workshop --remote
+```
+
+It lists what it will apply (the store's `1001_store.sql`, plus league-ify's
+`0001_league_ify.sql` if that hasn't run yet) and asks before it does
+anything. Use this command, not `d1 execute`: it records what ran, so it is
+safe to run again.
+
+### 3. Give the bench app a key
+
+Make a long random token. Either of these prints 64 random characters:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+openssl rand -hex 32
+```
+
+Store it as a Pages secret, pasting it at the prompt:
+
+```bash
+npx wrangler pages secret put BENCH_TOKEN
+```
+
+Then, on the workshop PC, put the same token in the bench app's `.env`:
+
+```
+STORE_URL=https://dhole.dev
+STORE_TOKEN=<the same token>
+```
+
+The store refuses everything from the bench until `BENCH_TOKEN` is set, and a
+token under 32 characters counts as not set. Keep the token out of git, chat
+and email.
+
+### 4. Tell the store when Stripe payments finish (after Stripe step 3)
+
+This needs the Stripe account. In the Stripe dashboard open
+**Developers → Webhooks** and add an endpoint (Stripe may call it an *event
+destination*):
+
+- URL: `https://dhole.dev/api/stripe/webhook`
+- Events: `checkout.session.completed` and `checkout.session.expired`
+  (nothing else is needed)
+
+Stripe then shows a **signing secret** starting `whsec_`. Store it:
+
+```bash
+npx wrangler pages secret put STRIPE_WEBHOOK_SECRET
+```
+
+Test mode and live mode have separate endpoints and separate signing secrets.
+When you go live (step 6), add the endpoint again in live mode and replace
+`STRIPE_WEBHOOK_SECRET` with the live one.
+
+While bench units are on sale, leave bank-debit payment methods (ACH Direct
+Debit and the like) off in **Settings → Payment methods**. They finish
+checkout before the money arrives, and the store only records paid sales.
+Cards, Apple Pay, Google Pay and Link are fine.
+
+### 5. Redeploy, then check
+
+Secrets and the new bucket reach the site on its next deployment: merge to
+`main`, or `npx wrangler pages deploy .`. Then:
+
+```bash
+curl -H "Authorization: Bearer <your token>" https://dhole.dev/api/bench/listings
+```
+
+- `{"listings":[]}`: ready. Turn on "Also on dhole.dev" in the bench app.
+- `503 Bench API is not configured.`: `BENCH_TOKEN` is missing or too short,
+  or the site hasn't been redeployed since you set it.
+- `401`: the token you sent isn't the one stored.
+
+### Testing the bench app against a local copy
+
+To try the whole loop on one machine without touching the real store:
+
+```bash
+npx wrangler d1 migrations apply dhole-workshop --local
+```
+
+Create `.dev.vars` in this folder (it is gitignored) with local-only values:
+
+```
+BENCH_TOKEN=<any 32+ characters, not the production token>
+STRIPE_WEBHOOK_SECRET=whsec_local_anything
+```
+
+Then `npm run dev` serves the site at `http://localhost:8788` with a local D1
+and a local R2 (under `.wrangler/state`). In the bench app's `.env`, set
+`STORE_URL=http://localhost:8788` and `STORE_TOKEN` to the same local token.
+If the bench app runs on another computer, start the site with
+`npm run dev -- --ip 0.0.0.0` and use this machine's address instead.
+
+Checkout locally says "not configured" unless you also add a **test-mode**
+`STRIPE_SECRET_KEY=sk_test_...` to `.dev.vars`; with Stripe's CLI,
+`stripe listen --forward-to localhost:8788/api/stripe/webhook` prints the
+`whsec_` value to use for `STRIPE_WEBHOOK_SECRET`.
+
+> `.dev.vars` is kept out of git, but a manual `npx wrangler pages deploy .`
+> uploads every file in this folder, `.dev.vars` included, where anyone could
+> download it. Never put a production secret in it, and move it out of the
+> folder before a manual deploy. Deploys from GitHub never see it.
+
+---
+
 ## Running it day to day
 
 ### Add or edit a product
 
-All in `data/products.js`. Copy a block, give it a new unique `id`, deploy.
+Refurbished units come from the bench app; you never add those here. For
+hand-made items it's all in `data/products.js`. Copy a block, give it a new
+unique `id` (never one like `ro-0042`, which is the bench's), deploy.
 The storefront, the cart, and the checkout function all read that one file, so
 there is nothing to keep in sync.
 
@@ -159,8 +309,12 @@ money quietly mischarges people.
 
 ### When something sells
 
-Drop its `stock` and deploy. At `stock: 0` it shows as sold out and the
-checkout function refuses it even if it is sitting in someone's old cart.
+**A refurbished unit from the bench:** nothing to do here. The store marks it
+sold, and the bench app picks the sale up on its next sync.
+
+**A hand-made item from `data/products.js`:** drop its `stock` and deploy. At
+`stock: 0` it shows as sold out and the checkout function refuses it even if it
+is sitting in someone's old cart.
 
 ### Branding
 
@@ -181,21 +335,31 @@ It appears on both the projects index and the homepage. Anything without a
 ### Local preview
 
 ```bash
-npm run dev     # wrangler pages dev . — runs the function too
-npm test        # the 16 checkout tests
+npx wrangler d1 migrations apply dhole-workshop --local   # once, and after new migrations
+npm run dev     # wrangler pages dev . — Functions, a local D1 and a local R2
+npm test        # the money path, the live bench stock, the vendored apps
 ```
+
+To point the bench app at your local copy, see "Testing the bench app against
+a local copy" below.
 
 ---
 
 ## Limitations you should know about
 
-**Inventory does not decrement itself.** Stock is a number in a file. If two
-people buy your last GameCube minutes apart, both payments succeed and you have
-oversold. At stock 2–3, that is a real risk rather than a theoretical one.
+**Hand-made items' stock does not decrement itself.** For anything in
+`data/products.js`, stock is a number in a file. If two people buy your last
+GameCube minutes apart, both payments succeed and you have oversold. At stock
+2–3, that is a real risk rather than a theoretical one. Cheapest fix: update
+`stock` promptly.
 
-Cheapest fix: update `stock` promptly. Proper fix: move stock into
-**Cloudflare KV** and decrement it inside the checkout function — maybe an
-hour's work on top of what is here, worth it past a few units a week.
+**Refurbished units from the bench don't have that problem.** Each is one
+listing in the database. Checkout puts the unit on hold before sending the
+buyer to Stripe, so a second buyer is told it's on hold; the sale is recorded
+when Stripe says it's paid. The hold lasts about half an hour, the same as the
+Stripe checkout page. The one gap: if a payment finishes in the last seconds
+of a hold just as someone else starts checking out, both can pay. The bench app
+flags that as "sold twice" so you can refund one.
 
 **Sales tax is off by default.** `ENABLE_AUTOMATIC_TAX` in `wrangler.toml` is
 `"false"`, because Stripe Tax rejects sessions until you have set an origin
@@ -219,7 +383,16 @@ product's `image` at them.
 ## Security notes
 
 - The Stripe key lives only in a Pages secret. Never in this repo, never sent
-  to a browser.
+  to a browser. So do `BENCH_TOKEN` and `STRIPE_WEBHOOK_SECRET`.
+- The bench API (`/api/bench/...`) refuses every request until `BENCH_TOKEN`
+  is set to at least 32 characters, and then answers only requests carrying
+  it. Anyone holding the token can put listings on your store, so treat it
+  like a password: if it leaks, set a new one here and in the bench app.
+- The Stripe webhook only believes events signed with `STRIPE_WEBHOOK_SECRET`
+  and at most five minutes old, so nobody can mark a unit sold by posting to
+  it.
+- Bench photos are re-encoded by the bench app before upload, with no EXIF
+  data, so a phone photo's GPS position (your workshop) is never published.
 - The browser sends **only ids and quantities** to checkout. The function
   prices the order from its own copy of the catalogue, so editing the cart in
   devtools changes what you order, never what it costs. `test/checkout.test.js`
@@ -240,5 +413,7 @@ product's `image` at them.
 npm test
 ```
 
-16 checks over price tampering, stock limits, malformed carts, duplicate lines,
-shipping selection, and Stripe payload construction.
+Checks over price tampering, stock limits, malformed carts, duplicate lines,
+shipping selection and Stripe payload construction; the bench API, the public
+store API, bench-unit holds and the Stripe webhook against a real SQLite
+standing in for D1; and the vendored Discover Cleaner and league-ify builds.

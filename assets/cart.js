@@ -5,8 +5,14 @@
 // server-side by the Worker at checkout. That means a stale cart in someone's
 // browser can never lock in an old price, and an edited cart in devtools can
 // never buy a console for a dollar.
+//
+// Bench units (ids like "ro-0042") are one of a kind: their quantity is
+// always 1. Their lines are kept even while the live listings haven't loaded,
+// or when the unit has sold or is on hold, so the cart can say so rather than
+// silently dropping them.
 
-import { findProduct, pickShipping } from "../data/products.js";
+import { SHIPPING } from "../data/products.js";
+import { findAny, isBenchId, BENCH_LISTING_ID, benchState } from "./catalogue.js";
 
 const KEY = "dhole_store_cart_v1";
 
@@ -17,8 +23,8 @@ function read() {
     // Drop anything malformed or referring to a product that no longer exists.
     return raw
       .filter(l => l && typeof l.id === "string" && Number.isInteger(l.qty) && l.qty > 0)
-      .filter(l => findProduct(l.id))
-      .map(l => ({ id: l.id, qty: l.qty }));
+      .filter(l => isBenchId(l.id) ? BENCH_LISTING_ID.test(l.id) : findAny(l.id))
+      .map(l => ({ id: l.id, qty: isBenchId(l.id) ? 1 : l.qty }));
   } catch {
     return [];
   }
@@ -38,10 +44,14 @@ export function countItems() {
   return read().reduce((n, l) => n + l.qty, 0);
 }
 
+export function inCart(id) {
+  return read().some(l => l.id === id);
+}
+
 // Clamps to available stock and returns what actually happened so the UI can
 // tell the customer "only 3 left" instead of silently ignoring them.
 export function addToCart(id, qty = 1) {
-  const product = findProduct(id);
+  const product = findAny(id);
   if (!product) return { ok: false, reason: "not-found" };
   if (product.stock < 1) return { ok: false, reason: "out-of-stock" };
 
@@ -58,13 +68,19 @@ export function addToCart(id, qty = 1) {
 }
 
 export function setQty(id, qty) {
-  const product = findProduct(id);
-  if (!product) return;
   const lines = read();
   const line = lines.find(l => l.id === id);
   if (!line) return;
 
-  const next = Math.max(0, Math.min(Math.floor(qty), product.stock));
+  let max;
+  if (isBenchId(id)) max = 1;
+  else {
+    const product = findAny(id);
+    if (!product) return;
+    max = product.stock;
+  }
+
+  const next = Math.max(0, Math.min(Math.floor(qty), max));
   if (next === 0) return removeFromCart(id);
   line.qty = next;
   write(lines);
@@ -79,16 +95,36 @@ export function clearCart() {
 }
 
 // Resolves the cart into full line items with prices, for display only.
+// A line whose product can't be shown is { id, qty, unavailable } with
+// unavailable = "checking" (live listings still loading), "unreachable"
+// (they failed to load) or "gone" (sold, withdrawn or on hold). Unavailable
+// lines count toward nothing.
 export function priceCart() {
   const lines = read();
-  const items = lines.map(l => {
-    const p = findProduct(l.id);
-    return { ...p, qty: l.qty, lineTotalCents: p.priceCents * l.qty };
-  });
+  const items = [];
+  const unavailable = [];
+  for (const l of lines) {
+    const p = findAny(l.id);
+    if (p) {
+      items.push({ ...p, qty: l.qty, lineTotalCents: p.priceCents * l.qty });
+    } else {
+      const s = benchState();
+      unavailable.push({
+        id: l.id,
+        qty: l.qty,
+        unavailable: s === "failed" ? "unreachable" : s === "ok" ? "gone" : "checking"
+      });
+    }
+  }
   const subtotalCents = items.reduce((n, i) => n + i.lineTotalCents, 0);
-  const shipping = items.length ? pickShipping(lines) : { label: "—", cents: 0 };
+  // Largest box in the order sets the rate; the checkout function decides
+  // the real amount.
+  const shipping = !items.length
+    ? { label: "—", cents: 0 }
+    : items.some(i => i.shippingClass === "console") ? SHIPPING.console : SHIPPING.small;
   return {
     items,
+    unavailable,
     subtotalCents,
     shippingCents: shipping.cents,
     shippingLabel: shipping.label,

@@ -20,16 +20,22 @@ hand: the next sync overwrites it. It is also the only path with a different
 security policy. `_headers` lets it load album covers from Spotify's image
 server (`https://i.scdn.co`), and every other page keeps the strict default.
 
-**Store** (`store.html`, `product.html`, `cart.html`) — reads `data/products.js`.
-Change a price or a stock count there and deploy.
+**Store** (`store.html`, `product.html`, `cart.html`) — reads `data/products.js`
+for hand-made items: change a price or a stock count there and deploy.
+Refurbished units come from the bench app instead, which pushes each one (copy,
+price, real photos) to the site's database and pulls the sales back. See
+"Live bench stock" in `SETUP.md`.
 
 **Log** (`log.html`) — the week-by-week notes, from `data/weeks.js`.
 
-## The one non-static piece
+## The non-static pieces
 
 Taking card payments needs a server, so `functions/api/checkout.js` runs as a
-Cloudflare Pages Function on the same domain. It is the only piece holding a
-secret, and it is deployed by the same command as everything else.
+Cloudflare Pages Function on the same domain. The live bench stock adds three
+more (`functions/api/bench/`, `functions/api/store/`,
+`functions/api/stripe/webhook.js`), backed by a D1 database and an R2 photo
+bucket. They hold the secrets, and they are deployed by the same command as
+everything else.
 
 Prices live in `data/products.js` and are read by *both* the site and the
 checkout function. The browser only ever sends an id and a quantity — never a
