@@ -6,8 +6,14 @@ compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "."
 
-# Public, non-secret configuration. The Stripe key is NOT here -- set it with:
-#   npx wrangler pages secret put STRIPE_SECRET_KEY
+# Public, non-secret configuration. Secrets are NOT here -- each is a Pages
+# secret, set with `npx wrangler pages secret put <NAME>` (SETUP.md):
+#   STRIPE_SECRET_KEY      checkout (functions/api/checkout.js)
+#   STRIPE_WEBHOOK_SECRET  the Stripe webhook (functions/api/stripe/webhook.js)
+#   BENCH_TOKEN            the bench API RefurbOS calls (functions/api/bench/)
+# For `npm run dev`, put local values in .dev.vars. It is gitignored, but a
+# manual `npx wrangler pages deploy .` uploads it as a public file: never put
+# a production secret in it, and move it aside before a manual deploy.
 [vars]
 SITE_URL = "https://dhole.dev"
 
@@ -18,21 +24,28 @@ SHIP_TO_COUNTRIES = "US"
 # registrations). Turning it on before that makes Stripe reject every session.
 ENABLE_AUTOMATIC_TAX = "false"
 
-# league-ify's D1 database. The only schema this repo creates in it is
-# migrations/0001_league_ify.sql: documents, matches, lu_users, lu_sessions.
-# Bound as env.DB inside every Pages Function, but only the league-ify API
-# (functions/api/league-ify) uses it. Checkout and stock don't touch it.
+# The site's D1 database, shared by two owners. The schema this repo creates in
+# it is the migrations folder:
+#   migrations/0001_league_ify.sql  league-ify's tables (documents, matches,
+#     lu_users, lu_sessions), vendored from Dholeson/league-ify, used only by
+#     its API (functions/api/league-ify)
+#   migrations/1001_store.sql  the store's live bench stock (store_listings,
+#     store_sales), the site's own, used by the bench API, the public store
+#     API, checkout and the Stripe webhook
+# league-ify's build copies its migrations in by name, numbered from 0001; the
+# site's own are numbered from 1001 so the two never collide.
+# Bound as env.DB inside every Pages Function.
 #
 # No [env.preview] section anywhere in this file, deliberately: Pages treats
 # non-inheritable keys as all-or-nothing, so adding one would silently drop the
-# [vars] above and this binding from preview deployments.
+# [vars] above and these bindings from preview deployments.
 #
 # Local workflow (remote D1 development is not possible on Pages):
 #   npx wrangler d1 migrations apply dhole-workshop --local
 #   npm run dev
-# Without the first step, league-ify sign-up fails with "no such table". Use
-# `migrations apply`, not `d1 execute --file`: it records what ran, so later
-# migrations apply in order. If you pass --persist-to, pass the SAME value to
+# Without the first step, league-ify sign-up and the bench API fail with
+# "no such table". Use `migrations apply`, not `d1 execute --file`: it records
+# what ran, so later migrations apply in order. If you pass --persist-to, pass the SAME value to
 # both commands or you will migrate one database and query another.
 [[d1_databases]]
 binding = "DB"
@@ -42,3 +55,11 @@ database_id = "7f733c72-d6b6-4555-a49c-8c706ac506a8"
 # real preview database, so this is a placeholder, not an id.
 preview_database_id = "DB"
 migrations_dir = "migrations"
+
+# Photos of bench units, pushed by RefurbOS through PUT /api/bench/images/ and
+# served at /api/store/img/. Keys are bench/<sha256>.jpg. Create the bucket
+# once with `npx wrangler r2 bucket create dhole-store-images`; `npm run dev`
+# uses a local stand-in under .wrangler/state instead.
+[[r2_buckets]]
+binding = "STORE_IMAGES"
+bucket_name = "dhole-store-images"

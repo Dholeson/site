@@ -43,6 +43,8 @@
 /assets/brand/*
   Cache-Control: public, max-age=604800, must-revalidate
 
-# Never cache the checkout endpoint.
+# Never cache anything static under /api/. Note that _headers rules don't
+# reach responses from Pages Functions (every /api/ endpoint is one): each
+# Function sets its own Cache-Control, e.g. /api/store/img/* is immutable.
 /api/*
   Cache-Control: no-store

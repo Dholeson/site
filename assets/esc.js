@@ -1,7 +1,7 @@
 // HTML-escape a value before putting it in an innerHTML template.
-// Site copy is authored in this repo rather than submitted by anyone, but
-// escaping costs nothing and stops a stray quote or ampersand in a title from
-// breaking the markup.
+// Most site copy is authored in this repo, but bench listings (names, blurbs,
+// details) arrive from the bench app through /api/store/listings, so every
+// value that reaches innerHTML goes through here.
 export function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, c => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
