@@ -162,6 +162,11 @@ unit sells here, the bench app picks up the sale (buyer, address, amount) on
 its next sync. The units live in the site's D1 database and the photos in an
 R2 bucket, both on your Cloudflare account.
 
+**Done on 2026-11-23:** the R2 bucket, the remote D1 migration, the
+`BENCH_TOKEN` secret and RefurbOS's `.env` (steps 1–3 below). Only the Stripe
+webhook (step 4) is left, once Stripe is connected. The bucket must exist
+before any deploy: `wrangler.toml` binds it, and a build without it fails.
+
 **Stripe still isn't connected** (steps 3–6 above). Until it is, bench units
 show on the store like everything else, but pressing Checkout says
 "Checkout is not configured." Nothing is held or charged.

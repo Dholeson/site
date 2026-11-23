@@ -205,10 +205,15 @@ These are why a local session is more useful than a cloud one:
 1. **Stripe is not connected.** `SETUP.md` step 3 onward. Until
    `STRIPE_SECRET_KEY` is set as a Pages secret, checkout returns a clear
    "not configured" error rather than failing silently. Bench units still
-   show on the store meanwhile. Live bench stock also needs the R2 bucket,
-   `BENCH_TOKEN`, the remote D1 migration and the Stripe webhook
-   (`SETUP.md`, "Live bench stock"); none of that has run against the real
-   Cloudflare account or Stripe yet, only `wrangler pages dev` locally.
+   show on the store meanwhile. Live bench stock's Cloudflare side was set up
+   on 2026-11-23 from the owner's PC: R2 bucket `dhole-store-images` created,
+   `1001_store.sql` applied `--remote` (`store_listings` / `store_sales` exist
+   in the live `dhole-workshop`), `BENCH_TOKEN` set as a Pages production
+   secret, and RefurbOS's `.env` has the matching `STORE_URL` / `STORE_TOKEN`.
+   Still to do: the Stripe webhook and `STRIPE_WEBHOOK_SECRET` once Stripe
+   exists (`SETUP.md`, "Live bench stock"). The first Pages build of this
+   branch failed ("Deploy failed") before the bucket existed; the binding
+   needs the bucket to exist before a deploy.
 2. **`SSL_ERROR_NO_CYPHER_OVERLAP`** was seen on a `*.pages.dev` preview URL in
    Firefox. Untriaged — most likely antivirus TLS scanning or a Firefox TLS
    setting, but nobody has actually loaded the production URL to check.
