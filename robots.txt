@@ -1,11 +1,15 @@
 User-agent: *
 Allow: /
 
-# Nothing useful to index behind checkout, and these pages should never show up
-# in search results ahead of the store itself.
-Disallow: /cart.html
-Disallow: /order-complete.html
-Disallow: /checkout-cancelled.html
+# The store's APIs are for the storefront and the bench app, not for search
+# results. The one exception is the product photos (/api/store/img/): Google
+# Images, product results and the link-preview crawlers (X's honours this
+# file) all need to fetch them. The longer, more specific Allow wins.
+Allow: /api/store/img/
 Disallow: /api/
+
+# Cart, checkout-result and 404 pages carry <meta name="robots"
+# content="noindex">. They are deliberately NOT disallowed here: a crawler
+# that may not fetch a page never sees its noindex.
 
 Sitemap: https://dhole.dev/sitemap.xml

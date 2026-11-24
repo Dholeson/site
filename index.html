@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dhole.dev — projects and retro consoles</title>
-  <meta name="description" content="Browser-playable side projects, and tested retro game consoles and accessories for sale." />
+  <title>dhole.dev — tested retro consoles &amp; browser projects</title>
+  <meta name="description" content="Refurbished N64, SNES and GameCube consoles and controllers, opened, cleaned and tested before they are listed. Plus side projects that run in your browser." />
   <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
   <link rel="canonical" href="https://dhole.dev/" />
@@ -24,21 +24,38 @@
   <link rel="stylesheet" href="/assets/site.css" />
   <link rel="stylesheet" href="/assets/pages.css" />
   <script type="module" src="/assets/entry/home.js"></script>
+  <!-- Structured data: a data block, never executed, so the CSP has nothing
+       to block. The site's name for search results, and who runs it. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebSite", "@id": "https://dhole.dev/#website", "name": "dhole.dev", "url": "https://dhole.dev/" },
+      { "@type": "Organization", "@id": "https://dhole.dev/#org", "name": "dhole.dev", "url": "https://dhole.dev/",
+        "logo": "https://dhole.dev/assets/brand/apple-touch-icon.png",
+        "description": "Refurbished retro game consoles and controllers, tested before they are listed." }
+    ]
+  }
+  </script>
 </head>
 <body>
+  <header class="site-header"></header>
   <section class="hero">
     <div class="wrap">
       <p class="eyebrow">Projects &amp; hardware</p>
-      <h1>Things I build, and <span class="grad">consoles I bring back</span>.</h1>
+      <h1>Things I build, and consoles I bring back.</h1>
       <p>
-        Every project here runs in your browser — no downloads, no install, just open it.
-        The shop is the other half: retro consoles and accessories, cleaned and tested
-        before they go out.
+        Open browser tools without downloading or installing anything, or shop retro
+        consoles and accessories cleaned and tested before sale.
       </p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="/projects.html">Try the projects</a>
-        <a class="btn" href="/store.html">Visit the shop</a>
+        <a class="btn btn-primary" href="/projects">Try the projects</a>
+        <a class="btn btn-primary" href="/store">Visit the shop</a>
       </div>
+      <p class="hero-note">
+        Consoles are opened, cleaned, and boot-tested before listing. Controller sticks
+        are measured with the drift tester on this site.
+      </p>
     </div>
   </section>
 
@@ -46,8 +63,8 @@
     <div class="wrap">
       <section class="section">
         <div class="section-head">
-          <h2>Playable projects</h2>
-          <a class="more" href="/projects.html">All projects →</a>
+          <h2>Browser tools</h2>
+          <a class="more" href="/projects">See all browser tools</a>
         </div>
         <div class="grid grid-2" id="home-projects"></div>
       </section>
@@ -55,7 +72,7 @@
       <section class="section">
         <div class="section-head">
           <h2>In the shop</h2>
-          <a class="more" href="/store.html">Everything for sale →</a>
+          <a class="more" href="/store">Everything for sale →</a>
         </div>
         <div class="grid" id="home-products"></div>
       </section>
@@ -70,9 +87,18 @@
               site, so when a listing says the stick is good, that is a reading rather
               than an opinion.
             </p>
-            <a class="btn btn-sm" href="/projects/drift-tester.html">Try the drift tester →</a>
+            <a class="btn btn-sm" href="/projects/drift-tester">Try the drift tester →</a>
           </div>
         </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><h2>More on dhole.dev</h2></div>
+        <ul class="more-links">
+          <li><a href="/portfolio"><b>Portfolio</b><span>Case studies of products I've shipped: the problem, the decisions, the outcome.</span></a></li>
+          <li><a href="/minecraft"><b>Lazy Sunday</b><span>One-click modded Minecraft for friends: click Play and land in the server, mods and all.</span></a></li>
+          <li><a href="/shipping-returns"><b>Shipping &amp; returns</b><span>Flat-rate US shipping, two business days to ship, and how every unit is tested.</span></a></li>
+        </ul>
       </section>
     </div>
   </main>

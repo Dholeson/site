@@ -190,9 +190,11 @@ function measureRest() {
 }
 
 function renderVerdict() {
+  let drifting = false;
   const rows = ["Left stick", "Right stick"].map((label, i) => {
     const { offset, jitter } = state.rest[i];
     const v = classify(offset, jitter);
+    if (v.cls !== "in") drifting = true;
     return `<tr>
       <td>${label}</td>
       <td class="mono">${offset.toFixed(3)}</td>
@@ -210,7 +212,12 @@ function renderVerdict() {
       Rest offset is how far from centre the stick sits untouched. Jitter is the spread
       across the sample. Anything under ${DEADZONE} sits inside a typical game's deadzone
       and will not move your character on its own.
-    </p>`;
+    </p>${drifting ? `
+    <div class="notice info drift-cta">
+      <strong>Drifting stick?</strong> Every controller in the shop was measured on this
+      page before it was listed.
+      <div><a class="btn btn-sm btn-primary" href="/store">See tested controllers →</a></div>
+    </div>` : ""}`;
 }
 
 function classify(offset, jitter) {

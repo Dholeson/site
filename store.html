@@ -3,38 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Store — retro consoles and accessories | dhole.dev</title>
-  <meta name="description" content="Tested and refurbished retro game consoles, controllers, and accessories." />
+  <title>Refurbished N64, SNES &amp; GameCube Consoles, Tested | dhole.dev</title>
+  <meta name="description" content="Retro consoles and controllers, opened, cleaned and boot-tested before they are listed, with stick drift measured. Flat-rate US shipping from $6." />
   <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
-  <link rel="canonical" href="https://dhole.dev/store.html" />
+  <link rel="canonical" href="https://dhole.dev/store" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
-  <meta property="og:url" content="https://dhole.dev/store.html" />
-  <meta property="og:title" content="Store — retro consoles and accessories" />
+  <meta property="og:url" content="https://dhole.dev/store" />
+  <meta property="og:title" content="Retro consoles, tested before they are listed" />
   <meta property="og:description" content="Consoles opened, cleaned, and boot-checked before they are listed. Controller sticks measured, not guessed." />
   <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Store — retro consoles and accessories" />
+  <meta name="twitter:title" content="Retro consoles, tested before they are listed" />
   <meta name="twitter:description" content="Consoles opened, cleaned, and boot-checked before they are listed. Controller sticks measured, not guessed." />
   <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
   <link rel="stylesheet" href="/assets/site.css" />
   <link rel="stylesheet" href="/assets/pages.css" />
+  <link rel="modulepreload" href="/assets/chrome.js" />
+  <link rel="modulepreload" href="/assets/store.js" />
+  <link rel="modulepreload" href="/assets/cart.js" />
+  <link rel="modulepreload" href="/assets/catalogue.js" />
+  <link rel="modulepreload" href="/data/products.js" />
+  <link rel="modulepreload" href="/assets/esc.js" />
+  <link rel="modulepreload" href="/assets/store-config.js" />
   <script type="module" src="/assets/entry/store.js"></script>
 </head>
 <body>
+  <header class="site-header"></header>
   <section class="demo-header">
     <div class="wrap">
-      <p class="eyebrow">Store</p>
-      <h1>Consoles that were tested before they were listed</h1>
+      <p class="eyebrow">Store · refurbished retro consoles</p>
+      <h1>Retro consoles, tested before they're listed</h1>
       <p class="lede">
         Everything is opened, cleaned, and boot-checked first. Controller sticks are
-        measured with the <a href="/projects/drift-tester.html">drift tester</a>, so
+        measured with the <a href="/projects/drift-tester">drift tester</a>, so
         "no drift" means a reading rather than a guess.
       </p>
+      <!-- Shipping figures mirror data/products.js SHIPPING; test/seo.test.js checks. -->
+      <ul class="trust-strip" aria-label="What every order gets">
+        <li><b>Opened, cleaned, boot-tested</b>Nothing is listed until it has been through a full boot. Refurbished units are the exact unit in the photos.</li>
+        <li><b>Flat-rate shipping</b>$18.00 for a console box, $6.00 for accessories. One box covers the order.</li>
+        <li><b>Ships in two business days</b>From the US, with a tracking number by email.</li>
+        <li><b>Consoles: 30-day power-on promise</b>If a console won't power on, there's a 30-day return window.</li>
+      </ul>
+      <p class="dim trust-more"><a href="/shipping-returns">Shipping, returns and how units are tested →</a></p>
     </div>
   </section>
 

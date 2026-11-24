@@ -3,33 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Controller Drift Tester — dhole.dev</title>
-  <meta name="description" content="Plug in a gamepad and measure analogue stick drift in the browser." />
+  <title>Controller Drift Test: Free Online Stick Tester | dhole.dev</title>
+  <meta name="description" content="Test a controller for stick drift in your browser: plug in a gamepad and get the exact rest offset and jitter of each stick. Free, nothing installed or uploaded." />
   <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
-  <link rel="canonical" href="https://dhole.dev/projects/drift-tester.html" />
+  <link rel="canonical" href="https://dhole.dev/projects/drift-tester" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
-  <meta property="og:url" content="https://dhole.dev/projects/drift-tester.html" />
-  <meta property="og:title" content="Controller Drift Tester — dhole.dev" />
+  <meta property="og:url" content="https://dhole.dev/projects/drift-tester" />
+  <meta property="og:title" content="Controller Drift Test: free, in your browser" />
   <meta property="og:description" content="Plug in a gamepad and measure analogue stick drift in your browser. Nothing is uploaded." />
   <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Controller Drift Tester — dhole.dev" />
+  <meta name="twitter:title" content="Controller Drift Test: free, in your browser" />
   <meta name="twitter:description" content="Plug in a gamepad and measure analogue stick drift in your browser. Nothing is uploaded." />
   <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
   <link rel="stylesheet" href="/assets/site.css" />
   <link rel="stylesheet" href="/assets/pages.css" />
   <link rel="stylesheet" href="/assets/demo.css" />
   <script type="module" src="./drift-tester.entry.js"></script>
+  <!-- Structured data: a data block, never executed, so the CSP has nothing to block. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Controller Drift Tester",
+    "url": "https://dhole.dev/projects/drift-tester",
+    "description": "Measures analogue stick drift in the browser: the rest offset and jitter of each stick, from the Gamepad API. Nothing is uploaded.",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any",
+    "browserRequirements": "A browser with the Gamepad API, such as a recent Chrome, Edge or Firefox",
+    "isAccessibleForFree": true,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "publisher": { "@id": "https://dhole.dev/#org", "@type": "Organization", "name": "dhole.dev", "url": "https://dhole.dev/" }
+  }
+  </script>
 </head>
 <body>
+  <header class="site-header"></header>
   <section class="demo-header">
     <div class="wrap">
-      <p class="eyebrow"><a href="/projects.html">Projects</a> / Live demo</p>
+      <p class="eyebrow"><a href="/projects">Projects</a> / Live demo</p>
       <h1>Controller Drift Tester</h1>
       <p class="lede">
         Plug a controller into this device and see exactly where its sticks sit. Every
@@ -102,7 +119,7 @@
         <p class="muted" style="max-width:68ch">
           Nothing is uploaded. It all runs in your browser.
         </p>
-        <a class="btn btn-sm" href="/store.html">See tested controllers in the shop →</a>
+        <a class="btn btn-sm" href="/store">See tested controllers in the shop →</a>
       </section>
     </div>
   </main>

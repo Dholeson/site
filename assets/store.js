@@ -4,13 +4,13 @@
 // (assets/catalogue.js). Bench copy comes from the bench app rather than this
 // repo, so every value goes through esc() before it reaches innerHTML.
 
-import { formatMoney, CONDITION_LABELS } from "../data/products.js";
+import { formatMoney, CONDITION_LABELS, SHIPPING } from "../data/products.js";
 import { CHECKOUT_ENDPOINT, SUPPORT_EMAIL } from "./store-config.js";
 import { getCart, addToCart, setQty, removeFromCart, priceCart, inCart } from "./cart.js";
 import { allProducts, findAny, isBenchId, loadBench, reloadBench } from "./catalogue.js";
 import { esc } from "./esc.js";
 
-const productHref = id => `/product.html?id=${encodeURIComponent(id)}`;
+const productHref = id => `/product?id=${encodeURIComponent(id)}`;
 
 function stockClass(p) {
   if (p.stock < 1) return "out";
@@ -36,6 +36,40 @@ function chips(p) {
 function addedLabel(res, bench) {
   if (!res.clamped) return "Added ✓";
   return bench ? "Already in your cart" : `Only ${res.stock} available`;
+}
+
+// One catalogue card: the store grid and the product page's "goes with it"
+// row both use it. Its button carries data-add for wireAdd().
+function productCard(p) {
+  return `
+      <article class="card product-card">
+        <a href="${productHref(p.id)}">
+          <img class="thumb" src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" />
+        </a>
+        <div class="card-body">
+          <h3><a href="${productHref(p.id)}">${esc(p.name)}</a></h3>
+          ${chips(p)}
+          <div class="price">${formatMoney(p.priceCents)}</div>
+          <div class="status ${stockClass(p)}">${esc(stockLabel(p))}</div>
+          <button class="btn btn-primary btn-block" data-add="${esc(p.id)}"
+                  style="margin-top:auto" ${p.stock < 1 ? "disabled" : ""}>
+            ${p.stock < 1 ? "Sold out" : "Add to cart"}
+          </button>
+        </div>
+      </article>`;
+}
+
+function wireAdd(container) {
+  container.addEventListener("click", e => {
+    const btn = e.target.closest("[data-add]");
+    if (!btn) return;
+    const id = btn.dataset.add;
+    const res = addToCart(id, 1);
+    if (res.ok) {
+      btn.textContent = addedLabel(res, isBenchId(id));
+      setTimeout(() => { btn.textContent = "Add to cart"; }, 1200);
+    }
+  });
 }
 
 // ---------- catalogue ----------
@@ -79,34 +113,10 @@ export function renderStore() {
       return;
     }
 
-    grid.innerHTML = list.map(p => `
-      <article class="card product-card">
-        <a href="${productHref(p.id)}">
-          <img class="thumb" src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" />
-        </a>
-        <div class="card-body">
-          <h3><a href="${productHref(p.id)}">${esc(p.name)}</a></h3>
-          ${chips(p)}
-          <div class="price">${formatMoney(p.priceCents)}</div>
-          <div class="status ${stockClass(p)}">${esc(stockLabel(p))}</div>
-          <button class="btn btn-primary btn-block" data-add="${esc(p.id)}"
-                  style="margin-top:auto" ${p.stock < 1 ? "disabled" : ""}>
-            ${p.stock < 1 ? "Sold out" : "Add to cart"}
-          </button>
-        </div>
-      </article>`).join("");
+    grid.innerHTML = list.map(productCard).join("");
   }
 
-  grid.addEventListener("click", e => {
-    const btn = e.target.closest("[data-add]");
-    if (!btn) return;
-    const id = btn.dataset.add;
-    const res = addToCart(id, 1);
-    if (res.ok) {
-      btn.textContent = addedLabel(res, isBenchId(id));
-      setTimeout(() => { btn.textContent = "Add to cart"; }, 1200);
-    }
-  });
+  wireAdd(grid);
 
   [platformSel, categorySel, sortSel].forEach(el => el.addEventListener("change", apply));
   searchInput.addEventListener("input", apply);
@@ -134,7 +144,7 @@ function notFound(main, title, text) {
     <div class="empty-state">
       <h2>${esc(title)}</h2>
       <p>${esc(text)}</p>
-      <p><a class="btn" href="/store.html">Back to the store</a></p>
+      <p><a class="btn" href="/store">Back to the store</a></p>
     </div>`;
 }
 
@@ -169,15 +179,52 @@ function mountGallery(main, p) {
   });
 }
 
+// What this item costs to ship, and what it does to an order's shipping.
+// The order's largest box sets the rate (lib/checkout-core.js shippingFor),
+// so an accessory in an order with a console adds nothing.
+function shippingLine(p) {
+  if (p.shippingClass === "console") {
+    return `Shipping: ${formatMoney(SHIPPING.console.cents)} flat. Accessories in the same order ride in this box for nothing extra.`;
+  }
+  return `Shipping: ${formatMoney(SHIPPING.small.cents)} flat, or nothing extra in an order with a console.`;
+}
+
+// Up to three in-stock items for the same platform (or that fit every
+// platform). A console's page shows only accessories, which is what its
+// "ships in the console's box" note promises; an accessory's page shows
+// consoles first.
+function goesWith(p) {
+  const fits = q => q.id !== p.id && q.stock > 0 &&
+    (p.category !== "console" || q.category === "accessory") &&
+    (q.platform === p.platform || q.platform === "Multi-platform" || p.platform === "Multi-platform");
+  const rank = q => (q.category === "console") === (p.category === "console") ? 1 : 0;
+  return allProducts().filter(fits).sort((a, b) => rank(a) - rank(b)).slice(0, 3);
+}
+
+function paintRelated(el, p) {
+  const list = goesWith(p);
+  if (!list.length) { el.innerHTML = ""; return; }
+  const isConsole = p.category === "console";
+  el.innerHTML = `
+    <div class="section-head"><h2>${isConsole ? "Goes with it" : `More for ${esc(p.platform)}`}</h2></div>
+    ${isConsole ? `<p class="muted related-note">These ship in the console's box: adding them doesn't change the
+      ${formatMoney(SHIPPING.console.cents)} shipping.</p>` : ""}
+    <div class="grid">${list.map(productCard).join("")}</div>`;
+}
+
 function paintProduct(main, p) {
-  document.title = `${p.name} — dhole.dev`;
+  // Same shape as the title functions/product.js writes on the server.
+  document.title = `${p.name} — ${formatMoney(p.priceCents)} | dhole.dev`;
   const bench = p.source === "bench";
+  // Bench units always have photos; a hand-made item gets the gallery once it
+  // lists real ones in `images` (data/products.js).
+  const hasPhotos = bench || (Array.isArray(p.images) && p.images.length > 0);
   const soldOut = p.stock < 1;
   const already = bench && inCart(p.id);
 
   main.innerHTML = `
     <div class="product-detail">
-      ${bench ? gallery(p) : `<img class="hero-img" src="${esc(p.image)}" alt="${esc(p.name)}" />`}
+      ${hasPhotos ? gallery(p) : `<img class="hero-img" src="${esc(p.image)}" alt="${esc(p.name)}" />`}
       <div>
         <h1>${esc(p.name)}</h1>
         ${chips(p)}
@@ -193,11 +240,20 @@ function paintProduct(main, p) {
         <button class="btn btn-primary${bench ? " bench-add" : ""}" id="add-btn" ${soldOut || already ? "disabled" : ""}>
           ${soldOut ? "Sold out" : already ? "In your cart" : "Add to cart"}
         </button>
-        <p class="dim" style="margin-top:1rem">Ships from the US. Tracking emailed when it goes out.</p>
+        <p class="dim ship-line" style="margin-top:1rem">${esc(shippingLine(p))}</p>
+        <p class="dim">Ships from the US within two business days, with tracking by email.
+          <a href="/shipping-returns">Shipping &amp; returns</a></p>
       </div>
-    </div>`;
+    </div>
+    <section class="section related" id="related" aria-live="polite"></section>`;
 
-  if (bench) mountGallery(main, p);
+  if (hasPhotos) mountGallery(main, p);
+
+  // The hand-made catalogue is here already; live units join when they load.
+  const related = main.querySelector("#related");
+  wireAdd(related);
+  paintRelated(related, p);
+  loadBench().then(() => paintRelated(related, p));
 
   const addBtn = document.getElementById("add-btn");
   if (addBtn) {
@@ -222,7 +278,9 @@ export function renderProduct() {
   const id = new URLSearchParams(location.search).get("id");
 
   if (id && isBenchId(id)) {
-    main.innerHTML = `<p class="muted">Loading this unit…</p>`;
+    // Holds the page's height while the unit loads, so the footer isn't on
+    // screen to jump down when it arrives (a layout shift otherwise).
+    main.innerHTML = `<p class="muted product-loading">Loading this unit…</p>`;
     loadBench().then(state => {
       const p = findAny(id);
       if (p) return paintProduct(main, p);
@@ -261,7 +319,7 @@ export function renderCart() {
       main.innerHTML = `
         <div class="empty-state">
           <h2>Your cart is empty</h2>
-          <p><a class="btn btn-primary" href="/store.html">Browse the store</a></p>
+          <p><a class="btn btn-primary" href="/store">Browse the store</a></p>
         </div>`;
       return;
     }

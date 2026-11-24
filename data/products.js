@@ -11,6 +11,16 @@
 //
 // To add a product: copy a block, give it a new unique `id`, and commit.
 //
+// TODO (before taking real money): photograph the actual units for sale and
+// replace the illustrations. Buyers of used hardware expect the real thing:
+// a main view of overall condition, then the ports and any visible marks.
+// Never stock photos or generated images. Put the files in assets/store/,
+// point `image` at the main one, and list them all, main first, in `images`:
+//   image: "assets/store/gamecube-indigo-1.jpg",
+//   images: ["assets/store/gamecube-indigo-1.jpg", "assets/store/gamecube-indigo-ports.jpg"],
+// The product page then shows them as a gallery, as it does for bench units.
+// (Bench units from RefurbOS already carry real photos.)
+//
 // Refurbished units from the bench app are NOT here: they live in D1 (see
 // lib/store-db.js) under ids like "ro-0042". Never give a product here an id
 // of that shape; test/checkout.test.js checks.
