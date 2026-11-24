@@ -275,9 +275,8 @@ These are why a local session is more useful than a cloud one:
    source of a `/product?id=` page and confirm Cloudflare injected the Web
    Analytics beacon into the Function's response as it does for static pages.
    `SETUP.md`, "Search and measurement".
-5. **Policy gaps.** `SUPPORT_EMAIL` in `assets/store-config.js` is empty, so
-   the site has no contact anywhere (Stripe and Merchant Center both expect
-   one). The 30-day power-on window is stated for consoles store-wide (store
+5. **Policy gaps.** `SUPPORT_EMAIL` is `support@dhole.dev` (Cloudflare Email
+   Routing forwards it to the owner). The 30-day power-on window is stated for consoles store-wide (store
    strip, shipping page); hand-made consoles' details say it, bench units'
    don't necessarily. Accessories have no stated return terms.
 6. **Delayed payment methods would lose bench sales.** A bank debit completes

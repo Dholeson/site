@@ -501,6 +501,14 @@ test("every project interface shot exists, desktop and phone crops", async () =>
   }
 });
 
+test("the support email in plain HTML matches SUPPORT_EMAIL", async () => {
+  const { SUPPORT_EMAIL } = await import("../assets/store-config.js");
+  if (!SUPPORT_EMAIL) return;
+  assert.ok(read("shipping-returns.html").includes(`mailto:${SUPPORT_EMAIL}`), "shipping-returns.html");
+  const org = ldBlocks(read("index.html"))[0]["@graph"].find(n => n["@type"] === "Organization");
+  assert.equal(org.email, SUPPORT_EMAIL, "index.html Organization email");
+});
+
 test("the store and shipping page quote the real shipping rates", () => {
   for (const f of ["store.html", "shipping-returns.html"]) {
     const html = read(f);

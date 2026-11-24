@@ -13,6 +13,7 @@
 // /store.html): the .html form costs every click a 308 redirect.
 
 import { mountCartBadge } from "./cart.js";
+import { SUPPORT_EMAIL } from "./store-config.js";
 
 const NAV = [
   { key: "projects", href: "/projects", label: "Projects" },
@@ -53,7 +54,8 @@ export function mountChrome(current = "") {
         <a href="/store">Store</a>
         <a href="/shipping-returns">Shipping &amp; returns</a>
         <a href="/portfolio">Portfolio</a>
-        <a href="/log">Log</a>
+        <a href="/log">Log</a>${SUPPORT_EMAIL ? `
+        <a href="mailto:${SUPPORT_EMAIL}">Contact</a>` : ""}
       </nav>
     </div>`;
   document.body.append(footer);
