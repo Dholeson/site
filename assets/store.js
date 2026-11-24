@@ -366,7 +366,6 @@ export function renderCart() {
         <div class="totals-row"><span>Subtotal</span><span>${formatMoney(subtotalCents)}</span></div>
         <div class="totals-row"><span>${esc(shippingLabel)}</span><span>${formatMoney(shippingCents)}</span></div>
         <div class="totals-row grand"><span>Total</span><span>${formatMoney(totalCents)}</span></div>
-        <p class="dim">Taxes, if applicable, are added at checkout.</p>
         ${unavailable.length ? `<p class="dim">${esc(blockedText)}</p>` : ""}
         <button class="btn btn-primary btn-block" id="checkout-btn" style="margin-top:.75rem"
                 ${blocked ? "disabled" : ""}>Checkout</button>
