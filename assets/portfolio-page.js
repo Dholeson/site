@@ -57,7 +57,7 @@ function renderProfile() {
 }
 
 function card(w) {
-  const caseHref = `/case.html?id=${encodeURIComponent(w.id)}`;
+  const caseHref = `/case?id=${encodeURIComponent(w.id)}`;
   const primary = w.links.find(l => l.primary);
   return `
   <article class="card pf-card">
@@ -94,7 +94,7 @@ export function renderCase() {
   if (!w) {
     document.title = "Not found — dhole.dev";
     main.innerHTML = `<div class="empty-state"><p>No project called “${esc(id || "")}”.</p>
-      <a class="btn" href="/portfolio.html">All work →</a></div>`;
+      <a class="btn" href="/portfolio">All work →</a></div>`;
     return;
   }
 
@@ -137,9 +137,9 @@ export function renderCase() {
     </div>
 
     <nav class="case-pager" aria-label="More work">
-      <a href="/case.html?id=${encodeURIComponent(prev.id)}"><span class="dim">← Previous</span>${esc(prev.title)}</a>
-      <a href="/portfolio.html" class="case-pager-all">All work</a>
-      <a href="/case.html?id=${encodeURIComponent(next.id)}" class="next"><span class="dim">Next →</span>${esc(next.title)}</a>
+      <a href="/case?id=${encodeURIComponent(prev.id)}"><span class="dim">← Previous</span>${esc(prev.title)}</a>
+      <a href="/portfolio" class="case-pager-all">All work</a>
+      <a href="/case?id=${encodeURIComponent(next.id)}" class="next"><span class="dim">Next →</span>${esc(next.title)}</a>
     </nav>`;
 }
 

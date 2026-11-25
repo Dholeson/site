@@ -48,6 +48,53 @@
   background: rgba(11,13,18,.8);
 }
 
+/* Homepage "Browser tools" cards: a real view of each tool on a plain dark
+   panel (no glow, no grid), the description, one action, and a quiet
+   "Built with" line instead of chips. */
+.tool-shot {
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+}
+.tool-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.tool-shot-glyph { display: flex; align-items: center; justify-content: center; color: var(--proj-accent, var(--accent-lit)); }
+.tool-desc { color: var(--fg-soft); }
+.tool-cta { align-self: flex-start; margin-top: auto; white-space: normal; text-align: center; }
+.built-with { color: var(--fg-muted); font-size: .82rem; }
+
+@media (max-width: 700px) {
+  /* Sized to the useful part of the screenshot, not a tall decorative box. */
+  .tool-shot { aspect-ratio: 2 / 1; }
+  .tool-card .card-body { padding: .9rem 1rem 1rem; gap: .5rem; }
+}
+
+/* Homepage shop cards: a visible way into each listing, under the price. */
+.product-details-link { margin-top: auto; }
+
+/* "More on dhole.dev": the pages that aren't in the main grid. */
+.more-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: .75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+.more-links a {
+  display: block;
+  height: 100%;
+  padding: .9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+}
+.more-links a:hover { border-color: var(--border-lit); }
+.more-links b { display: block; color: var(--fg); margin-bottom: .2rem; }
+.more-links span { color: var(--fg-soft); font-size: .9rem; }
+
 /* ---------- product cards ---------- */
 
 .product-card .thumb {
@@ -500,3 +547,60 @@
   .case-pager { grid-template-columns: 1fr 1fr; }
   .case-pager .case-pager-all { display: none; }
 }
+
+/* ---------- store: what every order gets ---------- */
+
+/* The answers a buyer of used hardware looks for before trusting a shop:
+   how it was checked, what shipping costs, when it ships, what if it's dead. */
+.trust-strip {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: .75rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+}
+.trust-strip li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .8rem 1rem;
+  color: var(--fg-muted);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+.trust-strip b { display: block; color: var(--fg); margin-bottom: .15rem; }
+.trust-more { margin-top: .9rem; }
+
+/* Product page: "goes with it" under the product. */
+.related { margin-top: 3.5rem; }
+.related-note { margin: -.5rem 0 1.25rem; max-width: 68ch; }
+
+/* Drift tester: the nudge shown when a stick drifts. */
+.drift-cta { margin-top: 1.25rem; }
+.drift-cta .btn { margin-top: .6rem; }
+
+/* Shipping & returns page. */
+.policy { max-width: 70ch; }
+.policy h2 { font-size: 1.25rem; margin: 2.25rem 0 .6rem; }
+.policy p, .policy li { color: var(--fg-muted); }
+.policy ul { padding-left: 1.2rem; }
+.policy li { margin-bottom: .35rem; }
+.policy table { width: 100%; border-collapse: collapse; margin: .5rem 0 1rem; font-size: .92rem; }
+.policy th, .policy td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); }
+.policy td:last-child, .policy th:last-child { text-align: right; font-family: var(--mono); white-space: nowrap; }
+
+/* Space held for content that arrives after first paint, so what's below it
+   doesn't jump (layout shift): a bench unit loading from the live stock, and
+   the projects grid, which the static "More on dhole.dev" row sits under. */
+.product-loading { min-height: 100vh; }
+#projects-grid:empty { min-height: 100vh; }
+
+/* Store and homepage shelves: hold their height while live units load and
+   when nothing is listed (used units are listed one at a time, so an empty
+   shelf is normal), so the footer and sections below never jump. */
+.grid-hold { min-height: 60vh; display: block; }
+.shelf-hold { min-height: 20rem; display: block; }
+.shelf-empty { max-width: 56ch; margin: 0 auto; }
+.shelf-empty h2 { font-size: 1.3rem; margin-bottom: .5rem; }
+.shelf-empty .btn { margin: .25rem .35rem; }

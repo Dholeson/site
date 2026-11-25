@@ -1,6 +1,10 @@
-/archive.html    /log.html         301
-/weeks.html      /log.html         301
-/admin.html      /log.html         301
-/shop            /store.html       301
-/shop/*          /store.html       301
-/projects/       /projects.html    301
+# Targets are the extensionless URLs Cloudflare serves. A target ending in
+# .html would cost a second hop (301 here, then Cloudflare's own 308 to the
+# clean URL). Never redirect /foo to /foo.html: Cloudflare already sends
+# /foo.html to /foo, and the two would loop forever.
+/archive.html    /log         301
+/weeks.html      /log         301
+/admin.html      /log         301
+/shop            /store       301
+/shop/*          /store       301
+/projects/       /projects    301

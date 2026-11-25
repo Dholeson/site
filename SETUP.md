@@ -14,13 +14,17 @@ index.html            Homepage — sends people to either half
 projects.html         Project index
 projects/             The playable demos (one .html + .js each)
 store.html            Storefront
-product.html          Product detail
+product.html          Product detail (its <head> is filled per product by
+                      functions/product.js)
 cart.html             Cart
+shipping-returns.html Shipping, returns, testing, payment, data
 log.html              Build log
 data/products.js      Hand-made catalogue: prices, stock, copy
 data/projects.js      Project list
 functions/api/        Checkout, the bench API, the public store API and the
                       Stripe webhook, as Cloudflare Pages Functions
+functions/product.js  Each product's title, link-preview card and Google data
+functions/sitemap.xml.js  The sitemap, live bench units included
 lib/                  Order pricing, live bench stock (D1), Stripe signatures
 migrations/           D1 tables: league-ify's (0001) and the store's (1001)
 test/                 Tests for the money path and the live bench stock
@@ -294,13 +298,88 @@ Checkout locally says "not configured" unless you also add a **test-mode**
 
 ---
 
+## Search and measurement
+
+One-time, about 20 minutes, all free.
+
+### Google Search Console
+
+1. <https://search.google.com/search-console> → **Add property** → **Domain**
+   → `dhole.dev`. Google shows a TXT record; add it in the Cloudflare
+   dashboard (**DNS → Records**) and press Verify.
+2. **Sitemaps** → submit `https://dhole.dev/sitemap.xml`. It lists every page,
+   every hand-made item and every bench unit on sale, with photos, and
+   updates itself as RefurbOS lists and sells.
+3. **URL Inspection** → paste one bench unit's `/product?id=` URL → **Test
+   live URL**. "Product snippets" should show as valid. Then **Request
+   indexing** for it and for `/store`.
+4. Bing: <https://www.bing.com/webmasters> can import the property from
+   Search Console in one click.
+
+### Google Merchant Center (free shopping listings)
+
+Once Stripe is live and `SUPPORT_EMAIL` is set (Merchant Center wants a
+contact and a returns policy on the site): <https://merchants.google.com>,
+add `dhole.dev`, and choose to get products from the website's structured
+data. Every product page already carries price, availability, condition and
+shipping.
+
+### Check a link preview
+
+Paste a `/product?id=` URL into a Discord or iMessage chat to yourself. A
+bench unit should show its own first photo, name and price, not the generic
+dhole.dev card. Facebook's <https://developers.facebook.com/tools/debug/>
+shows exactly what it reads, and re-fetches a stale card.
+
+### The numbers
+
+Traffic, referrers and Core Web Vitals: Cloudflare dashboard → **Web
+Analytics**. It doesn't record query strings, so every product page counts as
+`/product`. Orders, revenue and abandoned checkouts: Stripe dashboard.
+Search impressions, clicks and indexed pages: Search Console.
+
+Bench stock, from D1 (read-only queries; drop `--remote` and add `--local`
+to try them on a local copy). Amounts are cents. `store_sales` holds bench
+units only; Stripe has the full orders.
+
+```bash
+# Live now: units, total asking value, average price
+npx wrangler d1 execute dhole-workshop --remote --command "SELECT count(*) AS live_units, sum(price_cents) AS live_value_cents, CAST(avg(price_cents) AS INTEGER) AS avg_price_cents FROM store_listings WHERE status IN ('available', 'reserved')"
+```
+
+```bash
+# Last 30 days: listed, sold, orders, revenue; and live now (sell-through = sold / (sold + live))
+npx wrangler d1 execute dhole-workshop --remote --command "SELECT (SELECT count(*) FROM store_listings WHERE created_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')) AS listed_30d, (SELECT count(*) FROM store_sales WHERE sold_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')) AS units_sold_30d, (SELECT count(DISTINCT stripe_session_id) FROM store_sales WHERE sold_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')) AS orders_30d, (SELECT coalesce(sum(amount_cents), 0) FROM store_sales WHERE sold_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')) AS unit_revenue_cents_30d, (SELECT count(*) FROM store_listings WHERE status IN ('available', 'reserved')) AS live_now"
+```
+
+```bash
+# How fast units sell, overall and by platform
+npx wrangler d1 execute dhole-workshop --remote --command "SELECT platform, count(*) AS listed, sum(status = 'sold') AS sold, round(avg(CASE WHEN status = 'sold' THEN julianday(sold_at) - julianday(created_at) END), 1) AS avg_days_to_sell FROM store_listings GROUP BY platform ORDER BY sold DESC, listed DESC"
+```
+
+```bash
+# Units on sale for more than 21 days: candidates for new photos, copy or price
+npx wrangler d1 execute dhole-workshop --remote --command "SELECT id, name, price_cents, CAST(julianday('now') - julianday(created_at) AS INTEGER) AS days_listed FROM store_listings WHERE status IN ('available', 'reserved') AND created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-21 days') ORDER BY created_at"
+```
+
+```bash
+# Average bench order (units + shipping), last 30 days
+npx wrangler d1 execute dhole-workshop --remote --command "SELECT count(*) AS orders, CAST(avg(order_cents) AS INTEGER) AS avg_order_cents FROM (SELECT stripe_session_id, sum(amount_cents) + max(order_shipping_cents) AS order_cents FROM store_sales WHERE sold_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days') GROUP BY stripe_session_id)"
+```
+
+---
+
 ## Running it day to day
 
 ### Add or edit a product
 
-Refurbished units come from the bench app; you never add those here. For
-hand-made items it's all in `data/products.js`. Copy a block, give it a new
-unique `id` (never one like `ro-0042`, which is the bench's), deploy.
+Every used console, controller and memory card comes from the bench app,
+with photos of that exact unit; you never add those here. `data/products.js`
+is only for new, interchangeable stock you keep on the shelf (a cable, a
+cleaning kit), each with a real photo. It's empty today. To add one, copy
+the shape in its header comment, give it a new unique `id` (never one like
+`ro-0042`, which is the bench's), and deploy. A test refuses anything there
+that isn't new or that uses a drawing.
 The storefront, the cart, and the checkout function all read that one file, so
 there is nothing to keep in sync.
 
@@ -373,10 +452,9 @@ this scale.
 **Shipping is flat-rate per box size.** Console-sized or accessory-sized, and
 the largest item in the order decides. No weight-based or international rates.
 
-**The product images are illustrations, not photographs.** For used hardware,
-buyers expect photos of the actual unit, and some marketplaces require it. Swap
-them in before taking real money: drop files in `assets/store/` and point each
-product's `image` at them.
+**Used hardware is listed only from the bench.** The drawn placeholder items
+the store launched with are gone; until RefurbOS lists units, the store shows
+an empty shelf.
 
 ---
 

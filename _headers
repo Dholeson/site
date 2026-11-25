@@ -48,3 +48,13 @@
 # Function sets its own Cache-Control, e.g. /api/store/img/* is immutable.
 /api/*
   Cache-Control: no-store
+
+# Keep the *.pages.dev copies of the site out of search results: the
+# production one (dhole-dev.pages.dev) and every branch preview. Only
+# dhole.dev should rank. Functions set the same header themselves on
+# *.pages.dev (lib/seo.js isPagesDev), since _headers doesn't reach them.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex

@@ -3,7 +3,8 @@
 // everyone else and make it obvious there are two things here.
 
 import { projects } from "../data/projects.js";
-import { products, formatMoney } from "../data/products.js";
+import { formatMoney } from "../data/products.js";
+import { allProducts, loadBench } from "./catalogue.js";
 import { esc } from "./esc.js";
 
 export function renderHome() {
@@ -20,41 +21,76 @@ function renderFeaturedProjects() {
     return;
   }
 
+  // A real view of each tool where there is one; the glyph otherwise.
   el.innerHTML = featured.map(p => `
-    <article class="card project-card">
-      <a class="project-preview" href="${esc(p.demo)}" style="--proj-accent:${esc(p.accent)}">
-        <span class="project-preview-glyph" aria-hidden="true">${projectGlyph(p.id)}</span>
-        <span class="chip chip-live">Playable</span>
-      </a>
+    <article class="card project-card tool-card">
+      ${p.shot
+        ? `<a class="tool-shot" href="${esc(p.demo)}" tabindex="-1">
+             <picture>
+               ${p.shot.mobile ? `<source media="(max-width: 700px)" srcset="${esc(p.shot.mobile.src)}"
+                 width="${esc(p.shot.mobile.width)}" height="${esc(p.shot.mobile.height)}" />` : ""}
+               <img src="${esc(p.shot.src)}" alt="${esc(p.shot.alt)}"
+                    width="${esc(p.shot.width)}" height="${esc(p.shot.height)}" loading="lazy" />
+             </picture>
+           </a>`
+        : `<a class="tool-shot tool-shot-glyph" href="${esc(p.demo)}" tabindex="-1" style="--proj-accent:${esc(p.accent)}">
+             <span aria-hidden="true">${projectGlyph(p.id)}</span>
+           </a>`}
       <div class="card-body">
         <h3><a href="${esc(p.demo)}">${esc(p.title)}</a></h3>
-        <p class="muted">${esc(p.tagline)}</p>
-        <div class="chips">${p.tags.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
-        <a class="btn btn-sm" href="${esc(p.demo)}" style="margin-top:auto">Open it →</a>
+        <p class="tool-desc">${esc(p.tagline)}</p>
+        <a class="btn btn-sm tool-cta" href="${esc(p.demo)}">${esc(p.cta || "Open it →")}</a>
+        ${p.builtWith ? `<p class="built-with">${esc(p.builtWith)}</p>` : ""}
       </div>
     </article>`).join("");
 }
 
+// "View Super Nintendo details": the platform as people say it.
+const PLATFORM_NAMES = { "SNES": "Super Nintendo" };
+const detailsLabel = p => p.category === "console"
+  ? `View ${PLATFORM_NAMES[p.platform] || p.platform} details`
+  : "View details";
+
 function renderFeaturedProducts() {
   const el = document.getElementById("home-products");
   // Lead with things actually in stock -- nothing sells a shop like a sold-out row.
-  // Three fills the desktop grid exactly; a fourth wrapped to a lonely second row.
-  const featured = [...products]
-    .filter(p => p.stock > 0)
-    .sort((a, b) => b.priceCents - a.priceCents)
-    .slice(0, 3);
+  // Bench units come first: one of a kind, with real photos. Three fills the
+  // desktop grid exactly; a fourth wrapped to a lonely second row.
+  const paint = state => {
+    const inStock = allProducts().filter(p => p.stock > 0);
+    // Hold the row's height while loading and when the shelf is empty, so the
+    // sections below don't jump when units arrive.
+    el.classList.toggle("shelf-hold", !inStock.length);
+    if (!inStock.length) {
+      el.innerHTML = state === "ok"
+        ? `<div class="empty-state shelf-empty"><p>Nothing on the shelf right now. New units go up as they come off the bench.</p>
+             <p><a class="btn btn-sm" href="/store">See the store</a></p></div>`
+        : state === "failed"
+          ? `<div class="empty-state shelf-empty"><p><a href="/store">See what's in the store</a></p></div>`
+          : `<p class="muted">Loading what's on the shelf…</p>`;
+      return;
+    }
+    const bench = inStock.filter(p => p.source === "bench");
+    const rest = inStock.filter(p => p.source !== "bench").sort((a, b) => b.priceCents - a.priceCents);
+    const featured = [...bench, ...rest].slice(0, 3);
 
-  el.innerHTML = featured.map(p => `
+    el.innerHTML = featured.map(p => `
     <article class="card product-card">
-      <a href="/product.html?id=${encodeURIComponent(p.id)}">
+      <a href="/product?id=${encodeURIComponent(p.id)}">
         <img class="thumb" src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" />
       </a>
       <div class="card-body">
-        <h3><a href="/product.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a></h3>
-        <div class="chips"><span class="chip">${esc(p.platform)}</span></div>
+        <h3><a href="/product?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a></h3>
+        <div class="chips"><span class="chip">${esc(p.platform)}</span>${
+          p.source === "bench" ? `<span class="chip">One of one</span>` : ""}</div>
         <div class="price">${formatMoney(p.priceCents)}</div>
+        <a class="btn btn-sm product-details-link" href="/product?id=${encodeURIComponent(p.id)}">${esc(detailsLabel(p))}</a>
       </div>
     </article>`).join("");
+  };
+  // The hand-made catalogue shows at once; live units replace it if they load.
+  paint("loading");
+  loadBench().then(paint);
 }
 
 // Small inline marks so the homepage has something to look at without shipping

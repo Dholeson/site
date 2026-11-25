@@ -3,14 +3,16 @@
 Personal site with two halves: **browser-playable projects** and a **store for
 refurbished retro consoles**. Static site plus a few Pages Functions (checkout,
 the bench API, the public store API, the Stripe webhook, league-ify's API),
-hosted on Cloudflare Pages, with one D1 database and one R2 bucket.
+hosted on Cloudflare Pages, with one D1 database and one R2 bucket. Two more
+Functions serve pages rather than APIs: `/product` (each product's `<head>`
+written on the server) and `/sitemap.xml`.
 
 Most shop traffic arrives by direct link rather than through the homepage.
 
 ## Commands
 
 ```bash
-npm test                          # checkout + live-stock tests (D1 over node:sqlite), Discover Cleaner and league-ify checks
+npm test                          # checkout + live-stock tests (D1 over node:sqlite), SEO + URL checks, Discover Cleaner and league-ify checks
 npm run dev                       # wrangler pages dev . (Functions, local D1 + R2; see SETUP.md)
 npm run sync:discover-cleaner     # re-vendor the Discover Cleaner demo (see below)
 npx wrangler pages deploy .       # manual deploy (rarely needed)
@@ -28,11 +30,16 @@ There is no build step. Cloudflare Pages is connected to this repo: merging to
 | `projects.html`, `projects/` | Project index and the playable demos |
 | `projects/discover-cleaner-demo/` | **Generated — don't edit.** The Discover Cleaner web demo, copied from the app's repo by `npm run sync:discover-cleaner` |
 | `scripts/` | `sync-discover-cleaner.mjs`, the one vendoring script |
-| `store.html`, `product.html`, `cart.html` | Shop. `product.html?id=ro-0042` renders a bench unit with a photo gallery |
+| `store.html`, `product.html`, `cart.html` | Shop. `/product?id=ro-0042` renders a bench unit with a photo gallery |
+| `shipping-returns.html` | Shipping, returns, testing, payment and data: only what the code and catalogue already commit to |
+| `functions/product.js` | Serves `product.html` with that product's `<head>` (title, canonical, link-preview tags, schema.org Product) and an honest status |
+| `functions/sitemap.xml.js` | `/sitemap.xml`: pages, the hand-made catalogue, and live bench units with their photos |
+| `lib/seo.js` | Head and sitemap builders, `SITE_PAGES`, and `PAGE_HEADERS` (the Function's copy of `_headers`' global rule) |
+| `assets/home/` | Real interface views for the homepage's tool cards (desktop and phone crops) |
 | `log.html` | Week-by-week build log |
 | `portfolio.html`, `case.html` | Portfolio grid, and one templated case-study page (`case.html?id=`) for job applications |
 | `data/portfolio.js` | Portfolio content — one block per project, drives both pages |
-| `data/products.js` | Hand-made catalogue — prices, stock, copy (not bench units) |
+| `data/products.js` | Hand-typed catalogue, for new interchangeable stock only (cables, kits) with real photos. **Empty since 2026-11-25**: every used item is a bench unit. Tests use stand-ins from `test/support/catalogue-fixture.js` |
 | `data/projects.js` | Project list |
 | `functions/api/checkout.js` | Stripe Checkout, as a Pages Function. Prices and holds bench units from D1 |
 | `functions/api/bench/[[path]].js` | Bench API RefurbOS calls (Bearer `BENCH_TOKEN`): photos, listings, withdraw, sales |
@@ -73,7 +80,41 @@ by trusting the cart.
 **No inline `<script>` anywhere.** `_headers` ships a CSP with no
 `unsafe-inline` for scripts. Every page loads an entry module from
 `assets/entry/` instead. A new page with an inline script will be blocked at
-runtime, silently, in production but not in a plain local file server.
+runtime, silently, in production but not in a plain local file server. The one
+exception is structured data, `<script type="application/ld+json">`: a data
+block, never executed, so the CSP never applies (`test/seo.test.js` checks that
+every inline script on the site's pages is one, and that it parses).
+
+**Link to the clean URL.** Cloudflare serves `/store` from `store.html` and
+308s `/store.html` to `/store`, so every internal link, canonical, `og:url`,
+sitemap entry and `_redirects` target uses the extensionless form. The `.html`
+form costs each click a redirect, and a canonical that redirects confuses
+Google. Old `.html` links keep working through the 308 (query strings
+survive it). `test/seo.test.js` fails on a `.html` link in any site page.
+
+**The product page's `<head>` is written on the server.** Link previews
+(iMessage, Discord, Facebook, X) don't run JavaScript, and most shop traffic
+arrives by shared link, so `functions/product.js` fills `product.html`'s
+`<!-- seo:start -->`…`<!-- seo:end -->` block per product: a bench unit's
+first photo on the card, its own canonical, schema.org `Product` with price,
+availability, condition and flat shipping. Status: 200 for anything on sale
+(a hand-made item at stock 0 too, as out of stock), 410 for a sold bench
+unit, 404 for a withdrawn or unknown one (both noindex). D1 down or markers
+missing → the shell goes out unchanged. Never give `product.html` a
+canonical of its own: it once pointed at the store, which told Google every
+product was the store page. `_routes.json` sends `/product` and
+`/sitemap.xml` to their Functions; `_headers` doesn't reach Function
+responses, so the Function sets `lib/seo.js` `PAGE_HEADERS` itself. **Change
+the global CSP in `_headers` and you must change `PAGE_HEADERS` too** (a test
+holds them equal). `*.pages.dev` responses carry `X-Robots-Tag: noindex`
+(`_headers` for static files, `isPagesDev` in Functions).
+
+**Pages reserve the header.** Each page's `<body>` starts with an empty
+`<header class="site-header"></header>`, which CSS holds at 61px and
+`assets/chrome.js` fills, so nothing jumps when the script lands. Content
+that arrives after first paint above static content holds its space too
+(`.product-loading`, `#projects-grid:empty`). Measured layout shift is 0 on
+the shop pages; keep it there.
 
 **The global CSP allows Cloudflare Web Analytics' script, and nothing else
 off-site.** Web Analytics is on for the Pages project, and Cloudflare injects
@@ -183,6 +224,9 @@ in it, and move it aside before a manual deploy.
 ## Testing
 
 `npm test` covers the money path, the global CSP and both exceptions in `_headers`, the
+product page's server-written head and the sitemap (`test/seo.test.js`: every
+product state, hostile bench copy, D1 failures, clean URLs, robots.txt,
+redirects, the `PAGE_HEADERS` mirror), the
 vendored demo bundle, and the vendored league-ify build and its config
 (`nodejs_compat`, the `DB` binding, the migration). The live-stock tests call
 each Function's `onRequest` directly against `test/support/`: a D1 stand-in
@@ -196,7 +240,11 @@ mobile overflow, link previews) but it is not committed — reproduce it if you
 change rendering. The bench-unit pages were checked the same way under
 `wrangler pages dev` (390 px wide, real CSP, local D1 + R2): the merged grid,
 the product gallery, escaped copy, a sold unit's page, a cart with a gone unit,
-and the static-only fallback when `/api/store/listings` fails.
+and the static-only fallback when `/api/store/listings` fails. On 2026-11-24
+the SEO and homepage changes were checked the same way at 360, 390 and 1280 px:
+no CSP errors, no horizontal overflow, Cart visible in the nav down to 360 px,
+layout shift 0.000 on home, store, product and projects, text contrast
+6.7–11:1, and the drift tester's "drifting stick?" link to the store.
 
 ## Outstanding — needs a browser or an account
 
@@ -217,10 +265,22 @@ These are why a local session is more useful than a cloud one:
 2. **`SSL_ERROR_NO_CYPHER_OVERLAP`** was seen on a `*.pages.dev` preview URL in
    Firefox. Untriaged — most likely antivirus TLS scanning or a Firefox TLS
    setting, but nobody has actually loaded the production URL to check.
-3. **Hand-made products' images are illustrations, not photographs.** Bench
-   units carry the bench's real photos; the `data/products.js` items don't.
-   Buyers of used hardware expect real photos. Swap before taking real money.
-4. **Delayed payment methods would lose bench sales.** A bank debit completes
+3. **The shelf is only as full as RefurbOS makes it.** The drawn placeholder
+   items came off sale on 2026-11-25; the owner is entering the real consoles
+   as bench units. Until some are listed, the store and homepage show an empty
+   shelf (by design, with held height so nothing jumps).
+4. **Search and shop accounts aren't set up.** Verify dhole.dev in Google
+   Search Console (a Domain property, via a TXT record in Cloudflare DNS),
+   submit `/sitemap.xml`, and add the shop to Google Merchant Center (free
+   listings) once Stripe is live. After the next production deploy, view the
+   source of a `/product?id=` page and confirm Cloudflare injected the Web
+   Analytics beacon into the Function's response as it does for static pages.
+   `SETUP.md`, "Search and measurement".
+5. **Policy gaps.** `SUPPORT_EMAIL` is `support@dhole.dev` (Cloudflare Email
+   Routing forwards it to the owner). The 30-day power-on window is stated for consoles store-wide (store
+   strip, shipping page); hand-made consoles' details say it, bench units'
+   don't necessarily. Accessories have no stated return terms.
+6. **Delayed payment methods would lose bench sales.** A bank debit completes
    a Checkout Session with `payment_status: "unpaid"` and settles later; the
    webhook only records paid sessions (the contract), so keep such methods off
    in Stripe's payment-method settings while bench units are on sale.

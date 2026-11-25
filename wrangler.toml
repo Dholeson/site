@@ -22,6 +22,9 @@ SHIP_TO_COUNTRIES = "US"
 
 # Leave "false" until Stripe Tax is configured (origin address plus tax
 # registrations). Turning it on before that makes Stripe reject every session.
+# While it's "false" no tax is charged, so the site says nothing about tax.
+# When you turn it on, say so on the cart (assets/store.js) and on
+# /shipping-returns.
 ENABLE_AUTOMATIC_TAX = "false"
 
 # The site's D1 database, shared by two owners. The schema this repo creates in

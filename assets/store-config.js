@@ -10,6 +10,8 @@
 
 export const CHECKOUT_ENDPOINT = "/api/checkout";
 
-// Shown on the storefront and in the order confirmation.
+// Shown on the storefront and in the order confirmation. The footer's Contact
+// link uses it too. shipping-returns.html and index.html's structured data
+// spell it out in plain HTML for crawlers; test/seo.test.js keeps them equal.
 export const STORE_NAME = "dhole.dev store";
-export const SUPPORT_EMAIL = "";
+export const SUPPORT_EMAIL = "support@dhole.dev";

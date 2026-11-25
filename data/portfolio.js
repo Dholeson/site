@@ -276,7 +276,7 @@ export const work = [
     monogram: "$",
     tags: ["Cloudflare Pages", "Stripe Checkout", "Automated tests"],
     links: [
-      { label: "See the store", href: "/store.html", primary: true },
+      { label: "See the store", href: "/store", primary: true },
       { label: "Source", href: "https://github.com/Dholeson/site" }
     ],
     problem:
@@ -437,7 +437,7 @@ export const work = [
     accent: "#22d3ee",
     monogram: "◎",
     tags: ["Gamepad API", "Canvas", "No dependencies"],
-    links: [{ label: "Open it", href: "/projects/drift-tester.html", primary: true }],
+    links: [{ label: "Open it", href: "/projects/drift-tester", primary: true }],
     problem:
       "Used controllers get sold as \"no drift\" because someone wiggled the stick and shrugged. I wanted a number I could put in a listing.",
     shipped: [
@@ -466,7 +466,7 @@ export const work = [
     accent: "#fbbf24",
     monogram: "♪",
     tags: ["Web Audio API", "No dependencies"],
-    links: [{ label: "Open it", href: "/projects/chiptune.html", primary: true }],
+    links: [{ label: "Open it", href: "/projects/chiptune", primary: true }],
     problem:
       "Make retro-console-style music in the browser from nothing but basic sound waves.",
     shipped: [

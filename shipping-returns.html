@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shipping, Returns &amp; Testing | dhole.dev</title>
+  <meta name="description" content="Flat-rate US shipping ($6 accessories, $18 per console box), shipped within two business days with tracking. How every console is tested, and the 30-day power-on return window." />
+  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+  <link rel="canonical" href="https://dhole.dev/shipping-returns" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="dhole.dev" />
+  <meta property="og:url" content="https://dhole.dev/shipping-returns" />
+  <meta property="og:title" content="Shipping, returns and testing" />
+  <meta property="og:description" content="Flat-rate US shipping, shipped within two business days with tracking, and how every console is tested before it's listed." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Shipping, returns and testing" />
+  <meta name="twitter:description" content="Flat-rate US shipping, shipped within two business days with tracking, and how every console is tested before it's listed." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
+  <link rel="stylesheet" href="/assets/site.css" />
+  <link rel="stylesheet" href="/assets/pages.css" />
+  <script type="module" src="/assets/entry/shipping-returns.js"></script>
+</head>
+<body>
+  <header class="site-header"></header>
+  <!-- Every statement here mirrors something the code or catalogue already
+       commits to: SHIPPING in data/products.js (test/seo.test.js checks the
+       figures), SHIP_TO_COUNTRIES in wrangler.toml, the order-complete page's
+       two business days, the consoles' 30-day power-on window in their
+       details, and what store_sales keeps. Change them together. -->
+  <section class="demo-header">
+    <div class="wrap">
+      <p class="eyebrow"><a href="/store">Store</a> / Shipping &amp; returns</p>
+      <h1>Shipping, returns and testing</h1>
+      <p class="lede">What it costs to ship, when it goes out, what happens if a console
+        arrives dead, and what "tested" means here.</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="wrap policy">
+      <h2>Shipping</h2>
+      <table>
+        <thead><tr><th>What's in the order</th><th>Shipping</th></tr></thead>
+        <tbody>
+          <tr><td>Accessories only (controllers, cables, memory cards, kits)</td><td>$6.00</td></tr>
+          <tr><td>Anything with a console in it</td><td>$18.00</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>One flat rate per order, set by the biggest box. Accessories ordered with a
+          console ride in the console's box, so they add nothing to shipping.</li>
+        <li>Orders are packed and shipped within two business days, from the US. You get a
+          tracking number by email when yours goes out.</li>
+        <li>US addresses only for now.</li>
+      </ul>
+
+      <h2>Returns</h2>
+      <ul>
+        <li><b>Consoles:</b> 30-day return window if it does not power on.</li>
+      </ul>
+
+      <h2>How units are tested</h2>
+      <ul>
+        <li>Every console is opened, cleaned, and put through a full boot before it's listed.</li>
+        <li>Controller sticks are measured with the
+          <a href="/projects/drift-tester">drift tester</a> on this site, so "no drift" is a
+          reading, not an opinion.</li>
+        <li>Every used console, controller and memory card is listed one unit at a time,
+          and its photos are of that exact unit, not a stock image.</li>
+      </ul>
+
+      <h2>Paying</h2>
+      <ul>
+        <li>Checkout is Stripe's. Card details go to Stripe and never reach this site; Stripe
+          emails your receipt.</li>
+        <li>When you check out with a one-of-one unit, it's held for you for about half an hour
+          while you pay, so nobody else can buy it out from under you.</li>
+      </ul>
+
+      <h2>Your data</h2>
+      <ul>
+        <li>To ship your order, the store keeps the name, email and shipping address you give
+          Stripe, and what you bought.</li>
+        <li>Your cart lives in your own browser (local storage) until you check out.</li>
+        <li>Visits are counted with Cloudflare Web Analytics, which sets no cookies.</li>
+      </ul>
+
+      <h2>Contact</h2>
+      <p>Questions before or after you buy? Email
+        <a href="mailto:support@dhole.dev">support@dhole.dev</a>.</p>
+      <p style="margin-top:2rem"><a class="btn btn-primary" href="/store">Browse the store</a></p>
+    </div>
+  </main>
+</body>
+</html>
