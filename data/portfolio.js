@@ -21,6 +21,18 @@
 //              imageMobile { src, width, height }, optional: the same view in
 //              its phone layout, shown below 60em, where a 1440px screenshot
 //              is too small to read. imageAlt must be true of both.
+//              imageDark { src, mobile }, optional: paths only, for a capture
+//              of the site's own light interface taken in the dark theme too.
+//              Each file has its light twin's size and name plus "-dark"
+//              (image-dark.webp); the page shows the current theme's one.
+//              imageMobile and imageDark may name a capture the home page or
+//              /projects already uses (/assets/home/, /assets/projects/):
+//              shared, not copied.
+//   gallery    optional "More views" on the case page, after What shipped:
+//              [{ src, width, height, mobile { src, width, height }, alt,
+//              caption: [title, text] }]. src is the laptop view (from 60em),
+//              mobile its phone layout; alt must be true of both. Real
+//              captures only, usually the ones a tool's own page shows.
 //   tags       the "Built with" line           links    [{label, href, primary}];
 //                                                       a label names where it goes
 //   problem    one paragraph                   shipped  bullet list
@@ -100,6 +112,22 @@ export const work = [
     imageHeight: 900,
     imageAlt: "Discover Cleaner's Now page: the song playing, a countdown to when it clears from the backlog, and Like, Keep and Clear now buttons.",
     imageMobile: { src: "/assets/portfolio/discover-cleaner-phone.webp", width: 374, height: 491 },
+    // The three views /projects/discover-cleaner shows, with its alts and
+    // captions word for word (its files, shared).
+    gallery: [
+      { src: "/assets/projects/discover-cleaner/insights-report.webp", width: 1440, height: 900,
+        mobile: { src: "/assets/projects/discover-cleaner/insights-report-phone.webp", width: 748, height: 962 },
+        alt: "A monthly Insights report: plays per day and the month's totals against the month before",
+        caption: ["Insights.", "Reports for any week, month, year or all time, compared with the period before."] },
+      { src: "/assets/projects/discover-cleaner/artist.webp", width: 1440, height: 900,
+        mobile: { src: "/assets/projects/discover-cleaner/artist-phone.webp", width: 748, height: 1234 },
+        alt: "The artist page for Dance Gavin Dance: plays, rank, first and last listen, longest streak",
+        caption: ["Artist page.", "Your plays, rank, first and last listen, and streaks for every artist."] },
+      { src: "/assets/projects/discover-cleaner/library-backlog.webp", width: 1440, height: 900,
+        mobile: { src: "/assets/projects/discover-cleaner/library-backlog-phone.webp", width: 748, height: 678 },
+        alt: "The backlog in Library: tracks left, tracks cleared, and the auto-clear switch",
+        caption: ["Library.", "The backlog itself: how many tracks are left, how many have cleared, and whether auto-clear is on."] }
+    ],
     tags: ["Python", "Flask", "SQLite", "Vanilla JS", "Spotify API", "Last.fm API", "Agent orchestration"],
     links: [
       { label: "Open the Discover Cleaner demo", href: "/projects/discover-cleaner-demo/", primary: true },
@@ -299,6 +327,12 @@ export const work = [
     status: "Live",
     access: "Runs in your browser",
     tags: ["Web Audio API", "No dependencies"],
+    // /projects/chiptune mid-playback, in both themes (npm run capture:tools).
+    // The phone crop and its dark twin are the home and /projects row's files.
+    image: "/assets/portfolio/chiptune-playing-wide.webp", imageWidth: 1440, imageHeight: 810,
+    imageAlt: "The chiptune sequencer playing its preloaded pattern, with a dashed outline on the step being heard",
+    imageMobile: { src: "/assets/home/chiptune-playing-phone.webp", width: 358, height: 360 },
+    imageDark: { src: "/assets/portfolio/chiptune-playing-wide-dark.webp", mobile: "/assets/home/chiptune-playing-phone-dark.webp" },
     links: [{ label: "Open the sequencer", href: "/projects/chiptune", primary: true }],
     problem:
       "Make retro-console-style music in the browser from nothing but basic sound waves.",

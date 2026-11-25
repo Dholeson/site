@@ -4,7 +4,10 @@
    .notice and the tokens. No colour values here, only tokens.
 
    Rows are grouped by space and by the weight of their titles: no borders,
-   no cards, no tags. Photo panels (the screenshots) are square on sweep.
+   no cards, no tags. Screenshots are captures of the products, not unit
+   photos: each sits on a 12 px --panel frame, square, in both themes, so a
+   capture of a white interface reads as a picture rather than as controls
+   on this page. From 60em, rows without a screenshot sit two to a line.
    ========================================================================== */
 
 /* Late content arrives into held space: main fills the viewport, so the
@@ -41,21 +44,30 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
 .pf-body { display: grid; gap: var(--s-2); max-width: var(--measure); }
 
 .pf-media { margin: 0; }
+/* The frame: 12 px of panel round the screenshot. It is padding, so the
+   image's width and height attributes still hold its box (no shift). A theme
+   pair (two <picture>s, site.css shows one) sits in the same frame. */
+.pf-media, .case-shot { padding: var(--s-3); background: var(--panel); }
 .pf-media img,
 .case-shot img {
   display: block;
   width: 100%;
   height: auto;
   border-radius: 0;
-  background: var(--sweep);
+  background: var(--panel);
 }
 /* A phone-layout crop (imageMobile) shows below 60em at its own width at
-   most, so a tablet doesn't blow it up; from 60em the screenshot fills. */
+   most, so a tablet doesn't blow it up, and its frame stays round it rather
+   than running on as an empty panel; from 60em the screenshot fills. */
 .pf-media picture img,
 .case-shot picture img { max-width: 23.375rem; }
+.pf-media:has(picture),
+.case-shot:has(picture) { max-width: calc(23.375rem + 2 * var(--s-3)); }
 @media (min-width: 60em) {
   .pf-media picture img,
   .case-shot picture img { max-width: none; }
+  .pf-media:has(picture),
+  .case-shot:has(picture) { max-width: none; }
 }
 
 .pf-earlier { margin-top: var(--s-5); }
@@ -78,6 +90,14 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
   .pf-row--media > .pf-title { grid-row: 1; }
   .pf-row--media > .pf-body { grid-row: 2; align-self: start; }
   .pf-row--media > .pf-media { grid-column: 8 / span 5; grid-row: 1 / span 2; }
+}
+
+/* From 60em, rows without a screenshot sit two to a line (6 columns each, in
+   data order), so the right half carries the next case study instead of
+   space. A row with a screenshot keeps the whole width (text 7, image 5). */
+@media (min-width: 60em) {
+  .pf-list, .pf-group { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--col-gap); }
+  .pf-list > .pf-row--media, .pf-group > .pf-row--media, .pf-list > .pf-earlier { grid-column: 1 / -1; }
 }
 
 /* ---------- /case ---------- */
@@ -107,6 +127,19 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
 .case-body ul { display: grid; gap: var(--s-2); }
 /* Note and Built with sit together, closer than the sections. */
 .case-lines { display: grid; gap: var(--s-3); }
+
+/* "More views" (data/portfolio.js gallery): further real views of the
+   product, each on the same 12 px panel frame, captioned. Below 60em each
+   is its phone layout at 374 px at most; from 60em the laptop view fills
+   the column. Pictures are display: block in site.css already. */
+.case-gallery { display: grid; gap: var(--s-6); }
+.case-gallery picture { max-width: calc(23.375rem + 2 * var(--s-3)); padding: var(--s-3); background: var(--panel); }
+.case-gallery img { width: 100%; height: auto; max-width: 23.375rem; }
+.case-gallery figcaption { margin-top: var(--s-3); max-width: var(--measure); }
+@media (min-width: 60em) {
+  .case-gallery img,
+  .case-gallery picture { max-width: none; }
+}
 
 .case-pager {
   display: flex;

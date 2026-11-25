@@ -10,7 +10,18 @@
 // Layout shift: #pf-list and #case-main are held at 100vh while empty, and
 // main at the viewport (portfolio.css), so everything arrives in one go into
 // held space. Screenshots carry their pixel size. Only real screenshots
-// render: an entry without one is a text-only row.
+// render: an entry without one is a text-only row (from 60em those sit two
+// to a line), and an entry without a gallery has no "More views".
+//
+// A screenshot with imageDark (the step sequencer, a capture of the
+// site's own light interface) is a theme pair: two <picture>s in the one
+// figure, the light one (.for-light) then the dark one (.for-dark), with the
+// same sizes and alt. site.css shows only the current theme's, by the same
+// selectors as the dark tokens, so a theme chosen in the footer wins over
+// the device, and print shows the light one. Both images are lazy, even on
+// the case page, so the hidden one is never fetched. Never a <source> whose
+// media query asks for the device's colour scheme: it would ignore the
+// visitor's choice.
 
 import { profile, work, findWork } from "../data/portfolio.js";
 import { esc } from "./esc.js";
@@ -21,17 +32,58 @@ const external = href => (/^https?:\/\//i.test(href) ? ' target="_blank" rel="no
 
 // A real screenshot with its pixel size, or nothing. With imageMobile (a
 // crop of the same view in its phone layout), that crop shows below 60em
-// and the screenshot from 60em, through one <picture> with one alt.
+// and the screenshot from 60em, through one <picture> with one alt. With
+// imageDark as well, a pair of those pictures (see the top of this file).
 function screenshot(w, cls, eager) {
   if (!set(w.image) || !(w.imageWidth > 0) || !(w.imageHeight > 0)) return "";
   const lazy = eager ? "" : ' loading="lazy"';
   const alt = esc(w.imageAlt || "");
   const m = w.imageMobile;
-  if (m && set(m.src) && m.width > 0 && m.height > 0) {
+  const phone = m && set(m.src) && m.width > 0 && m.height > 0;
+  const dark = w.imageDark;
+  // A dark twin has its light file's size. Half a pair is no pair: without
+  // both of its files, the light screenshot shows alone, as before.
+  if (dark && set(dark.src) && (!phone || set(dark.mobile))) {
+    return `<figure class="${cls}">` +
+      themed(w, "for-light", w.image, phone && m.src, alt) +
+      themed(w, "for-dark", dark.src, phone && dark.mobile, alt) + "</figure>";
+  }
+  if (phone) {
     return `<figure class="${cls}"><picture><source media="(min-width: 60em)" srcset="${esc(w.image)}" width="${Number(w.imageWidth)}" height="${Number(w.imageHeight)}">` +
       `<img src="${esc(m.src)}" alt="${alt}" width="${Number(m.width)}" height="${Number(m.height)}"${lazy} decoding="async"></picture></figure>`;
   }
   return `<figure class="${cls}"><img src="${esc(w.image)}" alt="${alt}" width="${Number(w.imageWidth)}" height="${Number(w.imageHeight)}"${lazy} decoding="async"></figure>`;
+}
+
+// One member of a theme pair: the same <picture> as above, for one theme's
+// files, always lazy. `mobileSrc` is false when the entry has no phone crop.
+function themed(w, cls, src, mobileSrc, alt) {
+  const m = w.imageMobile;
+  const source = mobileSrc
+    ? `<source media="(min-width: 60em)" srcset="${esc(src)}" width="${Number(w.imageWidth)}" height="${Number(w.imageHeight)}">`
+    : "";
+  const [file, width, height] = mobileSrc ? [mobileSrc, m.width, m.height] : [src, w.imageWidth, w.imageHeight];
+  return `<picture class="${cls}">${source}<img src="${esc(file)}" alt="${alt}" width="${Number(width)}" height="${Number(height)}" loading="lazy" decoding="async"></picture>`;
+}
+
+// "More views": further real views of the product, after What shipped. Each
+// is a figure: the laptop view from 60em and its phone layout below, through
+// one <picture> with one alt (true of both), then a caption whose first
+// words are its title. Lazy: they are below the fold. Only items with a
+// real file and its pixel size render; none means no section.
+function gallery(w) {
+  const sized = x => x && set(x.src) && x.width > 0 && x.height > 0;
+  const items = (w.gallery || []).filter(sized);
+  if (!items.length) return "";
+  return `<div class="case-gallery">${items.map(g => {
+    const m = sized(g.mobile) ? g.mobile : null;
+    const [title, text] = Array.isArray(g.caption) ? g.caption : [];
+    const caption = [set(title) && `<strong>${esc(title)}</strong>`, set(text) && esc(text)].filter(Boolean).join(" ");
+    return `<figure><picture>${m
+      ? `<source media="(min-width: 60em)" srcset="${esc(g.src)}" width="${Number(g.width)}" height="${Number(g.height)}">`
+      : ""}<img src="${esc(m ? m.src : g.src)}" alt="${esc(g.alt || "")}" width="${Number(m ? m.width : g.width)}" height="${Number(m ? m.height : g.height)}" loading="lazy" decoding="async"></picture>${
+      caption ? `<figcaption>${caption}</figcaption>` : ""}</figure>`;
+  }).join("")}</div>`;
 }
 
 const statusLine = w => [w.status, w.year].filter(set).join(", ");
@@ -120,6 +172,7 @@ export function renderCase() {
         ${screenshot(w, "case-shot", true)}
         ${section("The problem", set(w.problem) && `<p>${esc(w.problem)}</p>`)}
         ${section("What shipped", list(w.shipped))}
+        ${section("More views", gallery(w))}
         ${section("Decisions", (w.decisions || []).map(d => `<h3>${esc(d.title)}</h3><p>${esc(d.body)}</p>`).join(""))}
         ${section("Outcome", set(w.outcome) && `<p>${esc(w.outcome)}</p>`)}
         ${section("What's next", set(w.next) && `<p>${esc(w.next)}</p>`)}
