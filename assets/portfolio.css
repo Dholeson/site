@@ -1,0 +1,121 @@
+/* ==========================================================================
+   /portfolio and /case: the case-study list and the templated case page.
+   Linked after site.css, which has the page head, buttons, .dl-rows,
+   .notice and the tokens. No colour values here, only tokens.
+
+   Rows are grouped by space and by the weight of their titles: no borders,
+   no cards, no tags. Photo panels (the screenshots) are square on sweep.
+   ========================================================================== */
+
+/* Late content arrives into held space: main fills the viewport, so the
+   footer is never in the first view, and the two JS-rendered regions hold
+   a screen while they are empty. */
+main.portfolio,
+main.case-page { min-height: calc(100svh - var(--header-h)); }
+#pf-list:empty,
+#case-main:empty { min-height: 100vh; }
+
+/* ---------- /portfolio head (static: npm run sync:owner writes it) ---------- */
+.pf-head .role {
+  margin-top: var(--s-2);
+  font-size: var(--t-h3);
+  font-weight: 500;
+  line-height: var(--lh-head);
+}
+.pf-head .btn-row { margin-top: var(--s-5); }
+
+/* ---------- the list ---------- */
+.pf-list,
+.pf-group { display: grid; row-gap: var(--s-7); }
+/* The head block sits further from the first row than the rows sit from
+   each other (with .page-head's bottom padding: 56 at 390, 80 from 960),
+   so the first entry reads as part of the list. */
+.pf-list { margin-top: var(--s-6); }
+
+.pf-row { display: grid; gap: var(--s-3); align-content: start; min-width: 0; }
+.pf-title { font-size: var(--t-h2); font-weight: 500; }
+/* The earlier group sits one step down, under its own h2. */
+.pf-earlier .pf-title { font-size: var(--t-h3); }
+.pf-body { display: grid; gap: var(--s-2); max-width: var(--measure); }
+
+.pf-media { margin: 0; }
+.pf-media img,
+.case-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+  background: var(--sweep);
+}
+
+.pf-earlier { margin-top: var(--s-5); }
+.pf-earlier > h2 { margin-bottom: var(--s-5); }
+
+@media (min-width: 60em) {
+  .pf-list,
+  .pf-group { row-gap: var(--s-8); }
+  .pf-list { margin-top: var(--s-7); }
+  /* Text in 7 of the 12 columns, the screenshot in the other 5. A row
+     without a screenshot keeps the full width (its text stays at reading
+     width through .pf-body's measure). */
+  .pf-row--media {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: auto 1fr;
+    column-gap: var(--col-gap);
+  }
+  .pf-row--media > .pf-title,
+  .pf-row--media > .pf-body { grid-column: 1 / span 7; }
+  .pf-row--media > .pf-title { grid-row: 1; }
+  .pf-row--media > .pf-body { grid-row: 2; align-self: start; }
+  .pf-row--media > .pf-media { grid-column: 8 / span 5; grid-row: 1 / span 2; }
+}
+
+/* ---------- /case ---------- */
+/* Head: the h1 (32, 40 from 960, from site.css) and the pitch at 20/400.
+   "All case studies" follows it as navigation; nothing sits above the h1. */
+.case-head { padding-bottom: var(--s-3); }
+.case-pitch {
+  margin-top: var(--s-3);
+  max-width: var(--measure);
+  font-size: var(--t-h3);
+  font-weight: 400;
+  line-height: 1.4;
+}
+.case-all { margin-bottom: var(--s-5); }
+@media (min-width: 60em) { .case-head { padding-bottom: var(--s-4); } .case-all { margin-bottom: var(--s-6); } }
+
+.case-grid { display: grid; gap: var(--s-7); align-items: start; }
+.case-side { display: grid; gap: var(--s-5); align-content: start; min-width: 0; }
+.case-body { display: grid; gap: var(--s-7); align-content: start; min-width: 0; }
+
+.case-shot { margin: 0; }
+.case-body > section,
+.case-lines { max-width: var(--measure); }
+.case-body > section { display: grid; gap: var(--s-3); }
+.case-body h2 { font-size: var(--t-h2); }
+.case-body h3 { margin-top: var(--s-3); font-size: var(--t-h3); }
+.case-body ul { display: grid; gap: var(--s-2); }
+/* Note and Built with sit together, closer than the sections. */
+.case-lines { display: grid; gap: var(--s-3); }
+
+.case-pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s-5);
+  justify-content: space-between;
+}
+.case-next { margin-left: auto; text-align: right; }
+
+/* From 960: the facts and links in a 4-column column that stays in view,
+   the screenshot and the story in the other 8. The column is sticky only
+   while it fits the viewport below the header (portfolio-page.js sets
+   .is-sticky), so its last rows and links are never out of reach. */
+@media (min-width: 60em) {
+  .case-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--col-gap);
+  }
+  .case-side { grid-column: 1 / span 4; }
+  .case-side.is-sticky { position: sticky; top: var(--sticky-top); }
+  .case-body { grid-column: 5 / span 8; }
+}

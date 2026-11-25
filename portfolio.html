@@ -3,54 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portfolio — dhole.dev</title>
-  <meta name="description" content="Products shipped by a Senior Product Manager directing AI coding agents. Every case study covers the problem, the decisions and the outcome." />
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+  <title>Product case studies | dhole.dev</title>
+  <meta name="description" content="Case studies of products built on my own time by a senior product manager directing AI coding agents, and how each was checked." />
   <link rel="canonical" href="https://dhole.dev/portfolio" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
   <meta property="og:url" content="https://dhole.dev/portfolio" />
-  <meta property="og:title" content="Portfolio — dhole.dev" />
-  <meta property="og:description" content="Products shipped by a Senior Product Manager directing AI coding agents. Every case study covers the problem, the decisions and the outcome." />
-  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:title" content="Product case studies" />
+  <meta property="og:description" content="Case studies of products built on my own time by a senior product manager directing AI coding agents, and how each was checked." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og-portfolio.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Portfolio — dhole.dev" />
-  <meta name="twitter:description" content="Products shipped by a Senior Product Manager directing AI coding agents. Every case study covers the problem, the decisions and the outcome." />
-  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
-  <link rel="stylesheet" href="/assets/site.css" />
-  <link rel="stylesheet" href="/assets/pages.css" />
-  <script type="module" src="/assets/entry/portfolio.js"></script>
+  <meta name="twitter:title" content="Product case studies" />
+  <meta name="twitter:description" content="Case studies of products built on my own time by a senior product manager directing AI coding agents, and how each was checked." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-portfolio.png" />
+
+  <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
+  <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+  <link rel="stylesheet" href="/assets/portfolio.css?v=2" />
+  <link rel="modulepreload" href="/data/portfolio.js" />
+  <link rel="modulepreload" href="/assets/esc.js" />
+  <link rel="modulepreload" href="/assets/chrome.js" />
+  <link rel="modulepreload" href="/assets/cart.js" />
+  <link rel="modulepreload" href="/assets/catalogue.js" />
+  <link rel="modulepreload" href="/assets/store-config.js" />
+  <link rel="modulepreload" href="/data/products.js" />
+  <script type="module" src="/assets/entry/portfolio.js?v=2"></script>
 </head>
 <body>
   <header class="site-header"></header>
-  <section class="demo-header">
+  <main class="portfolio">
     <div class="wrap">
-      <p class="eyebrow">Portfolio</p>
-      <h1>Products I've shipped</h1>
-      <p class="lede">
-        I'm a Senior Product Manager. These are products I've shipped on my own
-        time by directing AI coding agents: I own the problem, the decisions and
-        the testing, and the agents write most of the code. Each one has a short
-        case study, and a link to the real, working thing wherever there is one.
-      </p>
-      <ol class="pf-process" aria-label="How I work">
-        <li><b>Frame it</b>Pin down who it's for, what done looks like, and what it must never get wrong.</li>
-        <li><b>Split it</b>Break the work into pieces agents can build in parallel without colliding.</li>
-        <li><b>Verify it</b>Tests, side-by-side measurement and hands-on use. Nothing ships on trust.</li>
-        <li><b>Ship it</b>Decide what's good enough, deploy it, and keep it running for real users.</li>
-      </ol>
-      <div class="pf-contact" id="pf-contact"></div>
-    </div>
-  </section>
-
-  <main>
-    <div class="wrap">
-      <div class="pf-filters" id="pf-filters" role="group" aria-label="Filter by type"></div>
-      <div class="grid pf-grid" id="pf-grid"></div>
+      <div class="page-head pf-head">
+        <!-- owner:start: npm run sync:owner writes everything down to owner:end,
+             from data/owner.js (fullName) and the profile in data/portfolio.js.
+             Edit those, then run it; test/portfolio.test.js fails until you do. -->
+        <h1>Product case studies</h1>
+        <p class="lede">Case studies by a senior product manager: products I've built on my own time by directing AI coding agents. I set the problem and made the calls, and each case study shows how I checked the result.</p>
+        <div class="btn-row pf-contact">
+          <a class="btn" href="https://github.com/Dholeson" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <!-- owner:end -->
+      </div>
+      <noscript><p class="notice noscript"><strong>This page needs JavaScript to show the case studies.</strong> The <a href="/shipping-returns">shipping and returns</a> page works without it, and you can email <a href="mailto:support@dhole.dev">support@dhole.dev</a>.</p></noscript>
+      <div id="pf-list" class="pf-list"></div>
     </div>
   </main>
 </body>

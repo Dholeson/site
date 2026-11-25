@@ -3,32 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Case study — dhole.dev</title>
-  <meta name="description" content="Selected work: web apps, tools, games and client sites. Every project links to the real, working thing." />
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
-
+  <!-- seo:start: functions/case.js replaces everything down to seo:end with
+       this case study's title, description, canonical URL and link-preview
+       tags, from data/portfolio.js (lib/seo.js caseHead). What's here is only
+       the fallback. Never give it a canonical: every case study would claim
+       to be that one page. -->
+  <title>Case study | dhole.dev</title>
+  <meta name="description" content="A product case study from dhole.dev: the problem, what shipped, the decisions, and how the result was checked." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
-  <meta property="og:title" content="Portfolio — dhole.dev" />
-  <meta property="og:description" content="Selected work: web apps, tools, games and client sites. Every project links to the real, working thing." />
-  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:title" content="Product case studies" />
+  <meta property="og:description" content="A product case study from dhole.dev: the problem, what shipped, the decisions, and how the result was checked." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og-portfolio.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Portfolio — dhole.dev" />
-  <meta name="twitter:description" content="Selected work: web apps, tools, games and client sites. Every project links to the real, working thing." />
-  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
-  <link rel="stylesheet" href="/assets/site.css" />
-  <link rel="stylesheet" href="/assets/pages.css" />
-  <script type="module" src="/assets/entry/case.js"></script>
+  <meta name="twitter:title" content="Product case studies" />
+  <meta name="twitter:description" content="A product case study from dhole.dev: the problem, what shipped, the decisions, and how the result was checked." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-portfolio.png" />
+  <!-- seo:end -->
+  <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
+  <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+  <link rel="stylesheet" href="/assets/portfolio.css?v=2" />
+  <link rel="modulepreload" href="/data/portfolio.js" />
+  <link rel="modulepreload" href="/assets/esc.js" />
+  <link rel="modulepreload" href="/assets/chrome.js" />
+  <link rel="modulepreload" href="/assets/cart.js" />
+  <link rel="modulepreload" href="/assets/catalogue.js" />
+  <link rel="modulepreload" href="/assets/store-config.js" />
+  <link rel="modulepreload" href="/data/products.js" />
+  <script type="module" src="/assets/entry/case.js?v=2"></script>
 </head>
 <body>
   <header class="site-header"></header>
-  <main>
-    <div class="wrap case-wrap">
-      <p class="eyebrow case-back"><a href="/portfolio">← All work</a></p>
-      <article id="case-main"></article>
+  <main class="case-page">
+    <div class="wrap">
+      <noscript><p class="notice noscript"><strong>This page needs JavaScript to show the case studies.</strong> The <a href="/shipping-returns">shipping and returns</a> page works without it, and you can email <a href="mailto:support@dhole.dev">support@dhole.dev</a>.</p></noscript>
+      <article id="case-main" class="case"></article>
+      <!-- assets/portfolio-page.js moves this under the case study's head block. -->
+      <p class="case-all"><a class="btn-text" href="/portfolio">All case studies</a></p>
     </div>
   </main>
 </body>

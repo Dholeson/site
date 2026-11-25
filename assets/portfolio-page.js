@@ -1,146 +1,191 @@
-// Portfolio: an index grid (portfolio.html) and one templated case-study page
-// (case.html?id=...). Everything comes from data/portfolio.js, so adding a
-// project is adding a block there -- no new HTML page.
+// Portfolio: the case-study list on /portfolio and one templated case-study
+// page (/case?id=...). Both come from data/portfolio.js, so adding a project
+// is adding a block there, with no new HTML page.
+//
+// /portfolio's head (h1, lede, contact buttons) is static HTML that
+// npm run sync:owner writes; this file renders only the list into #pf-list.
+// /case's <head> is written on the server by functions/case.js; this file
+// renders the body into #case-main and keeps document.title in step.
+//
+// Layout shift: #pf-list and #case-main are held at 100vh while empty, and
+// main at the viewport (portfolio.css), so everything arrives in one go into
+// held space. Screenshots carry their pixel size. Only real screenshots
+// render: an entry without one is a text-only row.
 
 import { profile, work, findWork } from "../data/portfolio.js";
 import { esc } from "./esc.js";
 
-// ---------- index ----------
+const set = v => typeof v === "string" ? v.trim() !== "" : v !== undefined && v !== null;
+const caseUrl = id => `/case?id=${encodeURIComponent(id)}`;
+const external = href => (/^https?:\/\//i.test(href) ? ' target="_blank" rel="noopener"' : "");
+
+// A real screenshot with its pixel size, or nothing.
+function screenshot(w, cls, eager) {
+  if (!set(w.image) || !(w.imageWidth > 0) || !(w.imageHeight > 0)) return "";
+  return `<figure class="${cls}"><img src="${esc(w.image)}" alt="${esc(w.imageAlt || "")}" width="${Number(w.imageWidth)}" height="${Number(w.imageHeight)}"${eager ? "" : ' loading="lazy"'} decoding="async"></figure>`;
+}
+
+const statusLine = w => [w.status, w.year].filter(set).join(", ");
+const primaryLink = w => (w.links || []).find(l => l.primary) || null;
+
+// ---------- /portfolio ----------
 
 export function renderPortfolio() {
-  renderProfile();
-
-  const grid = document.getElementById("pf-grid");
-  const filterBar = document.getElementById("pf-filters");
-
-  // Filters are built from the data, in first-seen order, so a new category
-  // shows up without touching the page.
-  const kinds = [...new Set(work.map(w => w.kind))];
-  const initial = kinds.includes(decodeURIComponent(location.hash.slice(1)))
-    ? decodeURIComponent(location.hash.slice(1)) : "All";
-
-  filterBar.innerHTML = ["All", ...kinds].map(k => `
-    <button type="button" class="pf-filter" data-kind="${esc(k)}"
-      aria-pressed="${k === initial}">${esc(k)}</button>`).join("");
-
-  function apply(kind) {
-    const list = kind === "All" ? work : work.filter(w => w.kind === kind);
-    grid.innerHTML = list.map(card).join("");
-    for (const b of filterBar.querySelectorAll("button")) {
-      b.setAttribute("aria-pressed", String(b.dataset.kind === kind));
-    }
-  }
-
-  filterBar.addEventListener("click", e => {
-    const b = e.target.closest("button[data-kind]");
-    if (!b) return;
-    const kind = b.dataset.kind;
-    history.replaceState(null, "", kind === "All" ? location.pathname : `#${encodeURIComponent(kind)}`);
-    apply(kind);
-  });
-
-  apply(initial);
+  const list = document.getElementById("pf-list");
+  if (!list) return;
+  const main = work.filter(w => w.group !== "earlier");
+  const earlier = work.filter(w => w.group === "earlier");
+  list.innerHTML = main.map(w => row(w, "h2")).join("") + (earlier.length ? `
+    <section class="pf-earlier" aria-labelledby="pf-earlier">
+      <h2 id="pf-earlier">Earlier and in progress</h2>
+      <div class="pf-group">${earlier.map(w => row(w, "h3")).join("")}</div>
+    </section>` : "");
 }
 
-function renderProfile() {
-  const el = document.getElementById("pf-contact");
-  if (!el) return;
-  const links = [
-    profile.email  && { label: "Email me", href: `mailto:${profile.email}`, primary: true },
-    profile.resume && { label: "Résumé", href: profile.resume },
-    profile.github && { label: "GitHub", href: profile.github },
-    profile.linkedin && { label: "LinkedIn", href: profile.linkedin }
-  ].filter(Boolean);
-  el.innerHTML = links.map(l =>
-    `<a class="btn btn-sm${l.primary ? " btn-primary" : ""}" href="${esc(l.href)}"${external(l.href)}>${esc(l.label)}</a>`
-  ).join("");
-}
-
-function card(w) {
-  const caseHref = `/case?id=${encodeURIComponent(w.id)}`;
-  const primary = w.links.find(l => l.primary);
+// One entry: title, a real screenshot if there is one, then the pitch, how
+// it was checked, status and year, and the primary link under its own name.
+// No borders: rows are separated by space (portfolio.css).
+function row(w, h) {
+  const shot = screenshot(w, "pf-media", false);
+  const primary = primaryLink(w);
+  const status = statusLine(w);
   return `
-  <article class="card pf-card">
-    <a class="pf-thumb" href="${caseHref}" style="--proj-accent:${esc(w.accent)}" tabindex="-1" aria-hidden="true">
-      ${thumb(w)}
-      ${w.access ? `<span class="chip pf-access">${esc(w.access)}</span>` : ""}
-    </a>
-    <div class="card-body">
-      <p class="pf-meta">${esc(w.kind)} · ${esc(w.year)}</p>
-      <h3><a href="${caseHref}">${esc(w.title)}</a></h3>
-      <p class="muted">${esc(w.pitch)}</p>
-      <div class="pf-actions">
-        <a class="btn btn-sm" href="${caseHref}">Case study</a>
-        ${primary ? `<a class="btn btn-sm btn-primary" href="${esc(primary.href)}"${external(primary.href)}>${esc(primary.label)} →</a>` : ""}
+    <article class="pf-row${shot ? " pf-row--media" : ""}">
+      <${h} class="pf-title"><a href="${caseUrl(w.id)}">${esc(w.title)}</a></${h}>
+      ${shot}
+      <div class="pf-body">
+        <p>${esc(w.pitch)}</p>
+        ${set(w.checked) ? `<p><span class="quiet">Checked:</span> ${esc(w.checked)}</p>` : ""}
+        ${status ? `<p class="quiet">${esc(status)}</p>` : ""}
+        ${primary ? `<p><a class="btn-text" href="${esc(primary.href)}"${external(primary.href)}>${esc(primary.label)}</a></p>` : ""}
       </div>
-    </div>
-  </article>`;
+    </article>`;
 }
 
-function thumb(w) {
-  if (w.image) {
-    return `<img src="${esc(w.image)}" alt="" loading="lazy" />`;
-  }
-  return `<span class="pf-monogram">${esc(w.monogram || w.title.slice(0, 2))}</span>`;
-}
-
-// ---------- case study ----------
+// ---------- /case?id= ----------
 
 export function renderCase() {
   const main = document.getElementById("case-main");
+  if (!main) return;
   const id = new URLSearchParams(location.search).get("id");
-  const w = findWork(id);
+  const w = id ? findWork(id) : null;
+
+  // "All case studies" is static in case.html (so it exists without this
+  // script) and moves under the head block here. Moving a node re-creates
+  // it, so it never counts as a layout shift.
+  let all = document.querySelector(".case-all");
+  if (!all) {
+    all = document.createElement("p");
+    all.className = "case-all";
+    all.innerHTML = '<a class="btn-text" href="/portfolio">All case studies</a>';
+  }
 
   if (!w) {
-    document.title = "Not found — dhole.dev";
-    main.innerHTML = `<div class="empty-state"><p>No project called “${esc(id || "")}”.</p>
-      <a class="btn" href="/portfolio">All work →</a></div>`;
+    document.title = "Case study not found | dhole.dev";
+    main.innerHTML = `<header class="page-head case-head"><h1>No case study with that id</h1></header>`;
+    const a = all.querySelector("a");
+    if (a) a.className = "btn";
+    main.append(all);
     return;
   }
 
-  document.title = `${w.title} — Portfolio — dhole.dev`;
+  // An old id (alias) shows the case under its current address.
+  if (w.id !== id) {
+    try { history.replaceState(null, "", caseUrl(w.id) + location.hash); } catch { /* sandboxed */ }
+  }
+  document.title = `${w.title}: case study | dhole.dev`;
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.setAttribute("content", w.pitch);
 
-  const i = work.indexOf(w);
-  const prev = work[(i - 1 + work.length) % work.length];
-  const next = work[(i + 1) % work.length];
-
   main.innerHTML = `
-    <header class="case-head" style="--proj-accent:${esc(w.accent)}">
-      <p class="eyebrow">${esc(w.kind)} · ${esc(w.year)}</p>
+    <header class="page-head case-head">
       <h1>${esc(w.title)}</h1>
-      <p class="lede">${esc(w.pitch)}</p>
-      ${w.links.length ? `<div class="hero-actions">
-        ${w.links.map(l => `<a class="btn${l.primary ? " btn-primary" : ""}" href="${esc(l.href)}"${external(l.href)}>${esc(l.label)} →</a>`).join("")}
-      </div>` : ""}
+      <p class="case-pitch">${esc(w.pitch)}</p>
     </header>
+    <div class="case-grid">
+      <div class="case-side">
+        ${facts(w)}
+        ${buttons(w)}
+      </div>
+      <div class="case-body">
+        ${screenshot(w, "case-shot", true)}
+        ${section("The problem", set(w.problem) && `<p>${esc(w.problem)}</p>`)}
+        ${section("What shipped", list(w.shipped))}
+        ${section("Decisions", (w.decisions || []).map(d => `<h3>${esc(d.title)}</h3><p>${esc(d.body)}</p>`).join(""))}
+        ${section("Outcome", set(w.outcome) && `<p>${esc(w.outcome)}</p>`)}
+        ${section("What's next", set(w.next) && `<p>${esc(w.next)}</p>`)}
+        ${aside(w)}
+        ${contact(w)}
+        ${pager(w)}
+      </div>
+    </div>`;
+  main.querySelector(".case-head").after(all);
+  stickWhileItFits(main.querySelector(".case-side"));
+}
 
-    ${w.image ? `<img class="case-hero" src="${esc(w.image)}" alt="${esc(w.imageAlt || w.title)}" />` : ""}
+// From 960px the facts column is sticky, but only while it fits under the
+// header: a sticky column taller than the viewport would hide its last rows
+// and links until the end of the page. Toggling it at scroll 0 moves nothing.
+function stickWhileItFits(side) {
+  if (!side || typeof matchMedia !== "function") return;
+  const wide = matchMedia("(min-width: 60em)");
+  const fit = () => {
+    const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sticky-top")) || 85;
+    side.classList.toggle("is-sticky", wide.matches && side.offsetHeight <= window.innerHeight - top - 16);
+  };
+  fit();
+  window.addEventListener("resize", fit);
+}
 
-    <dl class="case-facts">
-      <div class="case-wide"><dt>My role</dt><dd>${esc(w.role)}</dd></div>
-      ${w.users ? `<div class="case-wide"><dt>Who it's for</dt><dd>${esc(w.users)}</dd></div>` : ""}
-      <div><dt>Status</dt><dd>${esc(w.status)}</dd></div>
-      ${w.access ? `<div><dt>How to see it</dt><dd>${esc(w.access)}</dd></div>` : ""}
-    </dl>
+// Role, For, Status, How to see it, Year, Checked: only the ones that are set.
+function facts(w) {
+  const rows = [
+    ["Role", w.role], ["For", w.users], ["Status", w.status],
+    ["How to see it", w.access], ["Year", w.year], ["Checked", w.checked]
+  ].filter(([, v]) => set(v));
+  if (!rows.length) return "";
+  return `<dl class="dl-rows case-facts">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`;
+}
 
-    <div class="case-body">
-      ${section("The problem", w.problem && `<p>${esc(w.problem)}</p>`)}
-      ${section("What shipped", list(w.shipped))}
-      ${section("Key decisions", w.decisions && w.decisions.map(d =>
-        `<div class="case-hard"><h3>${esc(d.title)}</h3><p>${esc(d.body)}</p></div>`).join(""))}
-      ${section("Outcome", w.outcome && `<p>${esc(w.outcome)}</p>`)}
-      ${section("What's next", w.next && `<p>${esc(w.next)}</p>`)}
-      ${w.tags && w.tags.length ? `<section class="case-built"><h2>Built with</h2><div class="chips">${w.tags.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div></section>` : ""}
-      ${w.note ? `<div class="notice info">${esc(w.note)}</div>` : ""}
-    </div>
+// "Note: ..." and "Built with: ...", together.
+function aside(w) {
+  const lines = [
+    set(w.note) && `<p><span class="quiet">Note:</span> ${esc(w.note)}</p>`,
+    w.tags && w.tags.length && `<p><span class="quiet">Built with:</span> ${esc(w.tags.join(", "))}</p>`
+  ].filter(Boolean);
+  return lines.length ? `<div class="case-lines">${lines.join("")}</div>` : "";
+}
 
-    <nav class="case-pager" aria-label="More work">
-      <a href="/case?id=${encodeURIComponent(prev.id)}"><span class="dim">← Previous</span>${esc(prev.title)}</a>
-      <a href="/portfolio" class="case-pager-all">All work</a>
-      <a href="/case?id=${encodeURIComponent(next.id)}" class="next"><span class="dim">Next →</span>${esc(next.title)}</a>
-    </nav>`;
+// Each link under its own name, the primary one first and ink-filled.
+function buttons(w) {
+  const links = w.links || [];
+  const ordered = [...links.filter(l => l.primary), ...links.filter(l => !l.primary)];
+  if (!ordered.length) return "";
+  return `<div class="btn-row case-links">${ordered.map((l, n) =>
+    `<a class="${n === 0 ? "btn-ink" : "btn"}" href="${esc(l.href)}"${external(l.href)}>${esc(l.label)}</a>`).join("")}</div>`;
+}
+
+// "Talk to me about this", only once data/portfolio.js has a way to do that.
+function contact(w) {
+  const ways = [];
+  if (set(profile.email)) {
+    const mail = esc(profile.email.trim());
+    ways.push(`email <a href="mailto:${mail}?subject=${esc(encodeURIComponent(w.title))}">${mail}</a>`);
+  }
+  if (set(profile.linkedin)) ways.push(`message me on <a href="${esc(profile.linkedin.trim())}"${external(profile.linkedin)}>LinkedIn</a>`);
+  if (!ways.length) return "";
+  return `<section class="case-contact"><h2>Talk to me about this</h2><p>To ask about ${esc(w.title)}, ${ways.join(" or ")}.</p></section>`;
+}
+
+// In list order; the first has no previous and the last no next.
+function pager(w) {
+  const i = work.indexOf(w);
+  const prev = work[i - 1];
+  const next = work[i + 1];
+  if (!prev && !next) return "";
+  return `<nav class="case-pager" aria-label="More case studies">${
+    prev ? `<a class="btn-text case-prev" href="${caseUrl(prev.id)}" rel="prev">Previous: ${esc(prev.title)}</a>` : ""}${
+    next ? `<a class="btn-text case-next" href="${caseUrl(next.id)}" rel="next">Next: ${esc(next.title)}</a>` : ""}</nav>`;
 }
 
 function section(title, html) {
@@ -149,8 +194,4 @@ function section(title, html) {
 
 function list(items) {
   return items && items.length ? `<ul>${items.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : "";
-}
-
-function external(href) {
-  return /^https?:\/\//.test(href) ? ' target="_blank" rel="noopener"' : "";
 }

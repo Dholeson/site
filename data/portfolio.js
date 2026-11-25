@@ -1,34 +1,41 @@
-// Portfolio content. One block per project; the index card and the case-study
-// page (case.html?id=<id>) are both generated from it.
+// Portfolio content. One block per project: the /portfolio list, the
+// case-study page (/case?id=<id>) and the case page's server-written <head>
+// (functions/case.js) are all generated from it.
 //
 // Written for product-management readers: lead with who it's for, the
-// problem, and the decisions -- the stack is a footnote, not the headline.
+// problem, the decisions and how the result was checked. The stack goes last.
 //
 // Fields
-//   id         URL slug                       title, pitch   card + page header
-//   kind       filter group                   year, role, status
-//   users      who it's for (one line)        access  how a reviewer can see it
-//   accent     hex colour for the card        monogram  two letters if no image
-//   image      optional screenshot path (put files in /assets/portfolio/)
-//   imageAlt   alt text for it               aliases  old ids that still resolve
-//   tags       "Built with" chips             links   [{label, href, primary}]
-//   problem    one paragraph                  shipped bullet list
-//   decisions  [{title, body}] -- the calls I made and why
-//   outcome    one paragraph                  next    one paragraph, optional
-//   note       optional caveat box
+//   id         URL slug (/case?id=)            aliases  old ids that still resolve
+//   title      list and page heading           pitch    one or two sentences
+//   group      "earlier" lists it under "Earlier and in progress"; leave it
+//              unset for the main list
+//   kind, year, role, status
+//   users      who it's for (one line)         access   how a reviewer can see it
+//   checked    how the result was verified, in one or two sentences, built
+//              only from figures already stated elsewhere in this file
+//              (test/portfolio.test.js checks every number in it)
+//   image      optional real screenshot (put files in /assets/portfolio/),
+//              with imageWidth and imageHeight (its pixel size, so the page
+//              holds its space) and imageAlt. No stand-ins: no image is fine.
+//   tags       the "Built with" line           links    [{label, href, primary}];
+//                                                       a label names where it goes
+//   problem    one paragraph                   shipped  bullet list
+//   decisions  [{title, body}]: the calls I made and why
+//   outcome    one paragraph                   next     one paragraph, optional
+//   note       optional caveat
 //
-// Order here is the order on the page: lead with the strongest work.
-// Only claim what actually happened. No invented metrics.
+// Order here is the order on the page: the strongest work first, then the
+// "earlier" group. Only claim what happened. No invented metrics.
 
 export const profile = {
-  // Contact buttons only render for fields that are set.
+  // Contact buttons only render for fields that are set. The portfolio's
+  // head is static HTML, so after changing these run: npm run sync:owner
   email: null,
   resume: null,
   github: "https://github.com/Dholeson",
   linkedin: null
 };
-
-const AI = " Built with AI coding agents.";
 
 export const work = [
   {
@@ -37,23 +44,22 @@ export const work = [
     pitch: "Every upcoming AKC dog show in one calendar and map, with ring times and judges pulled straight from the published judging programs.",
     kind: "Volunteer work",
     year: 2026,
-    role: "Volunteer for the Finnish Spitz Club of America. Product owner: scope, data quality and rollout." + AI,
+    role: "Volunteer for the Finnish Spitz Club of America. Product owner: scope, data quality and rollout.",
     users: "Club members, exhibitors, and anyone who wants to meet the breed in person.",
     status: "Live, updates itself twice a day",
     access: "Runs in your browser",
-    accent: "#e11d48",
-    monogram: "FS",
+    checked: "Every parser is checked against the index printed in each program (up to 524 of 524 entries matched), and all 274 programs were re-checked after one wrong start time was reported.",
     tags: ["Python", "pdfplumber", "SQLite", "GitHub Actions", "Cloudflare Workers"],
     links: [
-      { label: "Open it", href: "https://finnishspitzclub.github.io/fsca-events/", primary: true },
-      { label: "On finnishspitz.org", href: "https://finnishspitz.org/events" }
+      { label: "Open the Show Finder", href: "https://finnishspitzclub.github.io/fsca-events/", primary: true },
+      { label: "See it on finnishspitz.org", href: "https://finnishspitz.org/events" }
     ],
     problem:
-      "If you want to see a Finnish Spitz in person, or show one, you have to search AKC's event listings and then read each show's judging program PDF to find out when the breed is actually in the ring. That's a lot of digging just to know when to show up.",
+      "If you want to see a Finnish Spitz in person, or show one, you have to search AKC's event listings and then read each show's judging program PDF to find out when the breed is in the ring. That's a lot of digging just to know when to show up.",
     shipped: [
       "A calendar, map and grid of upcoming shows. Each show has judges, fees, entry details and one-tap calendar export.",
       "A day-of panel: the breed's ring, start time, judge, entry count and how many dogs are ahead.",
-      "Printable ring cards, and a breed picker that works for any AKC breed, not just Finnish Spitz.",
+      "Printable ring cards, and a breed picker that works for any AKC breed.",
       "Runs itself: it refreshes twice a day and is embedded on the club's own website, with nobody maintaining it."
     ],
     decisions: [
@@ -66,8 +72,8 @@ export const work = [
         body: "Pre-loading every breed would have meant about 50 times more requests to AKC. I chose on-demand loading behind a 24-hour cache instead, and later cut the server time per request roughly in half to stay inside the free plan's limits."
       },
       {
-        title: "Fix the class of bug, not the ticket",
-        body: "A user reported a wrong '9 AM' start time. Rather than patch that one show, I fixed the cause and re-checked all 274 programs, which corrected times on 9 days of shows."
+        title: "Fix the whole class of bug",
+        body: "A user reported a wrong '9 AM' start time. I fixed the cause and re-checked all 274 programs, which corrected times on 9 days of shows."
       }
     ],
     outcome:
@@ -78,20 +84,21 @@ export const work = [
     id: "discover-cleaner",
     aliases: ["spotify-discover-cleaner"],
     title: "Discover Cleaner",
-    pitch: "Clears songs from a Spotify \"to listen\" playlist once you've actually heard them, so a backlog that only ever grew finally shrinks.",
+    pitch: "Clears songs from a Spotify \"to listen\" playlist once you've heard them, so a backlog that only ever grew finally shrinks.",
     kind: "Tools",
     year: 2026,
-    role: "Solo: product design, direction and testing." + AI,
+    role: "Solo: product design, direction and testing.",
     users: "Anyone whose save-for-later playlist only ever grows. Me first.",
     status: "Live demo; open source",
     access: "Demo in your browser",
-    accent: "#1ed760",
-    monogram: "Dc",
+    checked: "An adversarial verifier confirmed 171 of the bugs about 20 agents reported and refuted 5. 444 automated tests. April 2026 plays within 2 of Last.fm's report (661 vs 659).",
     image: "/assets/portfolio/discover-cleaner.webp",
+    imageWidth: 1440,
+    imageHeight: 900,
     imageAlt: "Discover Cleaner's Now page: the song playing, a countdown to when it clears from the backlog, and Like, Keep and Clear now buttons.",
     tags: ["Python", "Flask", "SQLite", "Vanilla JS", "Spotify API", "Last.fm API", "Agent orchestration"],
     links: [
-      { label: "Open the demo", href: "/projects/discover-cleaner-demo/", primary: true },
+      { label: "Open the Discover Cleaner demo", href: "/projects/discover-cleaner-demo/", primary: true },
       { label: "Source on GitHub", href: "https://github.com/Dholeson/spotify-discover-cleaner" }
     ],
     problem:
@@ -126,19 +133,127 @@ export const work = [
   },
 
   {
+    id: "drift-tester",
+    title: "Controller Drift Tester",
+    pitch: "Plug in a gamepad and get a measured number for how far its sticks have wandered.",
+    kind: "Tools",
+    year: 2026,
+    role: "Solo: concept, direction and testing.",
+    users: "Me as a seller, and buyers who want to know what they're getting.",
+    status: "Live",
+    access: "Runs in your browser",
+    tags: ["Gamepad API", "Canvas", "No dependencies"],
+    links: [{ label: "Open the drift tester", href: "/projects/drift-tester", primary: true }],
+    problem:
+      "Used controllers get sold as \"no drift\" because someone wiggled the stick and shrugged. I wanted a number I could put in a listing.",
+    shipped: [
+      "A live view of both sticks.",
+      "A two-second rest test: let go of the sticks and it measures how far off-centre they sit and how much they jitter."
+    ],
+    decisions: [
+      {
+        title: "Replace an adjective with a number",
+        body: "The rest test turns \"no drift\" into a measured resting offset, and it's the same test for every controller."
+      }
+    ],
+    outcome: "Live.",
+    note: "Needs a controller plugged in."
+  },
+
+  {
+    id: "halo-debrief",
+    title: "Debrief",
+    pitch: "Halo Infinite analytics that answer the questions a player has: how should I play this map, and what should I fix?",
+    kind: "Web apps",
+    year: 2026,
+    role: "Solo: product design, direction and testing.",
+    users: "Halo players who want to improve, starting with me, plus anyone I scout or share a view with.",
+    status: "Live, updating itself",
+    access: "Runs in your browser",
+    tags: ["Python", "GitHub Actions", "GitHub Pages", "Vanilla JS"],
+    links: [
+      { label: "Open Debrief", href: "https://dholeson.github.io/halo-reporting/", primary: true },
+      { label: "Source on GitHub", href: "https://github.com/Dholeson/halo-reporting" }
+    ],
+    problem:
+      "Halo's own stats screens tell you what happened in one match. They don't tell you where you win, when you start tilting, or what to do differently on the map you're about to load into.",
+    shipped: [
+      "A pre-match Briefing: pick the map and mode, and get a verdict, your numbers there against your baseline, and a game plan.",
+      "A Coach that ranks findings about you: win conditions, tilt, session fatigue, warm-up, time of day and map pool.",
+      "Ranked history, matches grouped into play sessions, and a Squad view of who you win with.",
+      "Scouting: look up any player and get their newest 300 games in about three minutes."
+    ],
+    decisions: [
+      {
+        title: "Organise around moments of use",
+        body: "The product is built around when you'd use it: loading into a match (Briefing) and after a session (Debrief and Coach)."
+      },
+      {
+        title: "Show how sure each finding is",
+        body: "Every Coach finding carries its evidence and a confidence level, so a pattern from five games isn't presented as if it came from five hundred."
+      },
+      {
+        title: "Every view is a link",
+        body: "Filters, presets and saved views live in the URL, so any view can be bookmarked or sent to a teammate."
+      },
+      {
+        title: "No server to babysit",
+        body: "It runs entirely on GitHub's free tooling. GitHub's scheduler is unreliable, so the open page also checks for new games itself, more often if you've played recently."
+      }
+    ],
+    outcome: "Live, and keeps itself up to date with no manual steps.",
+    note: "Built under Microsoft's Game Content Usage Rules. Not affiliated with or endorsed by Microsoft."
+  },
+
+  {
+    id: "fsca-site",
+    title: "finnishspitz.org refresh",
+    pitch: "Restructured the Finnish Spitz Club of America's website so it reads as the breed's official, educational voice.",
+    kind: "Volunteer work",
+    year: 2026,
+    role: "Volunteer: positioning, content, structure and email setup",
+    users: "Prospective owners, club members and the board.",
+    status: "Live",
+    access: "Live website",
+    tags: ["Clubistry CMS", "Information architecture", "Copywriting"],
+    links: [{ label: "Visit finnishspitz.org", href: "https://finnishspitz.org", primary: true }],
+    problem:
+      "The club's site undersold it. The navigation and About pages didn't hang together, and nothing on the home page said why this club is the place to learn about the breed.",
+    shipped: [
+      "Reworked navigation and About pages, including checking and correctly stating the club's 501(c)(3) status.",
+      "A new home-page hero and a Board page.",
+      "Role-based club email addresses."
+    ],
+    decisions: [
+      {
+        title: "Lead with positioning",
+        body: "The home page now presents the club as the breed's official, educational voice, which is the reason a newcomer should trust it over a search result."
+      },
+      {
+        title: "Make contacts survive turnover",
+        body: "Role-based addresses instead of personal ones, so the right person gets the message after a board changeover."
+      },
+      {
+        title: "Audit the plumbing nobody looks at",
+        body: "I checked every form and email route on the site and made 11 fixes. One of them: member survey responses had been going to the platform vendor's test address."
+      }
+    ],
+    outcome: "Live on finnishspitz.org.",
+    note: "Content and configuration work in the club's website platform, with no custom code. The engineering side of my FSCA work is the Show Finder."
+  },
+
+  {
     id: "lazy-sunday",
     title: "Lazy Sunday",
     pitch: "One-click modded Minecraft for friends: click Play on a web page and you land in the server, mods and all.",
     kind: "Tools",
     year: 2026,
-    role: "Solo: design, direction, testing and hosting." + AI,
+    role: "Solo: design, direction, testing and hosting.",
     users: "Friends of mine, including one who's new to Minecraft and comfortable installing an app but not much else.",
     status: "Live",
     access: "Web page + Windows installer",
-    accent: "#4ade80",
-    monogram: "LS",
     tags: ["C#", "PowerShell", "Cloudflare Workers", "Prism Launcher", "Modrinth"],
-    links: [{ label: "See the page", href: "https://dhole.dev/minecraft", primary: true }],
+    links: [{ label: "See the Lazy Sunday page", href: "/minecraft", primary: true }],
     problem:
       "Modded Minecraft normally means installing a launcher and Java, keeping a mod list in sync by hand, and typing in a server address. That's five ways to lose a new player before they've joined, and my least technical friend was the one I was building it for.",
     shipped: [
@@ -171,54 +286,36 @@ export const work = [
   },
 
   {
-    id: "halo-debrief",
-    title: "Debrief",
-    pitch: "Halo Infinite analytics that answer the questions a player actually has: how should I play this map, and what should I fix?",
-    kind: "Web apps",
+    id: "chiptune",
+    title: "Chiptune Sequencer",
+    pitch: "A six-track step sequencer where every sound is generated live. No samples, no audio library.",
+    kind: "Tools",
     year: 2026,
-    role: "Solo: product design, direction and testing." + AI,
-    users: "Halo players who want to improve, starting with me, plus anyone I scout or share a view with.",
-    status: "Live, updating itself",
+    role: "Solo: concept and direction.",
+    status: "Live",
     access: "Runs in your browser",
-    accent: "#38bdf8",
-    monogram: "Db",
-    tags: ["Python", "GitHub Actions", "GitHub Pages", "Vanilla JS"],
-    links: [
-      { label: "Open Debrief", href: "https://dholeson.github.io/halo-reporting/", primary: true },
-      { label: "Source", href: "https://github.com/Dholeson/halo-reporting" }
-    ],
+    tags: ["Web Audio API", "No dependencies"],
+    links: [{ label: "Open the sequencer", href: "/projects/chiptune", primary: true }],
     problem:
-      "Halo's own stats screens tell you what happened in one match. They don't tell you where you win, when you start tilting, or what to do differently on the map you're about to load into.",
+      "Make retro-console-style music in the browser from nothing but basic sound waves.",
     shipped: [
-      "A pre-match Briefing: pick the map and mode, and get a verdict, your numbers there against your baseline, and a game plan.",
-      "A Coach that ranks findings about you: win conditions, tilt, session fatigue, warm-up, time of day and map pool.",
-      "Ranked history, matches grouped into play sessions, and a Squad view of who you win with.",
-      "Scouting: look up any player and get their newest 300 games in about three minutes."
+      "A 16-step grid across six tracks, with adjustable tempo, waveform and volume."
     ],
     decisions: [
       {
-        title: "Organise around moments, not stats",
-        body: "The product is built around when you'd use it: loading into a match (Briefing) and after a session (Debrief and Coach), not around a wall of numbers."
-      },
-      {
-        title: "Show confidence, not just findings",
-        body: "Every Coach finding carries its evidence and a confidence level, so a pattern from five games isn't presented as if it came from five hundred."
-      },
-      {
-        title: "Every view is a link",
-        body: "Filters, presets and saved views live in the URL, so any view can be bookmarked or sent to a teammate."
-      },
-      {
-        title: "No server to babysit",
-        body: "It runs entirely on GitHub's free tooling. GitHub's scheduler is unreliable, so the open page also checks for new games itself, more often if you've played recently."
+        title: "Fix timing at the root",
+        body: "Browser timers aren't precise enough for music; driving the beat off one makes it drift audibly. Notes are scheduled ahead on the audio system's own clock instead, which is precise."
       }
     ],
-    outcome: "Live, and keeps itself up to date with no manual steps.",
-    note: "Built under Microsoft's Game Content Usage Rules. Not affiliated with or endorsed by Microsoft."
+    outcome: "Live and playable.",
+    note: "Turn your sound on."
   },
+
+  // ---------- Earlier and in progress ----------
 
   {
     id: "osrs-skills",
+    group: "earlier",
     title: "OSRS Skills Rebuild",
     pitch: "Twelve Old School RuneScape skills rebuilt on an open-source server emulator by running a team of parallel AI agents, with me as lead and QA.",
     kind: "Games",
@@ -227,8 +324,7 @@ export const work = [
     users: "Me: a private sandbox for practising boss fights and skilling.",
     status: "Paused at a milestone; 27 features verified",
     access: "Private, local only",
-    accent: "#a3e635",
-    monogram: "RS",
+    checked: "27 features verified in-game by hand, which caught an XP table where level 99 came out as 73.",
     tags: ["Kotlin", "rsmod", "RuneLite plugin", "Agent orchestration"],
     links: [],
     problem:
@@ -264,20 +360,19 @@ export const work = [
 
   {
     id: "shop",
+    group: "earlier",
     title: "dhole.dev Shop",
     pitch: "A storefront for refurbished retro consoles with real card checkout, designed so a buyer can't be overcharged and I can't be underpaid.",
     kind: "Web apps",
     year: 2026,
-    role: "Solo: design, direction and deployment." + AI,
+    role: "Solo: design, direction and deployment.",
     users: "Buyers of tested retro hardware, and me as the seller who'd absorb any pricing mistake.",
     status: "Built; payments being connected",
     access: "Runs in your browser",
-    accent: "#8b5cf6",
-    monogram: "$",
     tags: ["Cloudflare Pages", "Stripe Checkout", "Automated tests"],
     links: [
       { label: "See the store", href: "/store", primary: true },
-      { label: "Source", href: "https://github.com/Dholeson/site" }
+      { label: "Source on GitHub", href: "https://github.com/Dholeson/site" }
     ],
     problem:
       "Take card payments without running a server, and without the price ever being something a buyer could tamper with.",
@@ -296,8 +391,8 @@ export const work = [
         body: "Used-controller listings quote readings from my own Drift Tester rather than 'works great'."
       },
       {
-        title: "Document the gap instead of overbuilding",
-        body: "Stock doesn't count itself down yet, so two people could buy the last unit minutes apart. At this volume that's a known, written-down risk with a planned fix, not a reason to delay launch."
+        title: "Write the gap down and ship",
+        body: "Stock doesn't count itself down yet, so two people could buy the last unit minutes apart. At this volume that's a known, written-down risk with a planned fix."
       }
     ],
     outcome: "Built and tested. Card payments are being connected before launch.",
@@ -305,56 +400,17 @@ export const work = [
   },
 
   {
-    id: "fsca-site",
-    title: "finnishspitz.org refresh",
-    pitch: "Restructured the Finnish Spitz Club of America's website so it reads as the breed's official, educational voice.",
-    kind: "Volunteer work",
-    year: 2026,
-    role: "Volunteer: positioning, content, structure and email setup",
-    users: "Prospective owners, club members and the board.",
-    status: "Live",
-    access: "Live website",
-    accent: "#fb7185",
-    monogram: "FS",
-    tags: ["Clubistry CMS", "Information architecture", "Copywriting"],
-    links: [{ label: "Visit the site", href: "https://finnishspitz.org", primary: true }],
-    problem:
-      "The club's site undersold it. The navigation and About pages didn't hang together, and nothing on the home page said why this club is the place to learn about the breed.",
-    shipped: [
-      "Reworked navigation and About pages, including checking and correctly stating the club's 501(c)(3) status.",
-      "A new home-page hero and a Board page.",
-      "Role-based club email addresses."
-    ],
-    decisions: [
-      {
-        title: "Lead with positioning",
-        body: "The home page now presents the club as the breed's official, educational voice, which is the reason a newcomer should trust it over a search result."
-      },
-      {
-        title: "Make contacts survive turnover",
-        body: "Role-based addresses instead of personal ones, so the right person gets the message after a board changeover."
-      },
-      {
-        title: "Audit the plumbing nobody looks at",
-        body: "I checked every form and email route on the site and made 11 fixes. One of them: member survey responses had been going to the platform vendor's test address."
-      }
-    ],
-    outcome: "Live on finnishspitz.org.",
-    note: "Content and configuration work in the club's website platform, not custom code. The engineering side of my FSCA work is the Show Finder."
-  },
-
-  {
     id: "leagueify",
+    group: "earlier",
     title: "Leagueify",
-    pitch: "A player-development campaign for ranked League of Legends: the scoreboard you actually need, with coaching built on your own matches.",
+    pitch: "A player-development campaign for ranked League of Legends: the scoreboard you need, with coaching built on your own matches.",
     kind: "Web apps",
     year: 2026,
-    role: "Solo: product design and direction." + AI,
+    role: "Solo: product design and direction.",
     users: "Ranked League players who want to improve deliberately, starting with me.",
     status: "Working; mid-migration to the cloud",
     access: "Private, demo on request",
-    accent: "#eab308",
-    monogram: "Lg",
+    checked: "22 tests run the old and new storage side by side, and all 1,523 stored matches come back identical.",
     tags: ["TypeScript", "React", "Riot API", "Claude API", "Cloudflare D1"],
     links: [],
     problem:
@@ -366,8 +422,8 @@ export const work = [
     ],
     decisions: [
       {
-        title: "A campaign, not a scoreboard",
-        body: "The core idea is that improvement needs a goal and a measure over time, not just another stats page."
+        title: "Build around a campaign",
+        body: "The core idea is that improvement needs a goal and a measure over time."
       },
       {
         title: "Migrate without a rewrite",
@@ -384,22 +440,22 @@ export const work = [
 
   {
     id: "darkroom",
+    group: "earlier",
     title: "Darkroom",
     pitch: "A short first-person narrative game about one night, a coastal town and a roll of film.",
     kind: "Games",
     year: 2026,
-    role: "Solo: direction, story and playtesting." + AI,
+    role: "Solo: direction, story and playtesting.",
     status: "In progress: playable start to finish",
     access: "Windows build, on request",
-    accent: "#f97316",
-    monogram: "Dr",
+    checked: "Over 3,300 automated tests, plus an automated run that plays through the whole night.",
     tags: ["Godot 4", "three.js", "Automated testing"],
     links: [],
     problem:
       "Make a small, atmospheric story game that holds together from title screen to end card, and keep its look intact while moving it from a browser prototype to a full game engine.",
     shipped: [
       "The whole night, playable from title to end card across 18 story beats.",
-      "A first-person body: you see your character's hands, not a floating camera.",
+      "A first-person body: you see your character's hands.",
       "A Windows build that's produced and smoke-tested automatically."
     ],
     decisions: [
@@ -408,7 +464,7 @@ export const work = [
         body: "It started as a quick browser prototype in three.js, then moved to the Godot engine, with the prototype kept as the reference for how it should look."
       },
       {
-        title: "Match by measurement, not taste",
+        title: "Match the look by measurement",
         body: "The Godot version was matched to the prototype by comparing captures side by side. That caught problems nobody would spot by eye, such as colours being quietly rounded off."
       },
       {
@@ -422,64 +478,6 @@ export const work = [
     ],
     outcome: "Playable start to finish and ready for playtesting.",
     next: "Playtesting, getting frame time under its performance budget, and VR support."
-  },
-
-  {
-    id: "drift-tester",
-    title: "Controller Drift Tester",
-    pitch: "Plug in a gamepad and get a measured number for how far its sticks have wandered.",
-    kind: "Tools",
-    year: 2026,
-    role: "Solo: concept, direction and testing." + AI,
-    users: "Me as a seller, and buyers who want to know what they're getting.",
-    status: "Live",
-    access: "Runs in your browser",
-    accent: "#22d3ee",
-    monogram: "◎",
-    tags: ["Gamepad API", "Canvas", "No dependencies"],
-    links: [{ label: "Open it", href: "/projects/drift-tester", primary: true }],
-    problem:
-      "Used controllers get sold as \"no drift\" because someone wiggled the stick and shrugged. I wanted a number I could put in a listing.",
-    shipped: [
-      "A live view of both sticks.",
-      "A two-second rest test: let go of the sticks and it measures how far off-centre they sit and how much they jitter, then gives a verdict against a typical in-game dead zone."
-    ],
-    decisions: [
-      {
-        title: "Replace an adjective with a number",
-        body: "\"No drift\" is a claim. A measured resting offset is evidence, and it's the same test for every controller."
-      }
-    ],
-    outcome: "Every controller listed in the shop is checked with it first.",
-    note: "Needs a controller plugged in."
-  },
-
-  {
-    id: "chiptune",
-    title: "Chiptune Sequencer",
-    pitch: "A six-track step sequencer where every sound is generated live. No samples, no audio library.",
-    kind: "Tools",
-    year: 2026,
-    role: "Solo: concept and direction." + AI,
-    status: "Live",
-    access: "Runs in your browser",
-    accent: "#fbbf24",
-    monogram: "♪",
-    tags: ["Web Audio API", "No dependencies"],
-    links: [{ label: "Open it", href: "/projects/chiptune", primary: true }],
-    problem:
-      "Make retro-console-style music in the browser from nothing but basic sound waves.",
-    shipped: [
-      "A 16-step grid across six tracks, with adjustable tempo, waveform and volume."
-    ],
-    decisions: [
-      {
-        title: "Fix timing at the root",
-        body: "Browser timers aren't precise enough for music; driving the beat off one makes it drift audibly. Notes are scheduled ahead on the audio system's own clock instead, which is precise."
-      }
-    ],
-    outcome: "Live and playable.",
-    note: "Turn your sound on."
   }
 ];
 
