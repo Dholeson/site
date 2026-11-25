@@ -1,0 +1,176 @@
+/* ==========================================================================
+   Tools: the /projects index, the chiptune sequencer and the Discover
+   Cleaner landing. Linked after site.css (the drift tester has drift.css).
+
+   Tokens only: no colour values here (test/design.test.js). Rows and
+   sections are grouped by space, with no rules or boxes; the only panels
+   are the sequencer's cells (controls) and the code block.
+   ========================================================================== */
+
+/* A section of a tool page after the page head. Its first h2 (in .prose)
+   brings 48px of its own, which collapses into this. */
+.tool-section { margin-top: var(--s-8); }
+
+/* ---------- /projects ---------- */
+/* Held at the viewport's height until the rows arrive. On a screen taller
+   than the finished rows, the paragraph after them would then move up into
+   view, so it stays hidden until they're in. (Without JS, projects.html's
+   <noscript> style lifts both.) */
+#tools:empty { min-height: 100vh; }
+#tools:empty ~ .tools-also { visibility: hidden; }
+
+/* Rows use the shared .index vocabulary (site.css). Below 60em: title,
+   capture, text, in DOM order.
+   A capture sits on a square sweep panel, so a picture of the sequencer's
+   white page never reads as the live controls. Below 35em the panel runs to
+   the screen's edges and the 358px phone crop shows at its own size; from
+   35em the panel stops at the 720px file's size plus its padding. */
+.tool-row > .index-media {
+  margin: 0 calc(-1 * var(--gutter));
+  padding: var(--s-4) var(--gutter);
+  background: var(--sweep);
+}
+@media (min-width: 35em) {
+  .tool-row > .index-media { max-width: calc(45rem + 2 * var(--s-4)); margin: 0; padding: var(--s-4); }
+}
+
+/* From 60em: the title and text in 5 columns, the capture in the other 7,
+   spanning both. A row without a capture keeps its text at reading width. */
+@media (min-width: 60em) {
+  .tool-row { grid-template-rows: auto 1fr; }
+  .tool-row > .index-title { grid-column: 1 / span 5; grid-row: 1; }
+  .tool-row > .index-text { grid-column: 1 / span 5; grid-row: 2; }
+  .tool-row > .index-media { grid-column: 6 / -1; grid-row: 1 / span 2; max-width: none; }
+  .tool-row--text > .index-title,
+  .tool-row--text > .index-text { grid-column: 1 / span 9; }
+}
+
+.tools-also { max-width: var(--measure); margin-top: var(--s-8); }
+
+/* ---------- Chiptune sequencer ---------- */
+/* Every cell is 44px tall. Below 64em a track is its label, then two rows of
+   eight; from 64em it is one row: a 120px label column, then sixteen cells of
+   at most 44px that may shrink (min-width 0), so nothing overflows at 960. */
+.seq {
+  --cell-h: var(--tap);
+  --cell-gap: var(--s-1);
+  --track-gap: var(--s-3);
+  --label-h: calc(var(--lh-head) * 1em);
+  --tracks: 6;                 /* TRACKS.length in projects/chiptune.js */
+  display: grid;
+  gap: var(--s-5);
+}
+
+.seq-transport { display: grid; gap: var(--s-3); }
+/* "Play" and "Stop" take the same width, so the row never reflows. */
+.seq-play { min-width: 6.5rem; }
+.seq-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-5);
+}
+.seq-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-1) var(--s-3);
+  min-height: var(--tap);
+}
+.seq-control label { font-weight: 500; }
+.seq-control input[type="range"] { width: 8rem; margin: 0; }
+/* Wide enough for "200 BPM". */
+.seq-tempo { display: inline-block; min-width: 4.75em; }
+
+.seq-grid { display: grid; gap: var(--track-gap); }
+/* Held at the finished grid's height until chiptune.js builds it. */
+.seq-grid:empty {
+  min-height: calc(var(--tracks) * (var(--label-h) + var(--s-1) + 2 * var(--cell-h) + var(--cell-gap))
+    + (var(--tracks) - 1) * var(--track-gap));
+}
+
+.seq-track { display: grid; gap: var(--s-1); min-width: 0; }
+.seq-label { font-weight: 500; line-height: var(--lh-head); }
+/* Capped so cells stay close to square on a tablet. */
+.seq-steps {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: var(--cell-gap);
+  min-width: 0;
+  max-width: 30rem;
+}
+
+/* Off: sweep inside an edge border. Off on a beat: sweep-dk. On: ink.
+   The column being heard: a 2px ink ring, 1px out, so it shows round an
+   ink cell too. */
+.seq-cell {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: var(--cell-h);
+  padding: 0;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--sweep);
+}
+.seq-cell.beat { background: var(--sweep-dk); }
+.seq-cell[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); }
+.seq-cell:hover { border-color: var(--ink); }
+.seq-cell.playing { outline: 2px solid var(--ink); outline-offset: 1px; }
+.seq-cell:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-gap); }
+
+@media (min-width: 64em) {
+  .seq { --track-gap: var(--cell-gap); }
+  .seq-grid:empty { min-height: calc(var(--tracks) * var(--cell-h) + (var(--tracks) - 1) * var(--track-gap)); }
+  .seq-track { grid-template-columns: 120px minmax(0, 1fr); align-items: center; gap: 0; }
+  .seq-steps { grid-template-columns: repeat(16, minmax(0, 44px)); max-width: none; }
+  .seq-note-narrow { display: none; }
+}
+
+.seq-note { max-width: var(--measure); }
+
+/* ---------- Discover Cleaner landing ---------- */
+.dc-actions { margin-top: var(--s-5); }
+.dc-actions-note { max-width: var(--measure); margin-top: var(--s-3); }
+
+/* Screenshots: square, on sweep, each with a 16px caption under it. */
+.dc-shots { display: grid; gap: var(--s-7); }
+.dc-shots figure { display: grid; gap: var(--s-3); align-content: start; }
+.dc-shots img { height: auto; border-radius: 0; background: var(--sweep); }
+.dc-shots figcaption { max-width: var(--measure); }
+
+/* Below 60em only the phone view of Now shows; the laptop view is lazy, so
+   it isn't fetched while hidden. */
+.dc-now-wide { display: none; }
+.dc-now-phone { width: min(100%, 15rem); }
+.dc-more { display: grid; gap: var(--s-6); }
+.dc-more img { width: 100%; }
+
+@media (min-width: 60em) {
+  /* Now: the laptop view across 8 columns, the phone view in the other 4 at
+     60% of the column, which makes the two about the same height. */
+  .dc-now-shots {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--col-gap);
+    align-items: start;
+  }
+  .dc-now-wide { display: block; grid-column: span 8; width: 100%; }
+  .dc-now-phone { grid-column: span 4; width: 60%; }
+  /* Insights, Artist page and Library side by side. */
+  .dc-more { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--col-gap); }
+}
+
+/* Run it yourself: real commands, on a square sweep block that scrolls
+   sideways inside itself on a phone. */
+.dc-run > * + * { margin-top: var(--s-4); }
+.dc-run pre {
+  max-width: min(100%, 48rem);
+  padding: var(--s-4);
+  border-radius: 0;
+  background: var(--sweep);
+  color: var(--ink);
+  line-height: var(--lh-body);
+}
+
+.dc-end .btn-row { margin-top: var(--s-4); }

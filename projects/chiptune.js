@@ -11,13 +11,15 @@
 
 const STEPS = 16;
 
+// Six tracks. assets/tools.css holds the empty grid at the height of six
+// (--tracks), so a change to the count changes that too (test/tools.test.js).
 const TRACKS = [
-  { name: "Lead",    freq: 523.25, type: "melodic", color: "#a78bfa" }, // C5
-  { name: "Harmony", freq: 392.00, type: "melodic", color: "#22d3ee" }, // G4
-  { name: "Alt",     freq: 329.63, type: "melodic", color: "#34d399" }, // E4
-  { name: "Bass",    freq: 130.81, type: "bass",    color: "#fbbf24" }, // C3
-  { name: "Snare",   freq: 0,      type: "noise",   color: "#f87171" },
-  { name: "Hat",     freq: 0,      type: "hat",     color: "#98a1b3" }
+  { name: "Lead",    freq: 523.25, type: "melodic" }, // C5
+  { name: "Harmony", freq: 392.00, type: "melodic" }, // G4
+  { name: "Alt",     freq: 329.63, type: "melodic" }, // E4
+  { name: "Bass",    freq: 130.81, type: "bass" },    // C3
+  { name: "Snare",   freq: 0,      type: "noise" },
+  { name: "Hat",     freq: 0,      type: "hat" }
 ];
 
 const LOOKAHEAD_MS = 25;    // how often the timer wakes
@@ -75,16 +77,17 @@ export function initChiptune() {
   });
 }
 
+// Each track is its label, then its sixteen steps. tools.css lays the steps
+// out as two rows of eight below 64em and one row of sixteen from 64em.
+// Cell states are CSS only: aria-pressed="true" is on, .beat marks every
+// fourth step, .playing is the column being heard.
 function buildGrid() {
   els.grid.innerHTML = TRACKS.map((t, row) => `
-    <div class="seq-row" style="--track-color:${t.color}">
-      <span class="seq-label">${t.name}</span>
-      ${Array.from({ length: STEPS }, (_, col) => `
-        <button class="seq-cell${col % 4 === 0 ? " beat" : ""}"
-                data-row="${row}" data-col="${col}"
-                aria-pressed="false"
-                aria-label="${t.name} step ${col + 1}"></button>
-      `).join("")}
+    <div class="seq-track" role="group" aria-labelledby="seq-track-${row}">
+      <span class="seq-label" id="seq-track-${row}">${t.name}</span>
+      <div class="seq-steps">${Array.from({ length: STEPS }, (_, col) => `<button type="button"
+        class="seq-cell${col % 4 === 0 ? " beat" : ""}" data-row="${row}" data-col="${col}"
+        aria-pressed="false" aria-label="${t.name} step ${col + 1}"></button>`).join("")}</div>
     </div>`).join("");
 
   els.grid.addEventListener("click", e => {
@@ -140,7 +143,6 @@ function start() {
   state.step = 0;
   state.nextNoteTime = ctx.currentTime + 0.05;
   els.play.textContent = "Stop";
-  els.play.classList.add("btn-primary");
   state.timer = setInterval(scheduler, LOOKAHEAD_MS);
 }
 
@@ -149,7 +151,6 @@ function stop() {
   clearInterval(state.timer);
   state.timer = null;
   els.play.textContent = "Play";
-  els.play.classList.remove("btn-primary");
   els.grid.querySelectorAll(".playing").forEach(c => c.classList.remove("playing"));
 }
 

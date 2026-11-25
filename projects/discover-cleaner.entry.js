@@ -2,4 +2,4 @@
 // discover-cleaner-demo/, vendored from the app's repo (see
 // scripts/sync-discover-cleaner.mjs).
 import { mountChrome } from "../assets/chrome.js";
-mountChrome("projects");
+mountChrome("tools");

@@ -3,96 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chiptune Maker: Online Step Sequencer | dhole.dev</title>
-  <meta name="description" content="Make chiptune music in your browser: a six-track step sequencer built on raw Web Audio square, triangle and noise oscillators. Free, nothing to install." />
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+  <title>Chiptune Sequencer: make chiptune music in your browser | dhole.dev</title>
+  <meta name="description" content="Make chiptune music in your browser: a six-track step sequencer built on raw Web Audio square, triangle and noise oscillators. Nothing to install and no account." />
   <link rel="canonical" href="https://dhole.dev/projects/chiptune" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
   <meta property="og:url" content="https://dhole.dev/projects/chiptune" />
-  <meta property="og:title" content="Chiptune Sequencer — dhole.dev" />
-  <meta property="og:description" content="A six-track step sequencer built on raw Web Audio oscillators. No samples, no libraries." />
-  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:title" content="Chiptune Sequencer" />
+  <meta property="og:description" content="A six-track step sequencer built on raw Web Audio oscillators. No samples and no audio library, and it runs in your browser." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og-tools.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Chiptune Sequencer — dhole.dev" />
-  <meta name="twitter:description" content="A six-track step sequencer built on raw Web Audio oscillators. No samples, no libraries." />
-  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
-  <link rel="stylesheet" href="/assets/site.css" />
-  <link rel="stylesheet" href="/assets/pages.css" />
-  <link rel="stylesheet" href="/assets/demo.css" />
-  <script type="module" src="./chiptune.entry.js"></script>
+  <meta name="twitter:title" content="Chiptune Sequencer" />
+  <meta name="twitter:description" content="A six-track step sequencer built on raw Web Audio oscillators. No samples and no audio library, and it runs in your browser." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-tools.png" />
+
+  <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
+  <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+  <link rel="stylesheet" href="/assets/tools.css?v=2" />
+  <script type="module" src="/projects/chiptune.entry.js?v=2"></script>
+  <!-- Without JS the controls do nothing and the grid never comes: hide them (the notice says why). -->
+  <noscript><style>.seq { display: none; }</style></noscript>
+  <link rel="modulepreload" href="/projects/chiptune.js" />
+  <link rel="modulepreload" href="/assets/chrome.js" />
+  <link rel="modulepreload" href="/assets/cart.js" />
 </head>
 <body>
   <header class="site-header"></header>
-  <section class="demo-header">
+  <main class="tool-page">
     <div class="wrap">
-      <p class="eyebrow"><a href="/projects">Projects</a> / Live demo</p>
-      <h1>Chiptune Sequencer</h1>
-      <p class="lede">
-        Six tracks, sixteen steps, and not a single audio sample — every sound is an
-        oscillator built at runtime.
-      </p>
-    </div>
-  </section>
-
-  <main>
-    <div class="wrap">
-      <div class="demo-stage">
-        <div class="seq-transport">
-          <button class="btn btn-primary" id="play-btn">Play</button>
-          <button class="btn" id="random-btn">Randomise</button>
-          <button class="btn" id="clear-btn">Clear</button>
-
-          <label>Tempo
-            <input type="range" id="tempo" min="60" max="200" value="132" />
-            <span class="dim mono" id="tempo-out">132 BPM</span>
-          </label>
-
-          <label>Waveform
-            <select id="wave">
-              <option value="square">Square</option>
-              <option value="sawtooth">Sawtooth</option>
-              <option value="triangle">Triangle</option>
-              <option value="sine">Sine</option>
-            </select>
-          </label>
-
-          <label>Volume
-            <input type="range" id="volume" min="0" max="100" value="50" />
-          </label>
-        </div>
-
-        <div class="seq-wrap">
-          <div class="seq-grid" id="seq-grid"></div>
-        </div>
-
-        <p class="demo-note" style="margin-top:1.25rem">
-          Click any square to toggle it. A pattern is loaded already — press Play.
-          Bars are marked every four steps.
-        </p>
+      <div class="page-head">
+        <h1>Chiptune Sequencer</h1>
+        <p class="lede">Six tracks and sixteen steps, and every sound is an oscillator built as it plays. A pattern is already loaded: press Play.</p>
       </div>
 
-      <section class="section">
+      <noscript><p class="notice noscript"><strong>This page needs JavaScript to show the sequencer.</strong> The <a href="/shipping-returns">shipping and returns</a> page works without it, and you can email <a href="mailto:support@dhole.dev">support@dhole.dev</a>.</p></noscript>
+
+      <section class="seq" aria-label="Sequencer">
+        <div class="seq-transport">
+          <div class="btn-row">
+            <button type="button" class="btn-ink seq-play" id="play-btn">Play</button>
+            <button type="button" class="btn" id="random-btn">Randomise</button>
+            <button type="button" class="btn" id="clear-btn">Clear</button>
+          </div>
+          <div class="seq-controls">
+            <div class="seq-control">
+              <label for="tempo">Tempo</label>
+              <input type="range" id="tempo" min="60" max="200" value="132" />
+              <output class="num seq-tempo" id="tempo-out" for="tempo">132 BPM</output>
+            </div>
+            <div class="seq-control">
+              <label for="wave">Waveform</label>
+              <select id="wave">
+                <option value="square">Square</option>
+                <option value="sawtooth">Sawtooth</option>
+                <option value="triangle">Triangle</option>
+                <option value="sine">Sine</option>
+              </select>
+            </div>
+            <div class="seq-control">
+              <label for="volume">Volume</label>
+              <input type="range" id="volume" min="0" max="100" value="50" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Six tracks of sixteen steps, built by chiptune.js. Held at its
+             finished height while empty (tools.css), so nothing below moves. -->
+        <div class="seq-grid" id="seq-grid"></div>
+
+        <p class="seq-note">Tap or click a square to switch that step on or off. The darker squares mark each beat, every four steps. <span class="seq-note-narrow">On a narrow screen each track's sixteen steps wrap onto two rows of eight.</span></p>
+      </section>
+
+      <section class="tool-section prose">
         <h2>How it works</h2>
-        <p class="muted" style="max-width:68ch">
-          The three melodic rows are C5, G4, and E4 — a spread of the same chord, so
-          anything you draw stays consonant. Bass is a triangle wave an octave and a
-          half down. Snare and hat are the same one-second buffer of white noise, run
-          through a highpass filter at different cutoffs and cut short by different
-          envelopes.
-        </p>
-        <p class="muted" style="max-width:68ch">
-          The interesting part is the timing. Driving a sequencer directly from
-          <code>setInterval</code> drifts, because timer callbacks jitter under load.
-          Instead the timer only looks ahead: it wakes every 25&nbsp;ms and schedules any
-          notes falling in the next 100&nbsp;ms straight onto the AudioContext clock,
-          which is sample-accurate. The playhead you see is deliberately delayed to
-          match the audio you are hearing rather than the notes already queued.
-        </p>
+        <p>The three melodic tracks are C5, G4 and E4, a spread of the same chord, so anything you draw stays consonant. Bass is a triangle wave on C3, two octaves below the lead. Snare and hat are the same one-second buffer of white noise, run through a highpass filter at different cutoffs and cut short by different envelopes.</p>
+        <p>The interesting part is the timing. Driving a sequencer directly from <code>setInterval</code> drifts, because timer callbacks jitter under load. Instead the timer only looks ahead: it wakes every 25&nbsp;ms and schedules any notes falling in the next 100&nbsp;ms straight onto the AudioContext clock, which is sample-accurate. The notes are queued ahead of time, so the playhead you see is delayed on purpose to line up with the audio you are hearing.</p>
       </section>
     </div>
   </main>

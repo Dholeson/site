@@ -1,70 +1,51 @@
-// Projects index. Everything listed here should be openable in a browser;
-// anything without a demo says so rather than looking clickable.
+// The /projects index: one row per data/projects.js entry, in data order.
+//
+// A row is the title (an h2 link to the tool), the capture when the entry has
+// a real one, the description, the "Built with" line and a button named for
+// the tool. Below 35em the capture is the phone crop and the row reads title,
+// capture, description; from 60em the text takes 5 columns and the capture 7
+// (assets/tools.css). An entry without a shot is a text-only row. No glyphs,
+// chips or arrows.
+//
+// The row classes are the shared .index vocabulary in site.css; tools.css
+// places them for this page.
 
 import { projects } from "../data/projects.js";
 import { esc } from "./esc.js";
 
-export function renderProjects() {
-  const el = document.getElementById("projects-grid");
-
-  if (!projects.length) {
-    el.innerHTML = `<div class="empty-state"><p>Nothing published yet.</p></div>`;
-    return;
-  }
-
-  el.innerHTML = projects.map(p => {
-    const live = Boolean(p.demo);
-    return `
-    <article class="card project-card">
-      ${live
-        ? `<a class="project-preview" href="${esc(p.demo)}" style="--proj-accent:${esc(p.accent)}">
-             <span class="project-preview-glyph" aria-hidden="true">${glyph(p.id)}</span>
-             <span class="chip chip-live">Playable</span>
-           </a>`
-        : `<div class="project-preview" style="--proj-accent:${esc(p.accent)}">
-             <span class="project-preview-glyph" aria-hidden="true">${glyph(p.id)}</span>
-             <span class="chip">Write-up only</span>
-           </div>`}
-      <div class="card-body">
-        <h3>${live ? `<a href="${esc(p.demo)}">${esc(p.title)}</a>` : esc(p.title)}</h3>
-        <p class="muted">${esc(p.description)}</p>
-        <div class="chips">
-          ${p.tags.map(t => `<span class="chip">${esc(t)}</span>`).join("")}
-          <span class="chip chip-accent">${esc(p.year)}</span>
-        </div>
-        ${live
-          ? `<a class="btn btn-sm" href="${esc(p.demo)}" style="margin-top:auto">Open it →</a>`
-          : `<span class="dim" style="margin-top:auto">No demo yet</span>`}
-      </div>
-    </article>`;
-  }).join("");
+// The phone crop below 35em, the desktop capture from 35em. width and height
+// on both <source> and <img> reserve the box before the image arrives.
+// The capture sits on a sweep panel and opens the tool, so a click on the
+// pictured controls goes to the real ones. It is left out of the tab order:
+// the title and the button already lead there.
+function capture(shot, href, { eager }) {
+  const m = shot.mobile;
+  const img = m || shot;
+  return `<a class="index-media" href="${href}" tabindex="-1">
+      <picture>
+        ${m ? `<source media="(min-width: 35em)" srcset="${esc(shot.src)}" width="${esc(shot.width)}" height="${esc(shot.height)}" />` : ""}
+        <img src="${esc(img.src)}" width="${esc(img.width)}" height="${esc(img.height)}" alt="${esc(shot.alt)}"${eager ? "" : ` loading="lazy"`} decoding="async" />
+      </picture>
+    </a>`;
 }
 
-function glyph(id) {
-  if (id === "discover-cleaner") {
-    return `<svg viewBox="0 0 64 64" width="76" height="76" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
-      <rect x="6" y="10" width="11" height="11" rx="2.5" fill="currentColor" stroke="none" opacity=".3"/>
-      <path d="M24 15.5 H38" opacity=".3"/>
-      <rect x="6" y="26.5" width="11" height="11" rx="2.5" fill="currentColor" stroke="none"/>
-      <path d="M24 32 H44"/>
-      <rect x="6" y="43" width="11" height="11" rx="2.5" fill="currentColor" stroke="none" opacity=".6"/>
-      <path d="M24 48.5 H37" opacity=".6"/>
-      <circle cx="51" cy="15.5" r="8" opacity=".3"/>
-      <path d="M51 7.5 A8 8 0 1 1 43 15.5"/>
-    </svg>`;
-  }
-  if (id === "drift-tester") {
-    return `<svg viewBox="0 0 64 64" width="76" height="76" fill="none" stroke="currentColor" stroke-width="2.5">
-      <circle cx="32" cy="32" r="22" opacity=".35"/>
-      <circle cx="32" cy="32" r="10" opacity=".55"/>
-      <circle cx="41" cy="26" r="4.5" fill="currentColor" stroke="none"/>
-      <path d="M32 32 L41 26" stroke-linecap="round"/>
-    </svg>`;
-  }
-  return `<svg viewBox="0 0 64 64" width="76" height="76" fill="none" stroke="currentColor" stroke-width="2.5">
-    <rect x="8"  y="26" width="8" height="12" rx="2" fill="currentColor" stroke="none" opacity=".5"/>
-    <rect x="20" y="18" width="8" height="28" rx="2" fill="currentColor" stroke="none"/>
-    <rect x="32" y="30" width="8" height="8"  rx="2" fill="currentColor" stroke="none" opacity=".5"/>
-    <rect x="44" y="22" width="8" height="20" rx="2" fill="currentColor" stroke="none" opacity=".8"/>
-  </svg>`;
+export function toolRow(p, { eager = false } = {}) {
+  const href = esc(p.demo);
+  const id = esc(p.id);
+  return `<article class="index-row tool-row${p.shot ? "" : " tool-row--text"}" id="${id}" aria-labelledby="tool-${id}">
+    <h2 class="index-title" id="tool-${id}"><a href="${href}">${esc(p.title)}</a></h2>
+    ${p.shot ? capture(p.shot, href, { eager }) : ""}
+    <div class="index-text">
+      <p>${esc(p.description)}</p>
+      ${p.builtWith ? `<p class="quiet">${esc(p.builtWith)}</p>` : ""}
+      <div class="btn-row"><a class="btn" href="${href}">${esc(p.cta || `Open ${p.title}`)}</a></div>
+    </div>
+  </article>`;
+}
+
+export function renderProjects(el = document.getElementById("tools")) {
+  if (!el) return;
+  const live = projects.filter(p => p.demo);
+  const firstShot = live.findIndex(p => p.shot);
+  el.innerHTML = live.map((p, i) => toolRow(p, { eager: i === firstShot })).join("");
 }
