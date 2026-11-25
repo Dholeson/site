@@ -39,10 +39,21 @@ export const CURRENCY = "usd";
 // (lib/checkout-core.js shippingFor, mirrored for display in assets/cart.js)
 // rather than summing, so a console plus three controllers ships as one
 // console-sized box. Bench units carry the same classes.
+// label goes to Stripe as the shipping rate's display_name (checkout page and receipts); short is for the cart and tables.
 export const SHIPPING = {
-  small:   { label: "Standard (accessories)", cents: 600 },
-  console: { label: "Standard (console box)", cents: 1800 }
+  small:   { label: "Shipping (accessories), ships within two business days", short: "Shipping (accessories)", cents: 600 },
+  console: { label: "Shipping (console box), ships within two business days", short: "Shipping (console box)", cents: 1800 }
 };
+
+// The returns terms, in one place. Pages render them from here; test/design.test.js fails if any page states another.
+// null = no terms stated yet (pages link to /shipping-returns instead). Change only when the owner decides (R §8).
+export const RETURNS = {
+  console: "If a console doesn't power on, there's a 30-day return window.",
+  accessory: null
+};
+
+// Mirrors ENABLE_AUTOMATIC_TAX in wrangler.toml (test/unit-copy.test.js holds them equal). true = the cart says "Total before tax".
+export const AUTOMATIC_TAX = false;
 
 export const products = [];
 
@@ -62,6 +73,6 @@ export function formatMoney(cents, currency = CURRENCY) {
 export const CONDITION_LABELS = {
   "new": "New",
   "refurbished": "Refurbished",
-  "used-good": "Used — Good",
-  "used-fair": "Used — Fair"
+  "used-good": "Used, good",
+  "used-fair": "Used, fair"
 };

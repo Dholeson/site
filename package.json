@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "wrangler pages dev .",
     "deploy": "wrangler pages deploy .",
-    "test": "node test/checkout.test.js && node test/discover-cleaner-demo.test.js && node test/league-ify.test.js && node --disable-warning=ExperimentalWarning test/bench-api.test.js && node --disable-warning=ExperimentalWarning test/store-public.test.js && node --disable-warning=ExperimentalWarning test/store-checkout.test.js && node --disable-warning=ExperimentalWarning test/stripe-webhook.test.js && node --disable-warning=ExperimentalWarning test/seo.test.js",
+    "test": "node test/run.mjs",
+    "check:layout": "node scripts/check-layout.mjs",
+    "render:brand": "node scripts/render-brand.mjs",
+    "capture:tools": "node scripts/capture-tools.mjs",
+    "sync:owner": "node scripts/sync-owner.mjs",
     "sync:discover-cleaner": "node scripts/sync-discover-cleaner.mjs"
   },
   "devDependencies": {
