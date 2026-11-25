@@ -8,6 +8,12 @@ Allow: /
 Allow: /api/store/img/
 Disallow: /api/
 
+# Dev files. The Pages output directory is the repo root ("."), so the
+# scripts/ folder (link-preview templates, layout-check fixtures) and the
+# tests are served too. Nothing on the site links to them.
+Disallow: /scripts/
+Disallow: /test/
+
 # Cart, checkout-result and 404 pages carry <meta name="robots"
 # content="noindex">. They are deliberately NOT disallowed here: a crawler
 # that may not fetch a page never sees its noindex.

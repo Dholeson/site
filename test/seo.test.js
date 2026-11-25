@@ -1,9 +1,9 @@
 // Tests for what search engines and link previews see: the product page's
-// server-written <head> (functions/product.js), the sitemap
-// (functions/sitemap.xml.js), lib/seo.js, and the site-wide rules that keep
-// URLs clean: canonicals, internal links, robots.txt, _redirects, _routes.json,
-// the *.pages.dev noindex, and the security headers the Function mirrors
-// from _headers.
+// server-written <head> (functions/product.js), the case-study page's
+// (functions/case.js), the sitemap (functions/sitemap.xml.js), lib/seo.js,
+// and the site-wide rules that keep URLs clean: canonicals, internal links,
+// robots.txt, _redirects, _routes.json, the *.pages.dev noindex, and the
+// security headers the Functions mirror from _headers.
 //
 // Everything here fails silently in production (a wrong canonical drops pages
 // from Google; a preview card falls back to the generic image), which is why
@@ -15,11 +15,14 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { onRequest as product } from "../functions/product.js";
+import { onRequest as caseFn } from "../functions/case.js";
 import { onRequest as sitemap } from "../functions/sitemap.xml.js";
 import { onRequest as bench } from "../functions/api/bench/[[path]].js";
 import { products, SHIPPING, formatMoney } from "../data/products.js";
+import { work, findWork } from "../data/portfolio.js";
 import {
-  PAGE_HEADERS, SITE_PAGES, clip, decimal, injectHead, itemCondition, jsonLd, productHead, SEO_START, SEO_END
+  CASE_IMAGE, FALLBACK_IMAGE, PAGE_HEADERS, SITE_PAGES, STATES, caseHead, caseNotFoundHead, clip, decimal,
+  injectHead, itemCondition, jsonLd, notFoundHead, productHead, SEO_START, SEO_END
 } from "../lib/seo.js";
 import { sitemapListings } from "../lib/store-db.js";
 import { harness } from "./support/harness.js";
@@ -54,6 +57,28 @@ const metaContent = (html, key) => {
   return m ? m[1] : null;
 };
 const canonicalOf = html => (html.match(/<link rel="canonical" href="([^"]*)"/) || [])[1] || null;
+const titleOf = html => (html.match(/<title>([^<]*)<\/title>/) || [])[1] ?? null;
+// Entities back to text, to compare a tag with the copy it was built from.
+const text = s => s === null ? null : s.replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+const unitStatusOf = html => metaContent(html, "unit-status");
+const checkoutOf = html => metaContent(html, "checkout");
+const OG_SITE = "https://dhole.dev/assets/brand/og-site.png";
+const OG_PORTFOLIO = "https://dhole.dev/assets/brand/og-portfolio.png";
+
+// A bench unit as lib/store-db.js toProduct shapes it, and a hand-made item,
+// both with copy free of em dashes, for calling productHead() directly.
+const PHOTO = `/api/store/img/${"a".repeat(64)}.jpg`;
+const BENCH_UNIT = {
+  id: "ro-0042", name: "Nintendo 64, Charcoal", platform: "Nintendo 64", category: "console",
+  condition: "Refurbished", priceCents: 15900, stock: 1, shippingClass: "console",
+  image: PHOTO, images: [PHOTO], blurb: "Opened, cleaned and recapped.", details: [], source: "bench"
+};
+const CATALOGUE_ITEM = {
+  id: "plain-cable", name: "Composite AV Cable", platform: "Multi-platform", category: "accessory",
+  condition: "new", priceCents: 1200, stock: 5, shippingClass: "small",
+  image: "assets/store/av-cable.svg", blurb: "A new multi-out composite cable.", details: []
+};
 
 // ---------- lib/seo.js ----------
 
@@ -106,6 +131,76 @@ test("injectHead() replaces exactly the marked block, and refuses missing or dou
   assert.throws(() => injectHead(SHELL + SHELL, "x"));
 });
 
+test("the fallback card is og-site.png at 1200x630, and the case card og-portfolio.png", () => {
+  assert.deepEqual(FALLBACK_IMAGE, { path: "/assets/brand/og-site.png", width: 1200, height: 630 });
+  assert.deepEqual(CASE_IMAGE, { path: "/assets/brand/og-portfolio.png", width: 1200, height: 630 });
+});
+
+test("a bench head names the unit with its uppercase id; a gone unit's titles carry no price", () => {
+  const h = state => productHead(BENCH_UNIT, { state });
+  assert.equal(titleOf(h("in-stock")), "Nintendo 64, Charcoal (RO-0042): $159.00 | dhole.dev");
+  assert.equal(metaContent(h("in-stock"), "og:title"), "Nintendo 64, Charcoal (RO-0042): $159.00");
+  assert.equal(metaContent(h("reserved"), "twitter:title"), "Nintendo 64, Charcoal (RO-0042): $159.00");
+  assert.equal(titleOf(h("sold")), "Sold: Nintendo 64, Charcoal (RO-0042) | dhole.dev");
+  assert.equal(titleOf(h("withdrawn")), "No longer listed: Nintendo 64, Charcoal (RO-0042) | dhole.dev");
+  for (const state of ["sold", "withdrawn"]) {
+    for (const key of ["og:title", "twitter:title"]) {
+      assert.ok(metaContent(h(state), key).includes("(RO-0042)"), `${state} ${key}`);
+      assert.ok(!metaContent(h(state), key).includes("$"), `${state} ${key}`);
+    }
+    assert.ok(!titleOf(h(state)).includes("$"), state);
+  }
+  assert.equal(text(metaContent(h("sold"), "description")), "This unit has sold. See what's listed now at dhole.dev.");
+  assert.equal(text(metaContent(h("withdrawn"), "description")), "This unit is no longer listed. See what's listed now at dhole.dev.");
+  assert.equal(text(metaContent(h("in-stock"), "description")),
+    "$159.00 + $18.00 shipping. Nintendo 64, unit RO-0042. Refurbished. Opened, cleaned and recapped.");
+  assert.equal(metaContent(h("in-stock"), "og:image:alt"), "Photo 1 of RO-0042, Nintendo 64, Charcoal");
+});
+
+test("unit-status: available, reserved, sold, withdrawn on bench heads; unknown when not found; none on catalogue items", () => {
+  const expected = { "in-stock": "available", "reserved": "reserved", "sold": "sold", "withdrawn": "withdrawn" };
+  for (const [state, status] of Object.entries(expected)) {
+    assert.equal(unitStatusOf(productHead(BENCH_UNIT, { state })), status, state);
+    // Bench by id alone counts too (the shape check-layout's fixtures and old caches have).
+    assert.equal(unitStatusOf(productHead({ ...BENCH_UNIT, source: undefined }, { state })), status, state);
+  }
+  for (const state of ["in-stock", "out-of-stock"]) {
+    assert.equal(unitStatusOf(productHead(CATALOGUE_ITEM, { state })), null, state);
+  }
+  const nf = notFoundHead();
+  assert.equal(unitStatusOf(nf), "unknown");
+  assert.equal(metaContent(nf, "robots"), "noindex");
+  assert.equal(titleOf(nf), "Not found | dhole.dev");
+  assert.equal(metaContent(nf, "description"), "That listing isn&#39;t here any more. It may have sold.");
+});
+
+test("the checkout=off meta appears exactly when checkout: false is passed, bench or catalogue, in every state", () => {
+  const cases = [[BENCH_UNIT, ["in-stock", "reserved", "sold", "withdrawn"]], [CATALOGUE_ITEM, ["in-stock", "out-of-stock"]]];
+  for (const [p, states] of cases) {
+    for (const state of states) {
+      const off = productHead(p, { state, checkout: false });
+      assert.equal(checkoutOf(off), "off", `${p.id} ${state}`);
+      assert.equal(off.split('name="checkout"').length, 2, "exactly one");
+      assert.ok(off.includes('<meta name="checkout" content="off" />'));
+      for (const on of [productHead(p, { state, checkout: true }), productHead(p, { state })]) {
+        assert.ok(!on.includes('name="checkout"'), `${p.id} ${state}`);
+      }
+    }
+  }
+});
+
+test("no em dash in anything the heads generate", () => {
+  const caseWork = { id: "x", title: "A tool", pitch: "Does one thing well." };
+  const heads = [
+    ...STATES.filter(s => s !== "out-of-stock").map(state => productHead(BENCH_UNIT, { state, checkout: false })),
+    ...["in-stock", "out-of-stock"].map(state => productHead(CATALOGUE_ITEM, { state, checkout: false })),
+    // A long blurb, so clip() cuts and adds its ellipsis.
+    productHead({ ...BENCH_UNIT, blurb: "word ".repeat(80) }),
+    notFoundHead(), caseHead(caseWork), caseNotFoundHead()
+  ];
+  for (const h of heads) assert.ok(!h.includes("—"), h);
+});
+
 // ---------- product.html ----------
 
 section("product.html: the shell the Function fills");
@@ -128,18 +223,27 @@ test("an in-stock item: 200, its own title, canonical, card and Product data", a
   const p = products.find(x => x.id === "n64-console-charcoal");
   const r = await page(makeEnv(), `/product?id=${p.id}`);
   assert.equal(r.status, 200);
-  assert.ok(r.head.includes(`<title>${p.name} — $145.00 | dhole.dev</title>`));
+  assert.ok(r.head.includes(`<title>${p.name}: $145.00 | dhole.dev</title>`));
+  assert.equal(metaContent(r.head, "og:title"), `${p.name}: $145.00`);
+  assert.equal(metaContent(r.head, "twitter:title"), `${p.name}: $145.00`);
   assert.equal(canonicalOf(r.head), "https://dhole.dev/product?id=n64-console-charcoal");
   assert.equal(metaContent(r.head, "og:url"), "https://dhole.dev/product?id=n64-console-charcoal");
   assert.equal(metaContent(r.head, "og:type"), "product");
-  assert.ok(metaContent(r.head, "description").startsWith("$145.00 · Refurbished · Nintendo 64."));
+  // Price and shipping lead: what a buyer reading a preview card wants first.
+  assert.ok(metaContent(r.head, "description").startsWith("$145.00 + $18.00 shipping. Nintendo 64. Refurbished. "),
+    metaContent(r.head, "description"));
   assert.ok(metaContent(r.head, "description").length <= 160);
+  assert.equal(metaContent(r.head, "og:description"), metaContent(r.head, "description"));
   // SVG illustrations don't render in previews: the generic card, with its size.
-  assert.equal(metaContent(r.head, "og:image"), "https://dhole.dev/assets/brand/og.png");
+  assert.equal(metaContent(r.head, "og:image"), OG_SITE);
+  assert.equal(metaContent(r.head, "twitter:image"), OG_SITE);
   assert.equal(metaContent(r.head, "og:image:width"), "1200");
+  assert.equal(metaContent(r.head, "og:image:height"), "630");
   assert.equal(metaContent(r.head, "product:price:amount"), "145.00");
   assert.equal(metaContent(r.head, "product:availability"), "in stock");
   assert.ok(!/name="robots"/.test(r.head));
+  assert.equal(unitStatusOf(r.head), null, "unit-status is for bench units only");
+  assert.equal(checkoutOf(r.head), null, "STRIPE_SECRET_KEY is set: no checkout=off");
   assert.ok(!r.head.includes("Product | dhole.dev"), "the fallback block is gone");
 
   const ld = ldOf(r.head, "Product");
@@ -157,10 +261,12 @@ test("an in-stock item: 200, its own title, canonical, card and Product data", a
     ["https://dhole.dev/", "https://dhole.dev/store", "https://dhole.dev/product?id=n64-console-charcoal"]);
 });
 
-test("an accessory's offer carries the small-box rate", async () => {
+test("an accessory's offer carries the small-box rate, and its description leads with it", async () => {
   const r = await page(makeEnv(), "/product?id=snes-controller");
   assert.equal(ldOf(r.head, "Product").offers.shippingDetails.shippingRate.value, decimal(SHIPPING.small.cents));
   assert.equal(ldOf(r.head, "Product").offers.itemCondition, "https://schema.org/UsedCondition");
+  assert.ok(metaContent(r.head, "description").startsWith("$28.00 + $6.00 shipping. SNES. Used, good. "),
+    metaContent(r.head, "description"));
 });
 
 test("stock 0: still 200 and indexable, marked out of stock", async () => {
@@ -172,7 +278,9 @@ test("stock 0: still 200 and indexable, marked out of stock", async () => {
     assert.equal(r.status, 200);
     assert.ok(canonicalOf(r.head));
     assert.equal(ldOf(r.head, "Product").offers.availability, "https://schema.org/OutOfStock");
-    assert.ok(metaContent(r.head, "description").startsWith("Sold out for now."));
+    assert.ok(metaContent(r.head, "description").startsWith("Out of stock for now. $135.00 + $18.00 shipping."),
+      metaContent(r.head, "description"));
+    assert.equal(titleOf(r.head), `${p.name}: $135.00 | dhole.dev`);
   } finally {
     p.stock = before;
   }
@@ -189,7 +297,27 @@ test("no id, an unknown id: 404, noindex, the page still renders its message", a
     assert.equal(r.status, 404, path);
     assert.equal(metaContent(r.head, "robots"), "noindex", path);
     assert.equal(canonicalOf(r.head), null, path);
+    assert.equal(unitStatusOf(r.head), "unknown", path);
+    assert.equal(titleOf(r.head), "Not found | dhole.dev", path);
     assert.ok(r.html.includes('id="product-main"'), path);
+  }
+});
+
+test("checkout=off rides on every product head exactly while STRIPE_SECRET_KEY is unset", async () => {
+  const off = [makeEnv({ STRIPE_SECRET_KEY: undefined }), makeEnv({ STRIPE_SECRET_KEY: "" })];
+  for (const env of off) {
+    await pushListing(bench, env, "ro-0050");
+    for (const id of ["n64-console-charcoal", "snes-controller", "ro-0050"]) {
+      const r = await page(env, `/product?id=${id}`);
+      assert.equal(r.status, 200, id);
+      assert.equal(checkoutOf(r.head), "off", id);
+    }
+  }
+  const on = makeEnv();
+  await pushListing(bench, on, "ro-0050");
+  for (const id of ["n64-console-charcoal", "snes-controller", "ro-0050"]) {
+    const r = await page(on, `/product?id=${id}`);
+    assert.ok(!r.head.includes('name="checkout"'), id);
   }
 });
 
@@ -204,13 +332,47 @@ test("a unit on sale: 200, its real photo on the card, every photo in the data",
   assert.match(og, /^https:\/\/dhole\.dev\/api\/store\/img\/[0-9a-f]{64}\.jpg$/);
   assert.equal(metaContent(r.head, "twitter:image"), og);
   assert.equal(metaContent(r.head, "og:image:width"), null, "a photo's size isn't known");
-  assert.ok(metaContent(r.head, "description").includes("One of one: the unit in the photos."));
+  assert.equal(unitStatusOf(r.head), "available");
+  // The name, then the id buyers quote back, then the price.
+  assert.equal(text(titleOf(r.head)), "PlayStation 4 Slim 500GB — Jet Black (RO-0042): $229.00 | dhole.dev");
+  assert.equal(text(metaContent(r.head, "og:title")), "PlayStation 4 Slim 500GB — Jet Black (RO-0042): $229.00");
+  assert.equal(metaContent(r.head, "twitter:title"), metaContent(r.head, "og:title"));
   const ld = ldOf(r.head, "Product");
   assert.equal(ld.image.length, 2);
   assert.equal(ld.image[0], og);
   assert.equal(ld.offers.price, "229.00");
   assert.equal(ld.offers.availability, "https://schema.org/InStock");
   assert.equal(ld.offers.itemCondition, "https://schema.org/RefurbishedCondition");
+});
+
+// One per shipping class: a bench description starts with the price plus
+// what that class ships for on its own, then the platform and the unit id.
+test("a console-class unit's description: price + $18.00 shipping, platform, unit id", async () => {
+  const env = makeEnv();
+  await pushListing(bench, env, "ro-0042");
+  const r = await page(env, "/product?id=ro-0042");
+  const d = text(metaContent(r.head, "description"));
+  assert.ok(d.startsWith(`$229.00 + ${formatMoney(SHIPPING.console.cents)} shipping. PlayStation 4, unit RO-0042. `), d);
+  assert.equal(SHIPPING.console.cents, 1800);
+  assert.ok(d.length <= 160);
+  assert.equal(metaContent(r.head, "og:description"), metaContent(r.head, "description"));
+});
+
+test("a small-class unit's description: price + $6.00 shipping, platform, unit id", async () => {
+  const env = makeEnv();
+  await pushListing(bench, env, "ro-0047", {
+    name: "Nintendo 64 Controller, Grey", platform: "Nintendo 64", category: "accessory",
+    condition: "Used, good", price_cents: 3200, shipping_class: "small",
+    blurb: "Original controller. The stick returns to centre."
+  });
+  const r = await page(env, "/product?id=ro-0047");
+  assert.equal(r.status, 200);
+  assert.equal(text(metaContent(r.head, "description")),
+    `$32.00 + ${formatMoney(SHIPPING.small.cents)} shipping. Nintendo 64, unit RO-0047. Used, good. Original controller. The stick returns to centre.`);
+  assert.equal(SHIPPING.small.cents, 600);
+  assert.equal(titleOf(r.head), "Nintendo 64 Controller, Grey (RO-0047): $32.00 | dhole.dev");
+  assert.equal(ldOf(r.head, "Product").offers.shippingDetails.shippingRate.value, "6.00");
+  assert.equal(unitStatusOf(r.head), "available");
 });
 
 test("bench copy is escaped in attributes and can't break out of the JSON-LD", async () => {
@@ -238,9 +400,13 @@ test("a unit in someone's checkout: 200, out of stock for now; a lapsed hold: in
   let r = await page(env, "/product?id=ro-0044");
   assert.equal(r.status, 200);
   assert.equal(ldOf(r.head, "Product").offers.availability, "https://schema.org/OutOfStock");
+  assert.equal(unitStatusOf(r.head), "reserved");
+  assert.ok(text(metaContent(r.head, "description")).startsWith("$229.00 + $18.00 shipping. "), "a hold may lapse: the offer stands");
+  assert.match(text(metaContent(r.head, "og:title")), /\(RO-0044\): \$229\.00$/);
   holdDirect(env, "ro-0044", "cs_test_old", Date.now() - 1000);
   r = await page(env, "/product?id=ro-0044");
   assert.equal(ldOf(r.head, "Product").offers.availability, "https://schema.org/InStock");
+  assert.equal(unitStatusOf(r.head), "available");
 });
 
 test("a sold unit: 410, noindex, no Product data, a 'Sold' card", async () => {
@@ -252,11 +418,20 @@ test("a sold unit: 410, noindex, no Product data, a 'Sold' card", async () => {
   assert.equal(metaContent(r.head, "robots"), "noindex");
   assert.equal(canonicalOf(r.head), null);
   assert.equal(ldBlocks(r.head).length, 0);
-  assert.match(metaContent(r.head, "og:title"), /^Sold: /);
+  assert.equal(unitStatusOf(r.head), "sold");
+  const name = "PlayStation 4 Slim 500GB — Jet Black";
+  assert.equal(text(metaContent(r.head, "og:title")), `Sold: ${name} (RO-0045)`);
+  assert.equal(text(metaContent(r.head, "twitter:title")), `Sold: ${name} (RO-0045)`);
+  assert.equal(text(titleOf(r.head)), `Sold: ${name} (RO-0045) | dhole.dev`);
+  for (const s of [metaContent(r.head, "og:title"), metaContent(r.head, "twitter:title"), titleOf(r.head)]) {
+    assert.ok(!s.includes("$"), `no price on a sold unit: ${s}`);
+  }
+  assert.equal(text(metaContent(r.head, "description")), "This unit has sold. See what's listed now at dhole.dev.");
+  assert.equal(metaContent(r.head, "product:price:amount"), null);
   assert.ok(r.html.includes('id="product-main"'));
 });
 
-test("a withdrawn unit: 404, noindex", async () => {
+test("a withdrawn unit: 404, noindex, a 'No longer listed' card with no price", async () => {
   const env = makeEnv();
   await pushListing(bench, env, "ro-0046");
   await call(bench, env, "POST", "/api/bench/listings/ro-0046/withdraw", { token: TOKEN, body: { reason: "pulled" } });
@@ -264,6 +439,14 @@ test("a withdrawn unit: 404, noindex", async () => {
   assert.equal(r.status, 404);
   assert.equal(metaContent(r.head, "robots"), "noindex");
   assert.equal(ldBlocks(r.head).length, 0);
+  assert.equal(unitStatusOf(r.head), "withdrawn");
+  const name = "PlayStation 4 Slim 500GB — Jet Black";
+  assert.equal(text(metaContent(r.head, "og:title")), `No longer listed: ${name} (RO-0046)`);
+  assert.equal(text(metaContent(r.head, "twitter:title")), `No longer listed: ${name} (RO-0046)`);
+  for (const s of [metaContent(r.head, "og:title"), metaContent(r.head, "twitter:title"), titleOf(r.head)]) {
+    assert.ok(!s.includes("$"), `no price on a withdrawn unit: ${s}`);
+  }
+  assert.equal(text(metaContent(r.head, "description")), "This unit is no longer listed. See what's listed now at dhole.dev.");
 });
 
 section("functions/product.js: never worse than the static file");
@@ -325,6 +508,158 @@ test("*.pages.dev copies say noindex", async () => {
     // The canonical still names the real site.
     assert.equal(canonicalOf(r.head), "https://dhole.dev/product?id=snes-console");
   }
+});
+
+// ---------- functions/case.js ----------
+
+section("functions/case.js: case-study heads");
+
+// A stand-in shell: case.html itself belongs to the portfolio pages, and
+// test/case-head.test.js runs the real one through this Function.
+const CASE_SHELL = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- seo:start: functions/case.js writes this block per case study -->
+  <title>Case study | dhole.dev</title>
+  <meta name="description" content="A product case study." />
+  <!-- seo:end -->
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+</head>
+<body>
+  <header class="site-header"></header>
+  <main><div class="wrap"><article id="case-main"></article></div></main>
+</body>
+</html>
+`;
+const CASE_BODY = CASE_SHELL.slice(CASE_SHELL.indexOf("</head>"));
+
+async function casePage(env, path, { method = "GET", host = "dhole.dev", asset } = {}) {
+  const request = new Request(`https://${host}${path}`, { method });
+  const next = async () => asset ? asset() : new Response(method === "HEAD" ? null : CASE_SHELL, {
+    status: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8", ETag: '"abc"', "Cache-Control": "public, max-age=600" }
+  });
+  const res = await caseFn({ request, env, params: {}, data: {}, waitUntil() {}, next });
+  const html = await res.text();
+  return { res, status: res.status, html, head: html.slice(0, html.indexOf("</head>")) };
+}
+
+const quietly = async fn => {
+  const err = console.error; console.error = () => {};
+  try { return await fn(); } finally { console.error = err; }
+};
+
+test("a known id: 200, its own title, description, canonical, og:url and the portfolio card", async () => {
+  const w = findWork("discover-cleaner");
+  assert.ok(w, "data/portfolio.js has discover-cleaner");
+  const r = await casePage(makeEnv(), "/case?id=discover-cleaner");
+  assert.equal(r.status, 200);
+  assert.equal(text(titleOf(r.head)), `${w.title}: case study | dhole.dev`);
+  assert.equal(canonicalOf(r.head), "https://dhole.dev/case?id=discover-cleaner");
+  assert.equal(metaContent(r.head, "og:url"), "https://dhole.dev/case?id=discover-cleaner");
+  assert.equal(metaContent(r.head, "og:type"), "article");
+  assert.equal(text(metaContent(r.head, "og:title")), `${w.title}: case study`);
+  assert.equal(text(metaContent(r.head, "description")), clip(w.pitch));
+  assert.equal(metaContent(r.head, "og:description"), metaContent(r.head, "description"));
+  assert.equal(metaContent(r.head, "og:image"), OG_PORTFOLIO);
+  assert.equal(metaContent(r.head, "og:image:width"), "1200");
+  assert.equal(metaContent(r.head, "og:image:height"), "630");
+  assert.equal(metaContent(r.head, "twitter:card"), "summary_large_image");
+  assert.equal(metaContent(r.head, "twitter:title"), metaContent(r.head, "og:title"));
+  assert.equal(metaContent(r.head, "twitter:image"), OG_PORTFOLIO);
+  assert.equal(metaContent(r.head, "robots"), null);
+  assert.ok(!r.head.includes("A product case study."), "the fallback block is gone");
+  assert.equal(r.html.slice(r.html.indexOf("</head>")), CASE_BODY, "the body is untouched");
+});
+
+test("every case study gets 200 and a canonical naming its own id", async () => {
+  for (const w of work) {
+    const r = await casePage(makeEnv(), `/case?id=${encodeURIComponent(w.id)}`);
+    assert.equal(r.status, 200, w.id);
+    assert.equal(canonicalOf(r.head), `https://dhole.dev/case?id=${encodeURIComponent(w.id)}`, w.id);
+    assert.ok(!/\.html\b/.test(canonicalOf(r.head)), w.id);
+  }
+});
+
+test("an old id (an alias): 200, with the canonical naming the current id", async () => {
+  const aliased = work.filter(w => (w.aliases || []).length);
+  assert.ok(aliased.length, "data/portfolio.js still has an alias to test");
+  for (const w of aliased) {
+    for (const alias of w.aliases) {
+      const r = await casePage(makeEnv(), `/case?id=${encodeURIComponent(alias)}`);
+      assert.equal(r.status, 200, alias);
+      assert.equal(canonicalOf(r.head), `https://dhole.dev/case?id=${w.id}`, alias);
+      assert.equal(metaContent(r.head, "og:url"), `https://dhole.dev/case?id=${w.id}`, alias);
+    }
+  }
+  const r = await casePage(makeEnv(), "/case?id=spotify-discover-cleaner");
+  assert.equal(canonicalOf(r.head), "https://dhole.dev/case?id=discover-cleaner");
+});
+
+test("no id or an unknown id: 404, noindex, no canonical, the page still renders its message", async () => {
+  for (const path of ["/case", "/case?id=", "/case?id=nope", `/case?id=${encodeURIComponent('<script>"x"')}`]) {
+    const r = await casePage(makeEnv(), path);
+    assert.equal(r.status, 404, path);
+    assert.equal(metaContent(r.head, "robots"), "noindex", path);
+    assert.equal(canonicalOf(r.head), null, path);
+    assert.equal(titleOf(r.head), "Case study not found | dhole.dev", path);
+    assert.ok(!r.head.includes("<script>"), path);
+    assert.equal(r.html.slice(r.html.indexOf("</head>")), CASE_BODY, path);
+  }
+});
+
+test("a shell without the markers goes out unchanged with 200", async () => {
+  const bare = "<!doctype html><html><head><title>t</title></head><body></body></html>";
+  for (const path of ["/case?id=discover-cleaner", "/case?id=nope"]) {
+    const r = await quietly(() => casePage(makeEnv(), path, {
+      asset: () => new Response(bare, { headers: { "Content-Type": "text/html" } })
+    }));
+    assert.equal(r.status, 200, path);
+    assert.equal(r.html, bare, path);
+  }
+});
+
+test("a non-OK or non-HTML asset, or a POST, passes straight through", async () => {
+  let r = await casePage(makeEnv(), "/case?id=discover-cleaner", { asset: () => new Response("gone", { status: 404 }) });
+  assert.equal(r.status, 404);
+  assert.equal(r.html, "gone");
+  r = await casePage(makeEnv(), "/case?id=discover-cleaner", {
+    asset: () => new Response("{}", { headers: { "Content-Type": "application/json" } })
+  });
+  assert.equal(r.html, "{}");
+  r = await casePage(makeEnv(), "/case?id=discover-cleaner", { method: "POST", asset: () => new Response("as is", { status: 405 }) });
+  assert.equal(r.status, 405);
+  assert.equal(r.html, "as is");
+});
+
+test("HEAD answers with the same status and no body", async () => {
+  let r = await casePage(makeEnv(), "/case?id=discover-cleaner", { method: "HEAD" });
+  assert.equal(r.status, 200);
+  assert.equal(r.html, "");
+  r = await casePage(makeEnv(), "/case?id=nope", { method: "HEAD" });
+  assert.equal(r.status, 404);
+  assert.equal(r.html, "");
+});
+
+test("the security headers, revalidation, no stale validators; *.pages.dev says noindex", async () => {
+  const r = await casePage(makeEnv(), "/case?id=discover-cleaner");
+  for (const [k, v] of Object.entries(PAGE_HEADERS)) assert.equal(r.res.headers.get(k), v, k);
+  assert.equal(r.res.headers.get("Cache-Control"), "public, max-age=0, must-revalidate");
+  assert.equal(r.res.headers.get("ETag"), null);
+  assert.match(r.res.headers.get("Content-Type"), /^text\/html/);
+  assert.equal(r.res.headers.get("X-Robots-Tag"), null);
+  const nf = await casePage(makeEnv(), "/case?id=nope");
+  for (const [k, v] of Object.entries(PAGE_HEADERS)) assert.equal(nf.res.headers.get(k), v, `404 ${k}`);
+  for (const host of ["dhole-dev.pages.dev", "claude-x.dhole-dev.pages.dev"]) {
+    const p = await casePage(makeEnv(), "/case?id=discover-cleaner", { host });
+    assert.equal(p.res.headers.get("X-Robots-Tag"), "noindex", host);
+    assert.equal(canonicalOf(p.head), "https://dhole.dev/case?id=discover-cleaner", "the canonical names the real site");
+  }
+});
+
+test("/case stays out of the sitemap", () => {
+  assert.ok(!SITE_PAGES.some(p => p.startsWith("/case")));
 });
 
 // ---------- the sitemap ----------
@@ -419,10 +754,11 @@ test("_headers keeps every *.pages.dev copy out of search, below /*", () => {
   }
 });
 
-test("_routes.json sends /product and /sitemap.xml to their Functions, and nothing else new", () => {
+test("_routes.json sends /product, /case and /sitemap.xml to their Functions, and nothing else new", () => {
   const routes = JSON.parse(read("_routes.json"));
-  assert.deepEqual(routes.include.sort(), ["/api/*", "/product", "/sitemap.xml"]);
+  assert.deepEqual(routes.include, ["/api/*", "/product", "/sitemap.xml", "/case"]);
   assert.ok(existsSync(join(ROOT, "functions", "product.js")));
+  assert.ok(existsSync(join(ROOT, "functions", "case.js")));
   assert.ok(existsSync(join(ROOT, "functions", "sitemap.xml.js")));
   assert.ok(!existsSync(join(ROOT, "sitemap.xml")), "a static sitemap.xml would only confuse: the Function serves it");
 });
@@ -435,6 +771,14 @@ test("robots.txt lets crawlers fetch product photos, keeps the APIs out, names t
   assert.ok(lines.includes("Sitemap: https://dhole.dev/sitemap.xml"));
   // noindex pages must stay fetchable, or their noindex is never seen.
   assert.ok(!lines.some(l => /^Disallow: \/(cart|order-complete|checkout-cancelled)/.test(l)));
+  // The output dir is ".", so the dev scripts, templates, fixtures and tests are served too.
+  assert.ok(lines.includes("Disallow: /scripts/"));
+  assert.ok(lines.includes("Disallow: /test/"));
+  // Nothing a buyer or a preview crawler needs is shut out.
+  const disallowed = lines.filter(l => l.startsWith("Disallow: ")).map(l => l.slice("Disallow: ".length));
+  for (const path of ["/", "/store", "/product?id=ro-0042", "/case?id=discover-cleaner", "/portfolio", "/projects/drift-tester", "/assets/brand/og-site.png"]) {
+    assert.ok(!disallowed.some(prefix => path.startsWith(prefix)), path);
+  }
 });
 
 test("_redirects never targets a .html URL, and never sends /foo to /foo.html", () => {

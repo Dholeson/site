@@ -12,6 +12,12 @@
 //   bench unit withdrawn                  404, noindex
 //   no id, unknown or malformed id        404, noindex
 //
+// Every product head also says whether Stripe is set up: with no
+// STRIPE_SECRET_KEY (the same test functions/api/checkout.js makes) it
+// carries <meta name="checkout" content="off">, and the page offers "Email to
+// buy this unit" instead of an Add to cart that could only fail. Setting the
+// secret switches it off by itself. Bench heads carry <meta name="unit-status">.
+//
 // It never makes the page worse than the static file: if D1 is unbound or
 // fails, or the markers are missing, the shell goes out unchanged with 200.
 // Old /product.html?id= links reach here through Cloudflare's own 308 to
@@ -34,6 +40,7 @@ const BENCH_STATE = { available: "in-stock", reserved: "reserved", sold: "sold",
 async function resolvePage(id, env) {
   const site = siteUrl(env);
   const shipTo = shipToCountries(env);
+  const checkout = Boolean(env.STRIPE_SECRET_KEY);
   const missing = { status: 404, head: notFoundHead() };
   if (!id) return missing;
 
@@ -44,13 +51,13 @@ async function resolvePage(id, env) {
     if (!row) return missing;
     const state = BENCH_STATE[effectiveStatus(row, nowIso())];
     if (!state) return null;
-    return { status: statusFor(state), head: productHead(toProduct(row), { site, state, shipTo }) };
+    return { status: statusFor(state), head: productHead(toProduct(row), { site, state, shipTo, checkout }) };
   }
 
   const p = findProduct(id);
   if (!p) return missing;
   const state = p.stock > 0 ? "in-stock" : "out-of-stock";
-  return { status: statusFor(state), head: productHead(p, { site, state, shipTo }) };
+  return { status: statusFor(state), head: productHead(p, { site, state, shipTo, checkout }) };
 }
 
 function headersFor(asset, hostname) {
