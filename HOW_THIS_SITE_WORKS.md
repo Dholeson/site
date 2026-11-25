@@ -47,8 +47,11 @@ isn't linked from the header or footer; the page stays until you decide.
 
 ## The look
 
-Light and neutral, so photos of the real unit carry the colour. Public Sans
-for text and Red Hat Mono only for unit ids, both served from this site.
+A neutral look in light and dark, so photos of the real unit carry the
+colour. The site follows the visitor's device (light or dark mode) unless
+they choose Light or Dark under "Theme" in the footer, and printing is always
+light (`SETUP.md`, "Light and dark"). Public Sans for text and Red Hat Mono
+only for unit ids, both served from this site.
 Every colour and type size is a token at the top of `assets/site.css`, and
 `npm test` fails if a page brings in its own colour, a shadow, a gradient or
 text under 16 px. `CLAUDE.md`, "Design system", has the rules and the

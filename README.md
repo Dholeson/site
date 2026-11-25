@@ -15,8 +15,10 @@ product case studies. The header links Store, Tools, Portfolio and Cart.
 - **Portfolio**: `portfolio.html` and `case.html`, from `data/portfolio.js`
 - **Build log**: `log.html`, not linked from the header or footer
 
-A light, neutral look with self-hosted fonts; every colour and type size is a token
-in `assets/site.css`, and `test/design.test.js` keeps it that way.
+A neutral look in light and dark, with self-hosted fonts. The site follows the
+device's light or dark mode unless the visitor picks Light or Dark under
+"Theme" in the footer, and printing is always light. Every colour and type size
+is a token in `assets/site.css`, and `test/design.test.js` keeps it that way.
 
 ```bash
 npm install

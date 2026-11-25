@@ -25,7 +25,10 @@ portfolio.html        Product case studies
 case.html             One case study (its <head> is filled by functions/case.js)
 log.html              Build log (not linked from the nav)
 404.html              Not found
-assets/site.css       The shared look; each page group adds one more stylesheet
+assets/site.css       The shared look, light and dark; each page group adds one
+                      more stylesheet
+assets/theme.js       Applies the visitor's Light or Dark choice before the
+                      page draws
 assets/fonts/         The two self-hosted fonts and their licences
 assets/brand/         Link-preview cards and icons
 data/products.js      Hand-made catalogue, plus the shipping rates and the
@@ -318,6 +321,59 @@ curl -H "Authorization: Bearer <your token>" https://dhole.dev/api/bench/listing
   or the site hasn't been redeployed since you set it.
 - `401`: the token you sent isn't the one stored.
 
+### When does a unit appear on the site?
+
+As soon as you move it to Listed in RefurbOS with "Also on dhole.dev" on, as
+long as it has at least one JPEG photo and its copy passes the lint. Its own
+page works within seconds, and the store page shows it within 30 seconds
+more.
+
+**What sends it.**
+- Moving a unit to Listed on its List card with "Also on dhole.dev" on. That
+  is the default, remembered per unit.
+- "Put it on dhole.dev" (or "Update on dhole.dev") on its Listed card.
+- A price change on a unit that is already on the site, which re-sends it by
+  itself.
+- Units you listed before the store was connected are never sent on their
+  own. Use "Put it on dhole.dev" for those.
+
+**How it gets there.** RefurbOS sends it straight away, in the background:
+its outbox runs right after the click and every 30 seconds after that. It
+uploads each photo first (a cleaned copy: rotation applied, long edge at most
+1600 px, no location data), then the listing. If the site can't be reached it
+tries again, waiting from 30 seconds up to an hour between tries. It stops,
+with a "failed" row on its /listing page (Retry or Dismiss), when:
+- the copy fails its lint;
+- no photo is usable: HEIC and WebP files are skipped, so shoot JPEG
+  ("Photos for a listing" below);
+- a field is blank;
+- the site refuses it.
+
+**When the site shows it.** The site accepts a listing only once every photo
+it names is stored, so a page never shows a missing photo. From that moment:
+- `/product?id=ro-0042` (the unit's own id) works at once, and the unit is in
+  `/sitemap.xml`;
+- `/store`, the homepage's Store row and "Listed now" read
+  `/api/store/listings`, which a browser may keep for up to 30 seconds. A
+  visitor who loaded the store in the last 30 seconds sees the unit on their
+  next load after that.
+
+**What a buyer can do with it.** That depends on which version of the site
+is live:
+- **Until this redesign is merged**, the live site is the older design.
+  Stripe isn't connected there either, so a unit you list shows an Add to
+  cart button, and checkout then fails with "Checkout is not configured."
+- **Once the redesign is merged**, each unit's page offers "Email to buy this
+  unit" until Stripe is set up (steps 3 to 6 above), and Add to cart after
+  that.
+
+So hold off listing until the redesign is merged, or merge first.
+
+**When it comes off.** Marking the unit sold elsewhere, pulling it back,
+making it a keeper, or "Remove from dhole.dev" takes it off the site. A unit
+in a buyer's open Stripe checkout can't come off until that hold ends (about
+30 minutes); RefurbOS waits and tries again.
+
 ### Testing the bench app against a local copy
 
 To try the whole loop on one machine without touching the real store:
@@ -492,6 +548,53 @@ until you have. It then re-renders the link-preview cards so
 `og-portfolio.png` shows your name, which needs Playwright (see
 "Checking the layout" below); look at the images, then commit everything.
 
+### Photos for a listing
+
+Photos are the site's colour, and every one is of the exact unit. They go up
+with the listing from RefurbOS.
+
+**Format.**
+- 1 to 8 photos per unit, at most 2 MB each.
+- Shoot JPEG: RefurbOS skips HEIC and WebP files. On an iPhone, set Settings,
+  Camera, Formats to Most Compatible.
+
+**Framing.** 4:3 landscape, with photo 1 at least 1200 px wide. RefurbOS
+sends a long edge of up to 1600 px. Under 900 px wide, link previews fall
+back to the plain dhole.dev card.
+
+**Backdrop and light.**
+- The same plain, neutral backdrop every time: a light-to-mid grey (a grey
+  card or a matte grey board) rather than pure white. It reads calmly in
+  both the light and the dark theme, and the photo panels' grey (`--sweep`
+  in `assets/site.css`) can later be set to match it.
+- No coloured backdrop.
+- Soft daylight, no props.
+
+**Where photo 1 shows.** The store card, the homepage's Store row (from
+960 px wide), "Listed now", link previews and the first slot of the
+product page's gallery. Make it the hero shot.
+
+**The photos, in order:**
+1. **Hero.** The whole console, three-quarter front view, lid and ports
+   visible.
+2. **Working.** Powered on and connected to a TV or monitor showing its boot
+   screen or a game, with console and screen in one frame and the power LED
+   lit. For a handheld: the screen lit with a game. This backs the record's
+   `Works:` line, and it is the most persuasive photo the store can show.
+3. The back and ports (AV out, power, controller ports). This backs
+   `Output:`.
+4. The label or serial on the base (model, region). This identifies the
+   exact unit.
+5. to 7. Each mark named in a `Looks:` line, close up with a coin or ruler
+   for scale, in the order the `Looks:` lines cite them ("photo 5").
+8. Opened mid-refurb (cleaned board, new capacitors), or everything in the
+   box laid out. This backs `Replaced:` or `In the box:`.
+
+**Controllers.** The controller beside a screen showing
+`/projects/drift-tester` with that controller's plot. The reading on the
+screen must be the one in the unit's `Measured:` line, taken in the same
+session.
+
 ### Writing a unit's record (RefurbOS)
 
 A product page turns a unit's details lines (up to 12, each at most 200
@@ -560,10 +663,14 @@ a card, give the file a new name and update the pages that point at it.
 
 1. Drop `projects/my-thing.html`, `projects/my-thing.js` and
    `projects/my-thing.entry.js` in. Copy the head and the start of the body
-   from an existing tool page: the shared stylesheet, the font preload, the
-   empty `<header class="site-header"></header>`, and a `<noscript>` notice
-   if the page needs JavaScript. `npm test` checks the head, the header and
-   the notice.
+   from an existing tool page: the theme lines (the `color-scheme` and two
+   `theme-color` metas, then `/assets/theme.js`, straight before the shared
+   stylesheet), the shared stylesheet, the font preload, the empty
+   `<header class="site-header"></header>`, and a `<noscript>` notice if the
+   page needs JavaScript. `npm test` checks the head, the header and the
+   notice. If the tool draws on a canvas, read its colours from the tokens
+   and draw again on the `dhole:theme` event, as the drift tester does;
+   `npm test` checks that too.
 2. Add an entry to `data/projects.js`: `demo` (the page's clean URL), a
    `cta` that names it ("Open the sequencer"), `tagline`, `description`,
    `builtWith`.
@@ -573,7 +680,35 @@ a card, give the file a new name and update the pages that point at it.
 `/projects` renders from the data by itself. Every entry needs a working
 page. A write-up with nothing to run belongs in `data/portfolio.js`
 instead. A `shot` is optional and must be a real capture of the tool's own
-page; for the chiptune sequencer, `npm run capture:tools` takes it.
+page.
+
+A capture of the site's own light interface needs a dark twin too, so the
+dark theme doesn't show a white block: `shot.dark = { src, mobile }`, the
+same two files with `-dark` before the extension, at the same sizes. The
+page then shows only the twin for the theme in use, and the browser fetches
+only that one. The homepage row has the same pair in `index.html`: copy the
+chiptune row's two `<picture>`s. A capture of a dark interface (Discover
+Cleaner's) needs no twin. For the chiptune sequencer,
+`npm run capture:tools` takes all of it: the sequencer playing, in light and
+then dark, for home, `/projects` and the portfolio. It checks each file's
+size against `data/projects.js`, `data/portfolio.js` and `index.html`, and
+says which to update if one differs.
+
+### A picture of the drift tester working
+
+The drift tester's row on the homepage and `/projects` has no picture yet,
+because a picture of it needs a real controller connected, and yours is the
+one to use. Either:
+
+- **Send a screenshot.** Open `/projects/drift-tester` in a desktop browser at
+  full width, connect your controller, move the sticks, let go, press
+  "Measure rest", and take a screenshot of the plots.
+- **Or build the capture tool with a session.** Start a session with the
+  controller connected to your PC; it builds `npm run capture:tools drift`
+  with you (a real controller only, both themes), and you run it.
+
+Either way the session then puts the picture on the homepage and Tools rows,
+captioned as your own controller rather than a unit for sale.
 
 ### Local preview
 
@@ -595,10 +730,27 @@ npm run check:layout
 It loads every page in Chromium at phone and desktop widths and checks that
 nothing scrolls sideways, nothing shifts while units and fonts load, no text
 is under 16 px, the buy action sits in the first screen of a product page,
-contrast holds, and the content security policy blocks nothing. It isn't
-part of `npm test` or CI, because it needs a browser: run it before merging
-anything that changes how pages look. It prints a table and exits 1 when a
-check fails; a full run takes a few minutes.
+contrast holds, and the content security policy blocks nothing. In every run
+it also checks the theme (the page is in the theme it should be, and the
+phone's bar colour matches the page), that only the current theme's capture
+is fetched, that printing gives dark text on white, and, on two product
+pages, that the photo strip's focus ring shows (also in Windows contrast
+themes). It isn't part of `npm test` or CI, because it needs a browser: run
+it before merging anything that changes how pages look. It prints a table
+and exits 1 when a check fails; a full run takes a few minutes.
+
+It checks a light device by default. Options for the themes:
+- `--scheme dark`: the device prefers dark.
+- `--theme light` or `--theme dark`: the visitor chose Light or Dark in the
+  footer (`--theme auto`, the default, follows the device).
+- `--first-paint`: with every script except `theme.js` held back, checks only
+  that the first frame is already in the right theme (no flash of the other
+  one).
+
+Other options: `--units 0,1,5,failed`, `--checkout off`, `--slow-fonts`,
+`--text-scale`, `--pages` and `--widths` (the script's header lists them all).
+Before merging a change to the look, run it at least as it is, with
+`--scheme dark`, and with `--scheme light --theme dark`.
 
 Playwright isn't one of the site's dependencies. Either install it
 (`npm i -D playwright && npx playwright install chromium`, without committing
@@ -628,6 +780,33 @@ push and pull request. Two one-time settings make it count:
    then stops the deploy itself, previews included. The store tests need
    Node 22.13 or later; if the build log shows an older 22, give the full
    version instead.
+
+---
+
+## Light and dark
+
+The site has a light and a dark theme, both neutral grey with no colour of
+their own, so the photos carry the colour.
+
+- **How a visitor gets each.** The site follows their device's setting
+  (light or dark mode) until they choose otherwise under "Theme" in the
+  footer: Match device, Light or Dark. Without JavaScript the device's
+  setting still applies; only the footer choice needs it.
+- **Where the choice is kept.** In that visitor's own browser
+  (`localStorage`, `dhole_theme_v1`), for every page of the site. Nothing is
+  sent anywhere. If the browser blocks storage, the choice lasts for that
+  page only.
+- **How to look at both.** Use the footer's Theme choice on any page, or
+  switch your device between light and dark mode while the footer says
+  Match device. Check the preview at a phone width (390 px) and at a laptop
+  width (1280 px).
+- **Printing is always light.** Printing a page or saving it as a PDF (a
+  receipt from `/order-complete`, a case study, `/shipping-returns`) gives
+  dark text on white paper, whatever the screen shows.
+- **What never changes with the theme.** Unit photos are never dimmed or
+  tinted. The link-preview cards and the site icon are the same in both.
+
+The colours and the rules behind them are in `CLAUDE.md`, "Two themes".
 
 ---
 
@@ -706,8 +885,11 @@ tampering, stock limits, malformed carts, duplicate lines, shipping selection
 and Stripe payload construction; the bench API, the public store API,
 bench-unit holds and the Stripe webhook against a real SQLite standing in for
 D1; every page's server-written head and the sitemap; the design rules
-(colours only from the shared tokens, the font rules, no text under 16 px,
-shipping and returns wording only from `data/products.js`); each page group;
+(colours only from the shared tokens, contrast in both themes, the font
+rules, no text under 16 px, shipping and returns wording only from
+`data/products.js`); the theme on every page (the theme script and its
+footer choice, each page's head, the paired light and dark captures); each
+page group;
 and the vendored
 Discover Cleaner and league-ify builds. CI runs the same command on every
 push ("Tests and CI" above). For how the pages look at phone and desktop
