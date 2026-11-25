@@ -2,9 +2,14 @@
 // checked statically over the site's own files, so a later edit can't
 // quietly bring back what the redesign took out.
 //
-//   colour      hex only in site.css :root; no colour values anywhere else in
-//               site CSS; no quoted colour strings in site JS; WCAG contrast
-//               computed from the real :root values
+//   colour      hex only in site.css :root blocks (the base and the two dark
+//               blocks); no colour values anywhere else in site CSS; no
+//               quoted colour strings in site JS; in every theme, from the
+//               real token values: WCAG contrast (text 4.5:1, edges 3:1),
+//               an APCA floor (Lc 75 body, Lc 60 secondary), no hue (R=G=B
+//               but amber and --fault), beat cells darker than --panel;
+//               the dark blocks one of each, screen only and identical;
+//               --sweep-dk gone (dark-spec §11.1)
 //   effects     no shadows, blurs, gradients or clipped text; radius at most
 //               4px; no uppercase; letter-spacing at most 0.01em; no text
 //               under 16px; no overflow-x on html or body
@@ -17,8 +22,12 @@
 //               never see the word "bench"
 //   money       every $ amount on home, store and shipping is a SHIPPING rate;
 //               no "$18"-style amounts; no "N days" except RETURNS.console
-//   heads       site.css, the Public Sans preload, theme-color, icon.svg;
-//               a <noscript> notice on every page JavaScript renders
+//   heads       site.css first, the Public Sans preload, icon.svg; the theme
+//               head of dark-spec §4.1 all or nothing, in order (a page
+//               without it keeps the single #ffffff theme-color while the
+//               build moves each package's pages; test/theme.test.js makes
+//               it required); a <noscript> notice on every page JavaScript
+//               renders
 //   files       fonts and licences; the retired stylesheets and brand files
 //               are gone and unreferenced; preview images at their sizes
 //
@@ -247,7 +256,15 @@ function allCssRules() {
   return rules;
 }
 const RULES = allCssRules();
-const isRoot = r => r.selector === ":root";
+
+// The token home (dark-spec §11.1 item 1): the base :root and the two dark
+// blocks, :root:not([data-theme="light"]) inside the device's dark media
+// query and :root[data-theme="dark"] for a visitor's choice. Both dark
+// blocks count as :root, so the hex, colour-value and --buy-*/--kapton*
+// guards treat them as the place where colours are defined: hex values live
+// only in site.css :root blocks, in both themes.
+const THEME_ROOTS = new Set([':root:not([data-theme="light"])', ':root[data-theme="dark"]']);
+const isRoot = r => r.selector === ":root" || THEME_ROOTS.has(r.selector);
 const isSiteRoot = r => r.file === SITE_CSS_FILE && isRoot(r);
 const where = (r, d) => `${r.file}:${(d || r).line} (${r.selector})`;
 
@@ -258,8 +275,17 @@ const tokenMap = rules => {
   for (const r of rules) for (const d of r.decls) if (d.prop.startsWith("--")) m.set(d.prop, d.value);
   return m;
 };
-const BASE_ROOT_RULES = RULES.filter(r => isSiteRoot(r) && r.context.length === 0);
+// Where each token is declared, as "file:line".
+const tokenLines = rules => {
+  const m = new Map();
+  for (const r of rules) for (const d of r.decls) if (d.prop.startsWith("--")) m.set(d.prop, `${r.file}:${d.line}`);
+  return m;
+};
+// The base tokens come only from the plain :root with no @media around it.
+// A dark block, even one moved out of its @media, never changes the base.
+const BASE_ROOT_RULES = RULES.filter(r => r.file === SITE_CSS_FILE && r.selector === ":root" && r.context.length === 0);
 const TOKENS = tokenMap(BASE_ROOT_RULES);
+const TOKEN_LINES = tokenLines(BASE_ROOT_RULES);
 
 // Replaces var() with token values until none are left. An unknown token
 // without a fallback comes out as <unresolved --name>.
@@ -301,6 +327,15 @@ function hexToRgb(hex) {
   if (h.length === 3) h = [...h].map(c => c + c).join("");
   return [0, 2, 4].map(k => parseInt(h.slice(k, k + 2), 16));
 }
+// Any hex colour (#rgb, #rgba, #rrggbb, #rrggbbaa) as [r, g, b], or null for
+// anything else (a system colour, a compound value like "2px solid #1b1b1b").
+function hexChannels(value) {
+  let h = value.trim().toLowerCase();
+  if (!/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/.test(h)) return null;
+  h = h.slice(1);
+  if (h.length <= 4) h = [...h].map(c => c + c).join("");
+  return [0, 2, 4].map(k => parseInt(h.slice(k, k + 2), 16));
+}
 function luminance([r, g, b]) {
   const lin = c => { const s = c / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
@@ -310,36 +345,96 @@ const contrast = (a, b) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 
-// Text pairs (4.5:1) and non-text edges (3:1), named by token.
+// APCA 0.0.98G-4g, the lightness contrast Lc of text on a background (the
+// reference is apca() in the planner's contrast.mjs, dark-spec §11.1 item 3).
+// WCAG 2's ratio overstates light-on-dark contrast, so dark text pairs that
+// pass 4.5:1 can still read faint; APCA is polarity-aware.
+function apca(text, bg) {
+  const Y = ([r, g, b]) => 0.2126729 * (r / 255) ** 2.4 + 0.7151522 * (g / 255) ** 2.4 + 0.0721750 * (b / 255) ** 2.4;
+  const clamp = y => (y < 0.022 ? y + (0.022 - y) ** 1.414 : y);   // black threshold, soft clamp
+  const yt = clamp(Y(text)), yb = clamp(Y(bg));
+  if (Math.abs(yb - yt) < 0.0005) return 0;
+  let lc;
+  if (yb > yt) { const s = (yb ** 0.56 - yt ** 0.57) * 1.14; lc = s < 0.1 ? 0 : s - 0.027; }    // dark text on light
+  else { const s = (yb ** 0.65 - yt ** 0.62) * 1.14; lc = s > -0.1 ? 0 : s + 0.027; }           // light text on dark
+  return lc * 100;
+}
+
+// Every token set the site can show (dark-spec §11.1 item 2): the base
+// :root, then each other site.css :root block that sets a colour (the two
+// dark blocks) laid over the base. var() resolves through the overlay, so
+// the base's --buy-bg: var(--ink) picks up the dark --ink, as in a browser.
+// Each set knows where each of its tokens is declared, for the messages.
+function overlay(r) {
+  const tokens = new Map(TOKENS), lines = new Map(TOKEN_LINES);
+  for (const d of r.decls) {
+    if (!d.prop.startsWith("--")) continue;
+    tokens.set(d.prop, d.value);
+    lines.set(d.prop, `${r.file}:${d.line}`);
+  }
+  return { label: `${r.file}:${r.line} ${r.selector}${r.context.length ? ` in ${r.context.join(" ")}` : ""}`, tokens, lines };
+}
+const setsColour = r => r.decls.some(d => d.prop === "color-scheme" || (d.prop.startsWith("--") && HEX.test(d.value)));
+const TOKEN_SETS = [
+  { label: `${SITE_CSS_FILE} :root`, tokens: TOKENS, lines: TOKEN_LINES },
+  ...RULES.filter(r => isSiteRoot(r) && !BASE_ROOT_RULES.includes(r) && setsColour(r)).map(overlay)
+];
+
+// Text pairs (4.5:1) and non-text edges (3:1), named by token, in every
+// theme (dark-spec §11.1 item 2). --sweep has no edge pair: no bordered
+// control sits on a photo panel, and retuning --sweep to real photos must
+// never be blocked by --edge.
 const TEXT_PAIRS = [
   ["ink", "paper"], ["graphite", "paper"], ["fault", "paper"],
-  ["ink", "sweep"], ["graphite", "sweep"], ["fault", "sweep"],
-  ["ink", "sweep-dk"], ["graphite", "sweep-dk"],
+  ["ink", "panel"], ["graphite", "panel"], ["fault", "panel"],
+  ["sweep-ink", "sweep"], ["sweep-graphite", "sweep"],
+  ["ink", "pressed"],
   ["buy-fg", "buy-bg"], ["buy-fg", "buy-bg-hover"],
-  ["ink", "kapton"], ["ink", "kapton-dk"],
+  ["kapton-fg", "kapton"], ["kapton-fg", "kapton-dk"],
   ["paper", "ink"], ["paper", "graphite"]
 ];
-const EDGE_PAIRS = [["edge", "paper"], ["edge", "sweep"]];
+const EDGE_PAIRS = [["edge", "paper"], ["edge", "panel"]];
+// APCA floors (item 3): body text Lc 75, 16px secondary text Lc 60.
+const APCA_PAIRS = [
+  [["ink", "paper"], 75], [["ink", "panel"], 75], [["sweep-ink", "sweep"], 75],
+  [["graphite", "paper"], 60], [["graphite", "panel"], 60], [["sweep-graphite", "sweep"], 60]
+];
 
-function contrastProblems(tokens, label) {
+// A token's colour in a set, with where it is declared, or a problem.
+function colourIn(set, name, problems) {
+  const v = resolveVars(`var(--${name})`, set.tokens).trim();
+  const rgb = hexToRgb(v);
+  const at = set.lines.get(`--${name}`) || `${SITE_CSS_FILE} (not declared)`;
+  if (!rgb) problems.push(`${at}: --${name} is "${v}" in ${set.label}, which isn't a plain #rgb or #rrggbb colour, so its contrast can't be checked`);
+  return rgb ? { rgb, hex: v, at } : null;
+}
+
+function contrastProblems(set) {
   const problems = [];
-  const colourOf = name => {
-    const v = resolveVars(`var(--${name})`, tokens);
-    const rgb = hexToRgb(v);
-    if (!rgb) problems.push(`${label}: --${name} is "${v}", which isn't a plain #rgb or #rrggbb colour, so its contrast can't be checked`);
-    return rgb ? { rgb, hex: v.trim() } : null;
-  };
   const check = ([fg, bg], min, hint) => {
-    const a = colourOf(fg), b = colourOf(bg);
+    const a = colourIn(set, fg, problems), b = colourIn(set, bg, problems);
     if (!a || !b) return;
     const ratio = contrast(a.rgb, b.rgb);
     if (ratio + 1e-9 < min) {
-      problems.push(`${label}: --${fg} (${a.hex}) on --${bg} (${b.hex}) is ${ratio.toFixed(2)}:1, under ${min}:1.${hint ? ` ${hint}` : ""}`);
+      problems.push(`${a.at}: --${fg} (${a.hex}) on --${bg} (${b.hex}, ${b.at}) is ${ratio.toFixed(2)}:1 in ${set.label}, under ${min}:1.${hint ? ` ${hint}` : ""}`);
     }
   };
   for (const p of TEXT_PAIRS) check(p, 4.5);
   check(EDGE_PAIRS[0], 3, "Input and outline-button borders must stay visible on the page: darken --edge.");
-  check(EDGE_PAIRS[1], 3, "A darker --sweep needs a darker --edge too: darken --edge until it is at least 3:1 on both --paper and --sweep.");
+  check(EDGE_PAIRS[1], 3, "A darker --panel needs a darker --edge too: darken --edge until it is at least 3:1 on both --paper and --panel.");
+  return problems;
+}
+
+function apcaProblems(set) {
+  const problems = [];
+  for (const [[fg, bg], min] of APCA_PAIRS) {
+    const a = colourIn(set, fg, problems), b = colourIn(set, bg, problems);
+    if (!a || !b) continue;
+    const lc = Math.abs(apca(a.rgb, b.rgb));
+    if (lc + 1e-9 < min) {
+      problems.push(`${a.at}: --${fg} (${a.hex}) on --${bg} (${b.hex}, ${b.at}) is APCA Lc ${lc.toFixed(1)} in ${set.label}, under Lc ${min}`);
+    }
+  }
   return problems;
 }
 
@@ -543,8 +638,6 @@ const attrsOf = tag => {
   }
   return a;
 };
-const headOf = f => (/<head\b[^>]*>([\s\S]*?)<\/head>/i.exec(blankHtmlComments(read(f))) || [, ""])[1];
-const tagsIn = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map(m => attrsOf(m[0]));
 
 // PNG width and height from the IHDR chunk.
 function pngSize(f) {
@@ -594,19 +687,19 @@ test("every site JS file scans cleanly", () => {
 
 section("colour");
 
-test("hex colours appear only in site.css :root", () => {
+test("hex colours appear only in site.css :root blocks (the base and the two dark blocks)", () => {
   const problems = [];
   for (const r of RULES) {
     if (isSiteRoot(r)) continue;
     for (const d of r.decls) {
       const m = HEX.exec(d.value);
-      if (m) problems.push(`${where(r, d)}: ${d.prop}: ${d.value} (hex colours belong in site.css :root; use a token)`);
+      if (m) problems.push(`${where(r, d)}: ${d.prop}: ${d.value} (hex colours belong in site.css :root blocks; use a token)`);
     }
   }
-  report(problems, "Hex colour outside site.css :root");
+  report(problems, "Hex colour outside site.css :root blocks");
 });
 
-test("no other colour values outside site.css :root (rgb(), hsl(), named colours)", () => {
+test("no other colour values outside site.css :root blocks (rgb(), hsl(), named colours)", () => {
   const problems = [];
   for (const r of RULES) {
     if (isSiteRoot(r)) continue;
@@ -619,7 +712,7 @@ test("no other colour values outside site.css :root (rgb(), hsl(), named colours
       }
     }
   }
-  report(problems, "Colour value outside site.css :root");
+  report(problems, "Colour value outside site.css :root blocks");
 });
 
 test("no quoted colour strings in site JS ('#rgb', '#rrggbb', '#rrggbbaa', or rgb()/hsl() literals)", () => {
@@ -634,30 +727,166 @@ test("no quoted colour strings in site JS ('#rgb', '#rrggbb', '#rrggbbaa', or rg
   report(problems, "Colour literal in site JS (read colours from the CSS tokens with getComputedStyle)");
 });
 
-test("site.css :root defines every material, and the money button's three lines", () => {
-  for (const name of ["paper", "sweep", "sweep-dk", "ink", "graphite", "rule-c", "edge", "kapton", "kapton-dk", "fault", "buy-bg", "buy-bg-hover", "buy-fg"]) {
-    assert.ok(TOKENS.has(`--${name}`), `${SITE_CSS_FILE} :root has no --${name}`);
+// dark-spec §11.1 item 4: the photo/panel split (--sweep for unit photos,
+// --panel for everything else, --panel-dk for beat cells, --pressed for a
+// pressed button), the photo panels' own text colours, the amber button's
+// label, and --forced-off for the photo strip's second ring in contrast
+// themes.
+test("site.css :root defines every material, the money button's three lines and both forced-colours rings", () => {
+  for (const name of [
+    "paper", "sweep", "sweep-ink", "sweep-graphite", "panel", "panel-dk", "pressed", "ink", "graphite", "rule-c", "edge",
+    "kapton", "kapton-dk", "kapton-fg", "fault", "buy-bg", "buy-bg-hover", "buy-fg", "forced-on", "forced-off"
+  ]) {
+    assert.ok(TOKENS.has(`--${name}`), `${SITE_CSS_FILE} :root has no --${name}: add it to the base :root block`);
   }
 });
 
-test("text pairs are at least 4.5:1 and edges at least 3:1, from the actual :root values", () => {
-  const problems = contrastProblems(TOKENS, `${SITE_CSS_FILE} :root`);
-  // A :root inside @media (a dark scheme, say) is checked as an overlay too.
-  for (const r of RULES.filter(r => isSiteRoot(r) && r.context.length)) {
-    const overlay = new Map(TOKENS);
-    for (const d of r.decls) if (d.prop.startsWith("--")) overlay.set(d.prop, d.value);
-    const colourTokens = r.decls.some(d => /^--(paper|sweep|sweep-dk|ink|graphite|edge|kapton|kapton-dk|fault|buy-[\w-]+)$/.test(d.prop));
-    if (colourTokens) problems.push(...contrastProblems(overlay, `${SITE_CSS_FILE}:${r.line} :root in ${r.context.join(" ")}`));
+// The old shared token for a pressed button and beat cells was split into
+// --pressed and --panel-dk (dark-spec §3.1): one value can't be visible as
+// a pressed fill on the dark page and stay darker than --panel too. So no
+// rule may name the old one, and nothing may declare it.
+// Transition (dark-spec §3.2): tools.css, drift.css and portfolio.css move
+// to the split in their own packages. Until a file uses any split token it
+// may still name the old one (reported below, not failed); from its first
+// split token on, it may not. Every other site CSS file may not at all.
+const SPLIT_TOKENS = /--(panel|panel-dk|pressed|sweep-ink|sweep-graphite|kapton-fg)(?![\w-])/;
+const SPLIT_PENDING = new Set(["assets/tools.css", "assets/drift.css", "assets/portfolio.css"]);
+test("--sweep-dk is gone: declared nowhere, and named only by a file not yet moved to the split", () => {
+  const OLD = /--sweep-dk(?![\w-])/;
+  const problems = [], pending = [];
+  const migrated = new Map();
+  for (const r of RULES) {
+    if (r.decls.some(d => SPLIT_TOKENS.test(d.prop) || SPLIT_TOKENS.test(d.value))) migrated.set(r.file, true);
   }
-  report(problems, "Contrast");
+  for (const r of RULES) {
+    for (const d of r.decls) {
+      if (OLD.test(d.prop)) { problems.push(`${where(r, d)}: declares ${d.prop}; use --panel-dk (beat cells) or --pressed (a pressed button)`); continue; }
+      if (!OLD.test(d.value)) continue;
+      if (SPLIT_PENDING.has(r.file) && !migrated.get(r.file)) pending.push(`${where(r, d)}`);
+      else problems.push(`${where(r, d)}: ${d.prop}: ${d.value} (--sweep-dk is gone: use --panel-dk for beat cells, --pressed for a pressed button)`);
+    }
+  }
+  if (pending.length) console.log(`      note: not yet on the split, so still naming --sweep-dk: ${pending.join(", ")}`);
+  report(problems, "--sweep-dk");
 });
 
-test("the contrast check catches a darker --sweep that leaves --edge alone", () => {
-  // The spec's own example: --sweep #e8e8e8 puts edge on sweep at 2.82:1.
-  const tuned = new Map(TOKENS);
-  tuned.set("--sweep", "#e8e8e8");
-  const problems = contrastProblems(tuned, "test");
-  assert.ok(problems.some(p => /--edge .* on --sweep .* is 2\.8\d:1/.test(p) && /darken --edge/.test(p)), problems.join("\n"));
+// dark-spec §11.1 item 5. Exactly one of each dark block, in site.css, each
+// in exactly its own @media. Screen only, so print and Save as PDF always
+// use the light tokens: a dark block in print turned body text into about
+// #909090 on paper (3.2:1, lighter than the secondary text). The two blocks
+// must hold the same declarations, in the same order, so the device's dark
+// and a chosen dark are the same theme; and they set colours only (no
+// --buy-*, --kapton*, type, spacing or font tokens: --buy-* follow --ink and
+// --paper by themselves, and amber is the same in both themes).
+const DARK_CONTEXTS = new Map([
+  [':root:not([data-theme="light"])', ["@media screen and (prefers-color-scheme: dark)"]],
+  [':root[data-theme="dark"]', ["@media screen"]]
+]);
+const DARK_PROPS = new Set(["color-scheme", "--paper", "--sweep", "--sweep-ink", "--sweep-graphite", "--panel", "--panel-dk",
+  "--pressed", "--ink", "--graphite", "--rule-c", "--edge", "--fault"]);
+test("the two dark blocks: one of each in site.css, screen only, identical, colour tokens only", () => {
+  const problems = [];
+  const blocks = [];
+  for (const [sel, context] of DARK_CONTEXTS) {
+    const found = RULES.filter(r => r.selector === sel);
+    if (found.length !== 1) {
+      problems.push(`${found.length ? found.map(r => `${r.file}:${r.line}`).join(", ") : SITE_CSS_FILE}: ${found.length} ${sel} blocks; there must be exactly one, in ${SITE_CSS_FILE}`);
+      continue;
+    }
+    const r = found[0];
+    blocks.push(r);
+    if (r.file !== SITE_CSS_FILE) problems.push(`${r.file}:${r.line}: ${sel} belongs in ${SITE_CSS_FILE}`);
+    if (JSON.stringify(r.context) !== JSON.stringify(context)) {
+      problems.push(`${r.file}:${r.line}: ${sel} is inside ${r.context.length ? r.context.map(c => `"${c}"`).join(" > ") : "no @media"}; it must be inside exactly "${context[0]}", so print always uses the light tokens`);
+    }
+    const scheme = r.decls.find(d => d.prop === "color-scheme");
+    if (!scheme || scheme.value !== "dark") problems.push(`${r.file}:${(scheme || r).line}: ${sel} must declare color-scheme: dark`);
+    for (const d of r.decls) {
+      if (!DARK_PROPS.has(d.prop)) problems.push(`${r.file}:${d.line}: ${sel} sets ${d.prop}; the dark blocks set only ${[...DARK_PROPS].join(", ")}`);
+    }
+  }
+  if (blocks.length === 2) {
+    const [a, b] = blocks;
+    const n = Math.max(a.decls.length, b.decls.length);
+    for (let k = 0; k < n; k++) {
+      const x = a.decls[k], y = b.decls[k];
+      if (x && y && x.prop === y.prop && x.value === y.value) continue;
+      problems.push(`${a.file}:${(x || a).line} and ${b.file}:${(y || b).line}: the dark blocks differ at declaration ${k + 1} ` +
+        `(${x ? `${x.prop}: ${x.value}` : "nothing"} against ${y ? `${y.prop}: ${y.value}` : "nothing"}); keep them identical, in the same order`);
+      break;
+    }
+  }
+  report(problems, "Dark blocks");
+});
+
+test("text pairs are at least 4.5:1 and edges at least 3:1, from the actual token values, in every theme", () => {
+  assert.ok(TOKEN_SETS.length >= 3, `expected the base and two dark token sets, found: ${TOKEN_SETS.map(t => t.label).join("; ")}`);
+  report(TOKEN_SETS.flatMap(contrastProblems), "Contrast");
+});
+
+test("the contrast check catches a darker --panel that leaves --edge alone", () => {
+  // The spec's own example: --panel #e8e8e8 puts edge on panel at 2.82:1.
+  const tokens = new Map(TOKENS);
+  tokens.set("--panel", "#e8e8e8");
+  const problems = contrastProblems({ label: "test", tokens, lines: TOKEN_LINES });
+  assert.ok(problems.some(p => /--edge .* on --panel .* is 2\.8\d:1/.test(p) && /darken --edge/.test(p)), problems.join("\n"));
+});
+
+// dark-spec §11.1 item 3: WCAG 2 overstates light-on-dark contrast, so the
+// dark theme also needs an APCA floor: Lc 75 for body text, and about Lc 60
+// for 16px secondary text (light mode's secondary is Lc 86).
+test("APCA: body text at least Lc 75 and secondary text at least Lc 60, in every theme", () => {
+  report(TOKEN_SETS.flatMap(apcaProblems), "APCA lightness contrast");
+});
+
+test("the APCA check matches the reference and catches revision 1's dark --graphite", () => {
+  const near = (x, y) => Math.abs(x - y) < 0.15;
+  assert.ok(near(apca(hexToRgb("#1b1b1b"), hexToRgb("#ffffff")), 104.1), "ink on white is Lc 104.1");
+  assert.ok(near(apca(hexToRgb("#e4e4e4"), hexToRgb("#161616")), -89.5), "dark ink on the dark page is Lc -89.5");
+  assert.ok(near(apca(hexToRgb("#b6b6b6"), hexToRgb("#161616")), -62.0), "dark graphite on the dark page is Lc -62.0");
+  const dark = TOKEN_SETS.find(t => t.label.includes('[data-theme="dark"]'));
+  assert.ok(dark, "the [data-theme=\"dark\"] token set");
+  const tokens = new Map(dark.tokens);
+  tokens.set("--graphite", "#a3a3a3");
+  const problems = apcaProblems({ ...dark, tokens });
+  assert.ok(problems.some(p => /--graphite \(#a3a3a3\) on --paper .* is APCA Lc 5\d\.\d/.test(p)), problems.join("\n"));
+});
+
+// dark-spec §11.1 item 6: the interface has no hue. Every token whose fully
+// resolved value is a hex colour is R=G=B, in every theme, except the amber
+// money switch and the error colour. Tokens that resolve to anything else
+// are skipped by that rule, not by name: system colours (--forced-on:
+// CanvasText and so on) and compound values (--focus-ring, --rule). This
+// keeps a warm-tinted near-black (the old AI-look dark theme) out.
+const HUE_ALLOWED = new Set(["--kapton", "--kapton-dk", "--kapton-fg", "--fault"]);
+test("no hue: every token that resolves to a hex colour is R=G=B in every theme (amber and --fault aside)", () => {
+  const problems = [];
+  for (const set of TOKEN_SETS) {
+    for (const name of set.tokens.keys()) {
+      if (HUE_ALLOWED.has(name)) continue;
+      const v = resolveVars(`var(${name})`, set.tokens).trim();
+      const rgb = hexChannels(v);
+      if (!rgb) continue;
+      if (rgb[0] !== rgb[1] || rgb[1] !== rgb[2]) {
+        problems.push(`${set.lines.get(name)}: ${name} is ${v} in ${set.label}; interface colours are neutral greys (R=G=B)`);
+      }
+    }
+  }
+  report(problems, "Hue in the interface");
+});
+
+// dark-spec §11.1 item 7: /projects/chiptune says "The darker squares mark
+// each beat, every four steps." So --panel-dk stays darker than --panel in
+// every theme.
+test("--panel-dk is darker than --panel in every theme (\"The darker squares mark each beat\")", () => {
+  const problems = [];
+  for (const set of TOKEN_SETS) {
+    const p = colourIn(set, "panel", problems), k = colourIn(set, "panel-dk", problems);
+    if (p && k && !(luminance(k.rgb) < luminance(p.rgb))) {
+      problems.push(`${k.at}: --panel-dk (${k.hex}) is not darker than --panel (${p.hex}, ${p.at}) in ${set.label}; the chiptune page says the darker squares mark each beat`);
+    }
+  }
+  report(problems, "Beat cells");
 });
 
 // =====================================================================
@@ -969,21 +1198,84 @@ test("no 'N days' or 'N-day' outside the exact RETURNS.console sentence", () => 
 
 section("page heads");
 
+// The dark --paper, which the dark theme-color meta must equal (the phone
+// browser's bar matches the page).
+const DARK_PAPER = (() => {
+  const r = RULES.find(r => r.file === SITE_CSS_FILE && r.selector === ':root[data-theme="dark"]');
+  const d = r && r.decls.find(d => d.prop === "--paper");
+  return d ? d.value.trim() : null;
+})();
+// A page's head with each tag's offset and line, comments blanked.
+function headTags(f) {
+  const html = blankHtmlComments(read(f));
+  const m = /<head\b[^>]*>([\s\S]*?)<\/head>/i.exec(html);
+  if (!m) return null;
+  const start = m.index + m[0].indexOf(">") + 1;
+  const lineAt = lineIndex(html);
+  const tags = name => [...m[1].matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))]
+    .map(t => ({ at: start + t.index, line: lineAt(start + t.index), a: attrsOf(t[0]) }));
+  return { link: tags("link"), meta: tags("meta"), script: tags("script") };
+}
+const THEME_JS = /^\/assets\/theme\.js(\?v=\d+)?$/;
+const hasThemeHead = h => h.meta.some(t => (t.a.name || "").toLowerCase() === "color-scheme"
+  || ((t.a.name || "").toLowerCase() === "theme-color" && "media" in t.a))
+  || h.script.some(t => THEME_JS.test(t.a.src || ""));
+
+// dark-spec §11.1 item 8. Every page: site.css first, the Public Sans
+// preload and icon.svg. The theme head (§4.1) is all or nothing: a page
+// with any part of it (the color-scheme meta, a theme-color with media, or
+// theme.js) has all of it, in this order: color-scheme "light dark"; the
+// dark theme-color (media "(prefers-color-scheme: dark)", data-dark,
+// content the dark --paper), first because the first matching one wins;
+// the plain #ffffff theme-color; theme.js as a classic script (no type,
+// async or defer: it must run before <body> is parsed), before the first
+// stylesheet so it doesn't wait for CSS. A page with none of it keeps the
+// old single #ffffff theme-color: this is the lenient rule while each
+// package moves its own pages. test/theme.test.js (D5) then requires the
+// theme head on every page.
 for (const f of SITE_HTML) {
-  test(`${f}: site.css first, the Public Sans preload, theme-color #ffffff and icon.svg`, () => {
-    const head = headOf(f);
-    assert.ok(head, `${f} has no <head>`);
-    const links = tagsIn(head, "link");
-    const sheets = links.filter(a => (a.rel || "").toLowerCase() === "stylesheet");
+  const themed = (() => { const h = headTags(f); return h ? hasThemeHead(h) : false; })();
+  test(`${f}: site.css first, the Public Sans preload, icon.svg and ${themed ? "the theme head" : "theme-color #ffffff (no theme head yet)"}`, () => {
+    const h = headTags(f);
+    assert.ok(h, `${f} has no <head>`);
+    const sheets = h.link.filter(t => (t.a.rel || "").toLowerCase() === "stylesheet");
     assert.ok(sheets.length, `${f}: no stylesheet`);
-    assert.match(sheets[0].href || "", /^\/assets\/site\.css(\?v=[\w.-]+)?$/, `${f}: the first stylesheet must be /assets/site.css`);
-    assert.ok(links.some(a => (a.rel || "").toLowerCase() === "preload" && a.href === "/assets/fonts/public-sans-latin-wght-normal.woff2"
-      && a.as === "font" && a.type === "font/woff2" && "crossorigin" in a), `${f}: no Public Sans preload (as="font" type="font/woff2" crossorigin)`);
-    const metas = tagsIn(head, "meta");
-    const theme = metas.filter(a => (a.name || "").toLowerCase() === "theme-color");
-    assert.equal(theme.length, 1, `${f}: one <meta name="theme-color">`);
-    assert.equal(theme[0].content, "#ffffff", `${f}: theme-color`);
-    assert.ok(links.some(a => (a.rel || "").toLowerCase() === "icon" && a.href === "/assets/brand/icon.svg"), `${f}: no <link rel="icon" href="/assets/brand/icon.svg">`);
+    assert.match(sheets[0].a.href || "", /^\/assets\/site\.css(\?v=[\w.-]+)?$/, `${f}:${sheets[0].line}: the first stylesheet must be /assets/site.css`);
+    assert.ok(h.link.some(t => (t.a.rel || "").toLowerCase() === "preload" && t.a.href === "/assets/fonts/public-sans-latin-wght-normal.woff2"
+      && t.a.as === "font" && t.a.type === "font/woff2" && "crossorigin" in t.a), `${f}: no Public Sans preload (as="font" type="font/woff2" crossorigin)`);
+    assert.ok(h.link.some(t => (t.a.rel || "").toLowerCase() === "icon" && t.a.href === "/assets/brand/icon.svg"), `${f}: no <link rel="icon" href="/assets/brand/icon.svg">`);
+    const colours = h.meta.filter(t => (t.a.name || "").toLowerCase() === "theme-color");
+    if (!hasThemeHead(h)) {
+      assert.equal(colours.length, 1, `${f}: one <meta name="theme-color"> (or the whole theme head of dark-spec §4.1)`);
+      assert.equal(colours[0].a.content, "#ffffff", `${f}:${colours[0].line}: theme-color`);
+      return;
+    }
+    const problems = [];
+    const schemes = h.meta.filter(t => (t.a.name || "").toLowerCase() === "color-scheme");
+    const scripts = h.script.filter(t => THEME_JS.test(t.a.src || ""));
+    if (schemes.length !== 1 || schemes[0].a.content !== "light dark") problems.push(`${f}: exactly one <meta name="color-scheme" content="light dark"> (found ${schemes.map(t => `line ${t.line}: "${t.a.content}"`).join(", ") || "none"})`);
+    if (colours.length !== 2) problems.push(`${f}: exactly two theme-color metas, the dark one then #ffffff (found ${colours.length})`);
+    else {
+      const [dark, light] = colours;
+      if (dark.a.media !== "(prefers-color-scheme: dark)" || !("data-dark" in dark.a) || dark.a.content !== DARK_PAPER) {
+        problems.push(`${f}:${dark.line}: the first theme-color must be <meta name="theme-color" content="${DARK_PAPER}" media="(prefers-color-scheme: dark)" data-dark /> (content is the dark --paper)`);
+      }
+      if (light.a.content !== "#ffffff" || "media" in light.a) problems.push(`${f}:${light.line}: the second theme-color must be content="#ffffff" with no media`);
+    }
+    if (scripts.length !== 1) problems.push(`${f}: exactly one <script src="/assets/theme.js?v=N"> (found ${scripts.length})`);
+    else {
+      const t = scripts[0];
+      for (const bad of ["type", "async", "defer"]) if (bad in t.a) problems.push(`${f}:${t.line}: theme.js has ${bad}; it must be a plain classic script that runs before <body> is parsed`);
+      if (!/\?v=\d+$/.test(t.a.src)) problems.push(`${f}:${t.line}: theme.js must be versioned (?v=N), like every stylesheet and entry`);
+    }
+    if (!problems.length) {
+      const order = [["the color-scheme meta", schemes[0]], ["the dark theme-color", colours[0]], ["the #ffffff theme-color", colours[1]],
+        ["theme.js", scripts[0]], ["the first stylesheet", sheets[0]]];
+      for (let k = 1; k < order.length; k++) {
+        if (!(order[k - 1][1].at < order[k][1].at)) problems.push(`${f}:${order[k][1].line}: ${order[k][0]} must come after ${order[k - 1][0]} (line ${order[k - 1][1].line}), as in dark-spec §4.1`);
+      }
+    }
+    report(problems, "Theme head");
   });
 }
 

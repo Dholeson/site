@@ -5,11 +5,11 @@
 // What's pinned: the shipping page states exactly what the code commits to
 // (both SHIPPING rates, RETURNS.console word for word, the US-only line only
 // while wrangler.toml ships to the US alone, and nowhere else on the site);
-// its sections and in-page links; the redesign's head and copy rules on all
-// three pages (no eyebrow, no old stylesheet or brand files, no inline
-// styles, no em dash or arrows); each page's nav key; the 404 copy; and the
-// log's rendering through renderLog() with a stand-in element (escaping,
-// order, dates read as calendar days).
+// its sections and in-page links; the redesign's head (with the theme head
+// and ?v=3) and copy rules on all three pages (no eyebrow, no old
+// stylesheet or brand files, no inline styles, no em dash or arrows); each
+// page's nav key; the 404 copy; and the log's rendering through renderLog()
+// with a stand-in element (escaping, order, dates read as calendar days).
 //
 // Run with:  npm test
 
@@ -230,13 +230,31 @@ section("the three pages: head and copy rules");
 for (const [file, { entry, key }] of Object.entries(PAGES)) {
   const html = read(file);
 
-  test(`${file}: the shared head snippet, info.css and its entry at ?v=2`, () => {
+  test(`${file}: the shared head snippet with the theme head, info.css and its entry at ?v=3`, () => {
     assert.ok(html.includes(`<link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />`));
     assert.ok(html.includes(`<link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />`));
     assert.ok(html.includes(`<link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />`));
-    assert.ok(html.includes(`<meta name="theme-color" content="#ffffff" />`));
-    assert.ok(html.indexOf(`href="/assets/site.css?v=2"`) > -1 && html.indexOf(`href="/assets/site.css?v=2"`) < html.indexOf(`href="/assets/info.css?v=2"`), "site.css, then info.css");
-    assert.ok(html.includes(`<script type="module" src="/${entry}?v=2"></script>`));
+    // The theme head (dark-spec §4.1), in this order: the dark theme-color
+    // before the light one (the first matching one wins), and theme.js after
+    // the metas it rewrites and before every stylesheet. Then site.css,
+    // info.css and the entry, all at ?v=3 (spec §2.3: new HTML needs new CSS).
+    const order = [
+      `<meta name="color-scheme" content="light dark" />`,
+      `<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)" data-dark />`,
+      `<meta name="theme-color" content="#ffffff" />`,
+      `<script src="/assets/theme.js?v=3"></script>`,
+      `<link rel="stylesheet" href="/assets/site.css?v=3" />`,
+      `<link rel="stylesheet" href="/assets/info.css?v=3" />`,
+      `<script type="module" src="/${entry}?v=3"></script>`
+    ];
+    let at = -1;
+    for (const tag of order) {
+      const i = html.indexOf(tag);
+      assert.ok(i > at, `${file}: ${tag} missing or out of order`);
+      at = i;
+    }
+    for (const m of html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)) assert.match(m[1], /\?v=3$/, `${file}: ${m[1]}`);
+    for (const m of html.matchAll(/<script type="module" src="([^"]+)"/g)) assert.match(m[1], /\?v=3$/, `${file}: ${m[1]}`);
     assert.ok(html.includes(`content="https://dhole.dev/assets/brand/og-site.png"`), "og-site.png");
     assert.match(html, /<body>\s*<header class="site-header"><\/header>/);
   });

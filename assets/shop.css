@@ -76,7 +76,7 @@ main.store { min-height: calc(100svh - var(--header-h)); }
 
 /* The loading and "couldn't load" panel stands where the photos will be. */
 .shot--panel { padding: var(--s-4); text-align: center; }
-.panel-msg { display: grid; gap: var(--s-2); justify-items: center; color: var(--ink); }
+.panel-msg { display: grid; gap: var(--s-2); justify-items: center; color: var(--sweep-ink); }
 .panel-msg h1 { font-size: var(--t-h3); }
 
 /* A gap above the row keeps the pager's outlines off the photo panel: 4px

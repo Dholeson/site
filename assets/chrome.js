@@ -17,6 +17,15 @@
 // text makes the bar too narrow, only Store, Tools and Portfolio scroll and
 // Cart with its count is never clipped. The mark carries no colour of its own:
 // site.css fills .mark-bg with --ink and .mark-fg with --paper.
+//
+// The footer carries the theme choice: a "Theme" fieldset of three native
+// radios (Match device, Light, Dark) between the footer links and the
+// copyright line. assets/theme.js (a classic script in every page's head)
+// does the work through window.dholeTheme; this only renders the radios,
+// calls dholeTheme.set() on a change, and re-checks them on "dhole:theme"
+// (another tab's choice, or a page back from the back/forward cache). With
+// no window.dholeTheme (an old cached page without theme.js) there is no
+// choice to offer, so nothing is rendered. The header never changes.
 
 import { mountCartBadge } from "./cart.js";
 import { SUPPORT_EMAIL } from "./store-config.js";
@@ -33,6 +42,24 @@ const NAV = [
   { key: "portfolio", href: "/portfolio", label: "Portfolio" }
 ];
 const ALIASES = { projects: "tools" };
+
+// The footer's theme choice, in this order. Internal: not exported.
+const THEMES = [["auto", "Match device"], ["light", "Light"], ["dark", "Dark"]];
+
+// The fieldset, with the current choice checked, or "" when theme.js hasn't
+// run (window.dholeTheme missing), so a page never offers a choice that
+// can't take effect.
+function themeChoice() {
+  const theme = window.dholeTheme;
+  if (!theme) return "";
+  const current = theme.choice();
+  const options = THEMES.map(([value, label]) =>
+    `<label><input type="radio" name="site-theme" value="${value}"${value === current ? " checked" : ""} />${label}</label>`).join("");
+  return `<fieldset class="theme-choice">
+      <legend>Theme</legend>
+      <div class="theme-options">${options}</div>
+    </fieldset>`;
+}
 
 // The "d" of assets/brand/icon.svg, drawn in a 64x64 box.
 const MARK_PATH = "M30.57 52Q25.12 52 22.02 48.25Q18.92 44.51 18.92 37.6Q18.92 33.31 20.17 30.14Q21.43 26.96 23.89 25.22Q26.36 23.47 29.98 23.47Q31.69 23.47 33.08 23.88Q34.47 24.29 35.56 24.96Q36.64 25.63 37.4 26.43Q38.16 27.22 38.58 28.01V12H45.08V51.47H40.31L39.58 45.84Q39.25 46.82 38.63 47.9Q38.01 48.97 36.96 49.91Q35.91 50.84 34.34 51.42Q32.77 52 30.57 52ZM31.9 47.24Q35.38 47.24 36.98 44.98Q38.58 42.71 38.58 37.44Q38.56 34.45 37.86 32.41Q37.16 30.36 35.72 29.32Q34.28 28.29 31.97 28.29Q29.05 28.29 27.17 30.43Q25.29 32.58 25.29 37.44Q25.29 42.27 27.02 44.76Q28.75 47.24 31.9 47.24Z";
@@ -67,9 +94,25 @@ export function mountChrome(current = "") {
       <li><a href="/projects">Tools</a></li><li><a href="/portfolio">Portfolio</a></li>
       <li><a href="/minecraft">Lazy Sunday</a></li><li><a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></li>
     </ul></nav>
+    ${themeChoice()}
     <p class="site-footer-meta">© ${new Date().getFullYear()} dhole.dev</p>
   </div>`;
   document.body.append(footer);
+
+  const choice = footer.querySelector(".theme-choice");
+  if (choice) {
+    // Arrow keys and clicks both fire change, so each applies at once.
+    choice.addEventListener("change", e => {
+      if (e.target.name === "site-theme") window.dholeTheme.set(e.target.value);
+    });
+    // Another tab chose, or the page came back from the back/forward cache
+    // to a different stored choice: check the radio that is now current.
+    window.addEventListener("dhole:theme", () => {
+      for (const radio of choice.querySelectorAll('input[name="site-theme"]')) {
+        radio.checked = radio.value === window.dholeTheme.choice();
+      }
+    });
+  }
 
   mountCartBadge();
 }

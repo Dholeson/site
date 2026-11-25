@@ -2,9 +2,11 @@
 // /cart, /order-complete and /checkout-cancelled (spec §10.2 to §10.5).
 //
 // What's pinned:
-// - every shop page's head: the shared snippet in order, shop.css and the
-//   entry at ?v=2, the Red Hat Mono preload where ids show, and nothing left
-//   of the old look (no eyebrow, pages.css, og.png or old icons);
+// - every shop page's head: the shared snippet in order (the theme head of
+//   dark-spec §4.1: the color-scheme meta, the dark theme-color, the light
+//   one, theme.js), site.css, shop.css and the entry at ?v=3, the Red Hat
+//   Mono preload where ids show, and nothing left of the old look (no
+//   eyebrow, pages.css, og.png or old icons);
 // - each page's body starts with the empty header, the JS-rendered pages
 //   carry their <noscript> notice first in main, and each entry mounts the
 //   chrome with its nav key;
@@ -56,15 +58,23 @@ section("the five shop pages: head, body and nav key");
 for (const [file, page] of Object.entries(PAGES)) {
   const html = read(file);
 
-  test(`${file}: the shared head snippet in order, with shop.css and the entry at ?v=2`, () => {
+  test(`${file}: the shared head snippet in order, with the theme head, shop.css and the entry at ?v=3`, () => {
+    // The theme head (dark-spec §4.1): the dark theme-color first, since the
+    // first matching one wins; theme.js after the metas it rewrites and
+    // before every stylesheet, so it sets data-theme before first paint
+    // without waiting for CSS. ?v=3: this release's new HTML needs its new
+    // CSS (spec §2.3).
     const order = [
       '<link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />',
       '<link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />',
       '<link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />',
+      '<meta name="color-scheme" content="light dark" />',
+      '<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)" data-dark />',
       '<meta name="theme-color" content="#ffffff" />',
-      '<link rel="stylesheet" href="/assets/site.css?v=2" />',
-      '<link rel="stylesheet" href="/assets/shop.css?v=2" />',
-      `<script type="module" src="/assets/entry/${page.entry}.js?v=2"></script>`
+      '<script src="/assets/theme.js?v=3"></script>',
+      '<link rel="stylesheet" href="/assets/site.css?v=3" />',
+      '<link rel="stylesheet" href="/assets/shop.css?v=3" />',
+      `<script type="module" src="/assets/entry/${page.entry}.js?v=3"></script>`
     ];
     let at = -1;
     for (const tag of order) {
@@ -76,8 +86,8 @@ for (const [file, page] of Object.entries(PAGES)) {
     assert.equal(html.includes(mono), page.mono, page.mono ? "the Red Hat Mono preload (ids show here)" : "no mono preload: no ids here");
     // Every stylesheet and entry script is versioned; modulepreloads are not
     // (they must name files that exist).
-    for (const m of html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)) assert.match(m[1], /\?v=2$/, m[1]);
-    for (const m of html.matchAll(/<script type="module" src="([^"]+)"/g)) assert.match(m[1], /\?v=2$/, m[1]);
+    for (const m of html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)) assert.match(m[1], /\?v=3$/, m[1]);
+    for (const m of html.matchAll(/<script type="module" src="([^"]+)"/g)) assert.match(m[1], /\?v=3$/, m[1]);
     for (const m of html.matchAll(/<link rel="modulepreload" href="([^"]+)"/g)) {
       assert.ok(!m[1].includes("?"), `${m[1]}: preloads stay unversioned`);
       assert.ok(existsSync(join(ROOT, m[1])), `${m[1]} is missing`);

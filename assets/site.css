@@ -5,8 +5,13 @@
    Order: @font-face, tokens (:root), base, layout, components, utilities.
 
    House rules, held by test/design.test.js:
-   - Colour values live only in the :root block. Everything else uses tokens.
-   - Light and neutral. Photos of the real unit carry the colour.
+   - Hex values live only in this file's :root blocks: the base one and the
+     two dark blocks under it. Everything else uses tokens.
+   - Neutral, in two themes on screen: light by default, dark (graphite) by
+     the device or the footer's choice (assets/theme.js). Print is always
+     light. Photos of the real unit carry the colour.
+   - --sweep is for unit photos only (.strip, .shot, unit cards, thumbs,
+     cart lines, the owner photo); every other panel is --panel.
    - Corners: var(--radius) on controls and .notice only. Photo panels are
      square, on a sweep background.
    - Hairlines (--rule) only under the header, over the footer, and on
@@ -52,25 +57,38 @@
 /* ---------- Tokens ---------- */
 :root {
   color-scheme: light;
-  /* Materials. Hex values live only in this block (guarded, §16). */
+  /* Materials. Hex values live only in this file's :root blocks: this one
+     and the two dark blocks below (guarded). Every colour here is R=G=B
+     except --kapton* and --fault: the interface has no hue. */
   --paper:     #ffffff; /* page */
-  --sweep:     #f2f2f2; /* photo panels; set to the sampled corner grey of real photos later, keep R=G=B */
-  --sweep-dk:  #e6e6e6; /* pressed outline button fill; chiptune beat cells */
+  --sweep:     #f2f2f2; /* unit-photo panels only: .strip, .shot, unit cards, thumbs, cart lines, the owner photo,
+                           the home Store-row photos. Set it to the sampled corner grey of real photos later;
+                           keep R=G=B. Nothing else may use it (guarded), so retuning it moves no tool. */
+  --sweep-ink:      var(--ink);      /* text on a photo panel (loading and failed panels) */
+  --sweep-graphite: var(--graphite); /* secondary text on a photo panel (its "Loading…" line, broken-image alt text) */
+  --panel:     #f2f2f2; /* every other panel: capture frames, .notice, code, disabled buttons, the drift plot,
+                           sequencer cells */
+  --panel-dk:  #e6e6e6; /* sequencer beat cells: always darker than --panel, in both themes, because the page
+                           says "The darker squares mark each beat" (guarded) */
+  --pressed:   #e6e6e6; /* .btn while pressed, and .btn[aria-pressed="true"] */
   --ink:       #1b1b1b; /* text, headings, prices, links, focus ring, selection, money buttons */
   --graphite:  #555555; /* secondary text at 16px; money-button hover */
   --rule-c:    #d6d6d6; /* hairlines on data rows only */
-  --edge:      #8a8a8a; /* input and outline-button borders; must stay >= 3:1 on paper and sweep */
-  --kapton:    #e3a034; /* optional money fill, see below */
+  --edge:      #8a8a8a; /* input and outline-button borders; >= 3:1 on paper and panel */
+  --kapton:    #e3a034; /* optional money fill, see below; the same in both themes */
   --kapton-dk: #cc8a1f; /* its hover */
+  --kapton-fg: #1b1b1b; /* the amber button's label, in both themes */
   --fault:     #a3261e; /* error text only */
-  /* The money buttons. Default: ink. After the owner's photo test (does yellowing read the same beside an
-     amber button as beside an ink one?) passes, switch to amber by changing these three lines to:
-     --buy-bg: var(--kapton); --buy-bg-hover: var(--kapton-dk); --buy-fg: var(--ink); */
+  /* The money buttons. Default: ink, in both themes (in dark, ink is the off-white). After the owner's photo
+     test (does yellowing read the same beside an amber button as beside an ink one?) passes, switch to amber
+     by changing these three lines to:
+     --buy-bg: var(--kapton); --buy-bg-hover: var(--kapton-dk); --buy-fg: var(--kapton-fg); */
   --buy-bg: var(--ink); --buy-bg-hover: var(--graphite); --buy-fg: var(--paper);
   /* Windows contrast themes (@media (forced-colors: active)) only: the
      user's own system colours, for the few marks that must stay visible
-     when the browser replaces every colour above (the chiptune pattern). */
-  --forced-on: CanvasText; --forced-mark: Highlight;
+     when the browser replaces every colour above (the chiptune pattern,
+     the photo strip's two focus rings). */
+  --forced-on: CanvasText; --forced-mark: Highlight; --forced-off: Canvas;
 
   --font-text: "Public Sans", "Public Sans Fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-id:   "Red Hat Mono", "Red Hat Mono Fallback", ui-monospace, Menlo, Consolas, monospace;
@@ -89,6 +107,48 @@
 @media (min-width: 48em) { :root { --gutter: 32px; } }
 @media (min-width: 75em) { :root { --gutter: 48px; } }
 @media (prefers-reduced-motion: reduce) { :root { --dur: 0ms; } }
+
+/* ---------- Dark: graphite ----------
+   The same record on dark stock: no hue, R=G=B throughout, nothing pure
+   black or pure white. Only colour tokens change, never a rule.
+   Who decides: the device (prefers-color-scheme), unless the visitor chose
+   in the footer, which assets/theme.js writes to <html data-theme> before
+   first paint. The two blocks hold the same declarations (guarded).
+   Screen only: printing and Save as PDF always use the light tokens above,
+   so a receipt or a case study prints dark on white paper.
+   --sweep-ink, --sweep-graphite and --buy-* follow --ink, --graphite and
+   --paper by themselves. --kapton* stay bright amber with a near-black
+   label (--kapton-fg) in both themes. */
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper:    #161616;
+    --sweep:    #242424;
+    --panel:    #242424;
+    --panel-dk: #1a1a1a;
+    --pressed:  #303030;
+    --ink:      #e4e4e4;
+    --graphite: #b6b6b6;
+    --rule-c:   #353535;
+    --edge:     #7c7c7c;
+    --fault:    #f49b90;
+  }
+}
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper:    #161616;
+    --sweep:    #242424;
+    --panel:    #242424;
+    --panel-dk: #1a1a1a;
+    --pressed:  #303030;
+    --ink:      #e4e4e4;
+    --graphite: #b6b6b6;
+    --rule-c:   #353535;
+    --edge:     #7c7c7c;
+    --fault:    #f49b90;
+  }
+}
 
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
@@ -279,6 +339,21 @@ code { overflow-wrap: anywhere; }
 }
 .site-footer-meta { margin-top: var(--s-2); color: var(--graphite); }
 
+/* The theme choice (assets/chrome.js; assets/theme.js does the work):
+   three native radios, each label a 44px target, under the footer links. */
+.theme-choice { min-width: 0; margin: var(--s-4) 0 0; padding: 0; border: 0; }
+.theme-choice legend { padding: 0; color: var(--graphite); }
+.theme-options { display: flex; flex-wrap: wrap; gap: 0 var(--s-5); }
+.theme-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: var(--tap);
+  min-height: var(--tap);
+  cursor: pointer;
+}
+.theme-options input { width: 1.125rem; height: 1.125rem; margin: 0; }
+
 /* A wrapping row of links, each a 44px target (at least 44px wide too, so a
    short word like "Tools" is): the footer, and in-page contents. The text
    starts at the box's left edge, as .btn-text's does, so a short word keeps
@@ -338,7 +413,7 @@ code { overflow-wrap: anywhere; }
   transition: background-color var(--dur) var(--ease);
 }
 .btn-buy:hover { background: var(--buy-bg-hover); color: var(--buy-fg); }
-.btn-buy:disabled, .btn-buy[aria-disabled="true"] { background: var(--sweep); color: var(--graphite); cursor: default; }
+.btn-buy:disabled, .btn-buy[aria-disabled="true"] { background: var(--panel); color: var(--graphite); cursor: default; }
 
 .btn-ink, .btn {
   display: inline-flex;
@@ -358,8 +433,8 @@ code { overflow-wrap: anywhere; }
 .btn-ink { border: 1px solid var(--ink); background: var(--ink); color: var(--paper); }
 .btn { border: 1px solid var(--edge); background: var(--paper); color: var(--ink); }
 .btn-ink:hover, .btn:hover { text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
-.btn:active, .btn[aria-pressed="true"] { background: var(--sweep-dk); }
-.btn-ink:disabled { border-color: var(--edge); background: var(--sweep); color: var(--graphite); cursor: default; text-decoration: none; }
+.btn:active, .btn[aria-pressed="true"] { background: var(--pressed); }
+.btn-ink:disabled { border-color: var(--edge); background: var(--panel); color: var(--graphite); cursor: default; text-decoration: none; }
 .btn:disabled { color: var(--graphite); cursor: default; text-decoration: none; }
 .btn.btn-wide { display: flex; width: 100%; min-height: 52px; }
 
@@ -392,14 +467,14 @@ code { overflow-wrap: anywhere; }
 /* The question line (questionLine() in assets/owner-block.js). */
 .ask { max-width: var(--measure); }
 
-/* A sweep panel. Its first sentence is <strong>; .notice--fault sets that
+/* A panel. Its first sentence is <strong>; .notice--fault sets that
    sentence in the error colour. */
 .notice {
   max-width: var(--measure);
   overflow-wrap: anywhere; /* an email address at 200% text is wider than a phone */
   padding: var(--s-4);
   border-radius: var(--radius);
-  background: var(--sweep);
+  background: var(--panel);
   color: var(--ink);
 }
 .notice > * + * { margin-top: var(--s-2); }
@@ -466,7 +541,8 @@ tr.total th, tr.total td { border-top: 2px solid var(--ink); font-size: var(--t-
 .index-title { font-size: var(--t-h2); font-weight: 500; overflow-wrap: anywhere; }
 .index-text { display: grid; gap: var(--s-3); max-width: var(--measure); }
 .index-status { min-height: calc(2em * var(--lh-body)); }
-.index-media, .index-media img { display: block; border-radius: 0; background: var(--sweep); }
+/* Captures of the tools, not unit photos: on --panel. */
+.index-media, .index-media img { display: block; border-radius: 0; background: var(--panel); }
 .index-media img { width: 100%; height: auto; }
 @media (min-width: 60em) {
   .index { row-gap: var(--s-8); }
@@ -476,6 +552,21 @@ tr.total th, tr.total td { border-top: 2px solid var(--ink); font-size: var(--t-
   .index-media { grid-column: span 4; }
   /* A row with no media: the text takes the rest of the row, at reading width. */
   .index-text:last-child { grid-column: span 9; }
+}
+
+/* Theme-paired captures: two <picture>s, one per theme, side by side in the
+   markup. Only the current theme's renders, and both images are lazy, so
+   only it is fetched. Same selectors and media as the dark tokens, so a
+   theme chosen in the footer wins over the device, and print shows the
+   light one. */
+.for-dark { display: none; }
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .for-light { display: none; }
+  :root:not([data-theme="light"]) .for-dark { display: block; }
+}
+@media screen {
+  :root[data-theme="dark"] .for-light { display: none; }
+  :root[data-theme="dark"] .for-dark { display: block; }
 }
 
 /* ---------- Unit cards (rendered only by assets/unit-card.js) ---------- */
@@ -510,6 +601,7 @@ tr.total th, tr.total td { border-top: 2px solid var(--ink); font-size: var(--t-
   margin-bottom: var(--s-2);
   border-radius: 0;
   background: var(--sweep);
+  color: var(--sweep-graphite); /* a broken image's alt text */
   object-fit: contain;
 }
 .unit-card-head {
@@ -571,6 +663,17 @@ tr.total th, tr.total td { border-top: 2px solid var(--ink); font-size: var(--t-
 }
 .strip::-webkit-scrollbar { display: none; }
 .strip:focus-visible { outline-offset: -2px; }
+/* Two rings, ink then paper, both inside the panel: whatever the photo,
+   one of them is at least 3:1 against it (ink and paper are 14:1 or more
+   apart in both themes). Each photo fills its shot, so its own outline,
+   4px in, sits just inside the strip's. */
+.strip:focus-visible .shot img { outline: 2px solid var(--paper); outline-offset: -4px; }
+/* Contrast themes force every outline to one colour; keep the two rings
+   apart in the user's own colours, so one of them still shows on any photo. */
+@media (forced-colors: active) {
+  .strip:focus-visible { outline-color: var(--forced-on); }
+  .strip:focus-visible .shot img { outline-color: var(--forced-off); }
+}
 .shot {
   display: grid;
   place-items: center;
@@ -580,7 +683,7 @@ tr.total th, tr.total td { border-top: 2px solid var(--ink); font-size: var(--t-
   scroll-snap-align: start;
   border-radius: 0;
   background: var(--sweep);
-  color: var(--graphite);
+  color: var(--sweep-graphite);
 }
 .shot img { width: 100%; height: 100%; border-radius: 0; object-fit: contain; }
 
