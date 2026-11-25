@@ -10,24 +10,43 @@ Rough time: **45–60 minutes**, most of it waiting on Stripe verification.
 ## What is here
 
 ```
-index.html            Homepage — sends people to either half
-projects.html         Project index
-projects/             The playable demos (one .html + .js each)
+index.html            Homepage: what the site is, then Store, the tools and
+                      Portfolio as one index
 store.html            Storefront
 product.html          Product detail (its <head> is filled per product by
                       functions/product.js)
 cart.html             Cart
+order-complete.html   Where Stripe sends a buyer who paid
+checkout-cancelled.html  Where Stripe sends a buyer who cancelled
 shipping-returns.html Shipping, returns, testing, payment, data
-log.html              Build log
-data/products.js      Hand-made catalogue: prices, stock, copy
-data/projects.js      Project list
+projects.html         Tools index ("Tools" in the nav)
+projects/             The tools (one .html + .js each)
+portfolio.html        Product case studies
+case.html             One case study (its <head> is filled by functions/case.js)
+log.html              Build log (not linked from the nav)
+404.html              Not found
+assets/site.css       The shared look; each page group adds one more stylesheet
+assets/fonts/         The two self-hosted fonts and their licences
+assets/brand/         Link-preview cards and icons
+data/products.js      Hand-made catalogue, plus the shipping rates and the
+                      returns sentence every page uses
+data/owner.js         Your name, place, a sentence and a photo (all empty today)
+data/portfolio.js     Case studies, and your contact links for the portfolio
+data/projects.js      The tools list
 functions/api/        Checkout, the bench API, the public store API and the
                       Stripe webhook, as Cloudflare Pages Functions
 functions/product.js  Each product's title, link-preview card and Google data
+functions/case.js     Each case study's title and link-preview card
 functions/sitemap.xml.js  The sitemap, live bench units included
-lib/                  Order pricing, live bench stock (D1), Stripe signatures
-migrations/           D1 tables: league-ify's (0001) and the store's (1001)
-test/                 Tests for the money path and the live bench stock
+lib/                  Order pricing, live bench stock (D1), Stripe signatures,
+                      page heads
+migrations/           D1 tables: league-ify's (0001) and the store's (1001,
+                      1002)
+scripts/              Dev scripts: owner sync, card rendering, tool captures,
+                      the layout check (none of them is part of the site)
+test/                 npm test: the money path, live bench stock, page heads,
+                      the design rules, every page group, the vendored apps
+.github/workflows/    CI: npm test on every push and pull request
 ```
 
 ---
@@ -60,8 +79,9 @@ npx wrangler pages deploy .
 First run asks for a project name — `dhole-dev` matches `wrangler.toml`.
 
 You get a URL like `https://dhole-dev.pages.dev`. Open it. Everything except
-checkout works immediately: the projects run, the catalogue browses, the cart
-adds up.
+checkout works immediately: the tools run and the store shows what the bench
+app has listed. Until step 4, each product page offers "Email to buy this
+unit" instead of Add to cart, so nobody starts a checkout that can't finish.
 
 ---
 
@@ -120,6 +140,10 @@ Redeploy so the function picks it up:
 npx wrangler pages deploy .
 ```
 
+Nothing else to switch. With the key set, `functions/product.js` stops
+writing `<meta name="checkout" content="off">`, and product pages show Add to
+cart again by themselves.
+
 ---
 
 ## Step 5 — Test with a fake card
@@ -128,12 +152,16 @@ Card `4242 4242 4242 4242`, any future expiry, any CVC, any postcode. Run one
 full order and check:
 
 - the totals on the Stripe page match the cart
-- shipping is $18.00 with a console in the order, $6.00 for accessories only
-- you land on `/order-complete.html` and the cart is now empty
+- shipping is $18.00 with a console in the order, $6.00 for accessories only,
+  and its label says it ships within two business days
+- you land on `/order-complete` and the cart is now empty
 - the payment shows up in your Stripe dashboard
 
 Also press Back on the Stripe page once and confirm you land on
-`/checkout-cancelled.html` **with the cart still intact**.
+`/checkout-cancelled` **with the cart still intact**. With a bench unit in
+the order, that page (and the unit's product page, and the cart) offers
+"Return to your checkout", which reopens the same Stripe page while the hold
+lasts. It is remembered in that browser only.
 
 Once the bench is connected ("Live bench stock" below), run one more order
 with a bench unit in it. After paying, the unit disappears from the store and
@@ -172,8 +200,16 @@ webhook (step 4) is left, once Stripe is connected. The bucket must exist
 before any deploy: `wrangler.toml` binds it, and a build without it fails.
 
 **Stripe still isn't connected** (steps 3–6 above). Until it is, bench units
-show on the store like everything else, but pressing Checkout says
-"Checkout is not configured." Nothing is held or charged.
+show on the store like everything else, and each one's page offers "Email to
+buy this unit" (an email to support@dhole.dev with the unit's id in the
+subject) in place of Add to cart. A cart that still gets to Checkout says
+online checkout isn't switched on yet. Nothing is held or charged.
+
+**Not yet applied remotely:** `migrations/1002_store_images.sql`, which
+records each photo's pixel size so a product's link preview can declare it
+(and use the plain dhole.dev card when photo 1 is under 900 px wide). After
+the redesign is deployed, run step 2's command once more; it applies only
+1002. The site works without it, with previews as they were before.
 
 These are one-time steps. Run them from this folder, signed in with
 `npx wrangler login`.
@@ -195,10 +231,11 @@ hundred photos.
 npx wrangler d1 migrations apply dhole-workshop --remote
 ```
 
-It lists what it will apply (the store's `1001_store.sql`, plus league-ify's
-`0001_league_ify.sql` if that hasn't run yet) and asks before it does
-anything. Use this command, not `d1 execute`: it records what ran, so it is
-safe to run again.
+It lists what it will apply (the store's `1001_store.sql` and
+`1002_store_images.sql`, plus league-ify's `0001_league_ify.sql` if that
+hasn't run yet) and asks before it does anything. Use this command, not
+`d1 execute`: it records what ran, so it is safe to run again, and it is how
+every later migration gets applied too.
 
 ### 3. Give the bench app a key
 
@@ -318,8 +355,8 @@ One-time, about 20 minutes, all free.
 
 ### Google Merchant Center (free shopping listings)
 
-Once Stripe is live and `SUPPORT_EMAIL` is set (Merchant Center wants a
-contact and a returns policy on the site): <https://merchants.google.com>,
+Once Stripe is live (Merchant Center wants a contact and a returns policy on
+the site; `/shipping-returns` has both): <https://merchants.google.com>,
 add `dhole.dev`, and choose to get products from the website's structured
 data. Every product page already carries price, availability, condition and
 shipping.
@@ -327,15 +364,29 @@ shipping.
 ### Check a link preview
 
 Paste a `/product?id=` URL into a Discord or iMessage chat to yourself. A
-bench unit should show its own first photo, name and price, not the generic
-dhole.dev card. Facebook's <https://developers.facebook.com/tools/debug/>
-shows exactly what it reads, and re-fetches a stale card.
+bench unit should show its own first photo, its name with the unit id, and
+its price, not the generic dhole.dev card. (Once migration 1002 is applied,
+a unit whose first photo is under 900 px wide shows the generic card on
+purpose.) Try one on hold, one sold, one withdrawn and a made-up id too:
+sold and withdrawn cards say so and show no price. A `/case?id=` link should
+show the case study's own title and pitch, over the portfolio image. Facebook's
+<https://developers.facebook.com/tools/debug/> shows exactly what it reads,
+and re-fetches a stale card.
+
+### Check the analytics beacon
+
+After a production deploy, view the source of a `/product?id=` page and a
+`/case?id=` page on dhole.dev and look for a script from
+`static.cloudflareinsights.com`. Cloudflare injects it into static pages;
+those two are served by Functions, and whether it reaches their responses
+hasn't been checked yet. If it's missing, Web Analytics just doesn't count
+those pages.
 
 ### The numbers
 
 Traffic, referrers and Core Web Vitals: Cloudflare dashboard → **Web
 Analytics**. It doesn't record query strings, so every product page counts as
-`/product`. Orders, revenue and abandoned checkouts: Stripe dashboard.
+`/product` and every case study as `/case`. Orders, revenue and abandoned checkouts: Stripe dashboard.
 Search impressions, clicks and indexed pages: Search Console.
 
 Bench stock, from D1 (read-only queries; drop `--remote` and add `--local`
@@ -395,32 +446,172 @@ sold, and the bench app picks the sale up on its next sync.
 `stock: 0` it shows as sold out and the checkout function refuses it even if it
 is sitting in someone's old cart.
 
+### Your details: `data/owner.js` and the portfolio profile
+
+Everything about you is optional, and each empty field leaves no trace on
+the site: no placeholder, no stand-in photo.
+
+- In `data/owner.js`: `firstName` turns on a short block about you, "Who
+  you're buying from" on the store and product pages and "Who runs
+  dhole.dev" on the homepage. `place` (the city or state you ship from) is
+  added to it. Without `firstName` the store and product pages show only a
+  plain "Questions? Email support@dhole.dev" line, and the homepage shows
+  nothing. `about` is one sentence in your own words.
+  `benchPhoto` is `{ src, width, height, alt }` of a real photo of you or the
+  bench, never a stand-in. `fullName` becomes the portfolio's heading and goes
+  on its link-preview card.
+- In `data/portfolio.js`, `profile`: a personal `email`, a `resume` PDF and a
+  `linkedin` URL (GitHub is set). The portfolio shows a contact button only
+  for each one that is set.
+
+Then run:
+
+```bash
+npm run sync:owner
+```
+
+The portfolio's heading block is static HTML, so it shows even without
+JavaScript, and this rewrites it from those two files. `npm test` fails
+until you have. It then re-renders the link-preview cards so
+`og-portfolio.png` shows your name, which needs Playwright (see
+"Checking the layout" below); look at the images, then commit everything.
+
+### Writing a unit's record (RefurbOS)
+
+A product page turns a unit's details lines (up to 12, each at most 200
+characters) into a record, by the word each line starts with. Any letter
+case works. A line without one of these prefixes still shows, under Notes,
+so nothing is lost:
+
+| Start the line with | Shown under |
+|---|---|
+| `Works:` | Tested |
+| `Replaced:` | Replaced (say whether original or aftermarket) |
+| `Measured:` | Measured (paste the drift tester's "Copy reading" line as it is; it starts with `Measured:`) |
+| `Looks:` | Marks and wear (one line per mark) |
+| `In the box:` | In the box |
+| `Not included:` | Not included |
+| `Output:` | Video output |
+
+For example:
+
+```
+Works: Boots and plays a cartridge. All 4 controller ports read.
+Replaced: Power supply filter capacitors (new, aftermarket).
+Looks: Light yellowing on the lid (photo 5).
+Looks: Scuff on the right side (photo 6).
+In the box: Console, 1 controller, power supply, AV cable.
+Not included: Expansion Pak, games.
+Output: Composite video only.
+```
+
+Put a plain description of how it looks in the 40-character condition field.
+
+**`(photo N)` is optional.** It points a line at photo N, and the page turns
+it into a button that shows that photo. When every `Looks:` line has a
+reference to a photo the unit has, the summary under the price reads "2
+marks, shown in photos 5 and 6" and opens the first; otherwise it reads "2
+marks, listed under Marks and wear" and links to that row. A record without
+any references is complete.
+
+**If you write references, lock the photo order once they're written.**
+Reordering the photos in RefurbOS afterwards silently points every reference
+at the wrong photo; a number past the last photo just stays plain text.
+
+**Better, as a RefurbOS feature:** tag each photo with the flaw it shows and
+let RefurbOS write the `(photo N)` references when it pushes, so they always
+match the order, plus a default `Works:` and `In the box:` per platform.
+That's a change in the RefurbOS repo only: details stay free text, and the
+store needs nothing new.
+
 ### Branding
 
-The favicon and the link-preview card live in `assets/brand/`. The preview card
-(`og.png`, 1200x630) is what shows up when someone pastes a dhole.dev link into
-a chat or a post — worth regenerating if you change the tagline. It was rendered
-from a plain HTML page, so it can be rebuilt the same way rather than opening a
-design tool.
+The link-preview cards and the icons live in `assets/brand/`: `og-site.png`
+(home, store, shipping and product pages without a usable photo),
+`og-tools.png`, `og-portfolio.png`, `icon.svg` and `icon-180.png`. Each card
+is 1200x630 and is rendered from an HTML template in `scripts/brand/`, never
+drawn in a design tool:
 
-### Add a project
+```bash
+npm run render:brand
+```
 
-1. Drop `projects/my-thing.html` and `projects/my-thing.js` in.
-2. Add an entry to `data/projects.js` pointing `demo` at the page.
+It needs Playwright (see "Checking the layout"). Look at the PNGs, then
+commit them. `/assets/brand/` is cached for a week, so if you ever redesign
+a card, give the file a new name and update the pages that point at it.
 
-It appears on both the projects index and the homepage. Anything without a
-`demo` is listed as write-up only rather than looking clickable.
+### Add a tool
+
+1. Drop `projects/my-thing.html`, `projects/my-thing.js` and
+   `projects/my-thing.entry.js` in. Copy the head and the start of the body
+   from an existing tool page: the shared stylesheet, the font preload, the
+   empty `<header class="site-header"></header>`, and a `<noscript>` notice
+   if the page needs JavaScript. `npm test` checks the head, the header and
+   the notice.
+2. Add an entry to `data/projects.js`: `demo` (the page's clean URL), a
+   `cta` that names it ("Open the sequencer"), `tagline`, `description`,
+   `builtWith`.
+3. Add its row to the homepage's index in `index.html`, matching the entry;
+   `test/home.test.js` holds the two equal.
+
+`/projects` renders from the data by itself. Every entry needs a working
+page. A write-up with nothing to run belongs in `data/portfolio.js`
+instead. A `shot` is optional and must be a real capture of the tool's own
+page; for the chiptune sequencer, `npm run capture:tools` takes it.
 
 ### Local preview
 
 ```bash
 npx wrangler d1 migrations apply dhole-workshop --local   # once, and after new migrations
 npm run dev     # wrangler pages dev . — Functions, a local D1 and a local R2
-npm test        # the money path, the live bench stock, the vendored apps
+npm test        # everything in test/, as CI runs it
 ```
 
 To point the bench app at your local copy, see "Testing the bench app against
-a local copy" below.
+a local copy" above.
+
+### Checking the layout
+
+```bash
+npm run check:layout
+```
+
+It loads every page in Chromium at phone and desktop widths and checks that
+nothing scrolls sideways, nothing shifts while units and fonts load, no text
+is under 16 px, the buy action sits in the first screen of a product page,
+contrast holds, and the content security policy blocks nothing. It isn't
+part of `npm test` or CI, because it needs a browser: run it before merging
+anything that changes how pages look. It prints a table and exits 1 when a
+check fails; a full run takes a few minutes.
+
+Playwright isn't one of the site's dependencies. Either install it
+(`npm i -D playwright && npx playwright install chromium`, without committing
+the change to `package.json`), or point at an install you already have:
+
+```bash
+PLAYWRIGHT_MODULE=/path/to/node_modules/playwright/index.js npm run check:layout
+```
+
+`npm run render:brand`, `npm run capture:tools` and the image step of
+`npm run sync:owner` find Playwright the same way.
+
+### Tests and CI
+
+`.github/workflows/test.yml` runs `npm ci` and `npm test` on GitHub for every
+push and pull request. Two one-time settings make it count:
+
+1. **Make it a required check on `main`.** On GitHub, in the repo's
+   **Settings**, add a branch protection rule (or a ruleset) for `main`,
+   turn on **Require status checks to pass before merging**, and choose the
+   check named `test`. It appears in the list once the workflow has run at
+   least once. A red suite then can't be merged, so it can't deploy.
+2. **Optional: make Cloudflare run the tests too.** In the Cloudflare
+   dashboard, open the `dhole-dev` Pages project's build settings: set the
+   build command to `npm test`, leave the output directory as `.`, and add
+   the build environment variable `NODE_VERSION` = `22`. A failing suite
+   then stops the deploy itself, previews included. The store tests need
+   Node 22.13 or later; if the build log shows an older 22, give the full
+   version instead.
 
 ---
 
@@ -442,8 +633,11 @@ flags that as "sold twice" so you can refund one.
 
 **Sales tax is off by default.** `ENABLE_AUTOMATIC_TAX` in `wrangler.toml` is
 `"false"`, because Stripe Tax rejects sessions until you have set an origin
-address and tax registrations. Configure Stripe Tax first, then flip it and
-redeploy. Whether you owe sales tax at all is a question for an accountant.
+address and tax registrations. Configure Stripe Tax first, then flip it, set
+`AUTOMATIC_TAX` in `data/products.js` to `true` to match (the cart then says
+"Total before tax"; a test fails while the two differ), add a line about tax
+to `/shipping-returns`, and redeploy. Whether you owe sales tax at all is a
+question for an accountant.
 
 **No order system beyond Stripe.** Stripe emails the customer a receipt and
 emails you a notification; you fulfil from the Stripe dashboard. Reasonable at
@@ -491,7 +685,14 @@ an empty shelf.
 npm test
 ```
 
-Checks over price tampering, stock limits, malformed carts, duplicate lines,
-shipping selection and Stripe payload construction; the bench API, the public
-store API, bench-unit holds and the Stripe webhook against a real SQLite
-standing in for D1; and the vendored Discover Cleaner and league-ify builds.
+It runs every file in `test/` (Node 22.13 or later). Checks over price
+tampering, stock limits, malformed carts, duplicate lines, shipping selection
+and Stripe payload construction; the bench API, the public store API,
+bench-unit holds and the Stripe webhook against a real SQLite standing in for
+D1; every page's server-written head and the sitemap; the design rules
+(colours only from the shared tokens, the font rules, no text under 16 px,
+shipping and returns wording only from `data/products.js`); each page group;
+and the vendored
+Discover Cleaner and league-ify builds. CI runs the same command on every
+push ("Tests and CI" above). For how the pages look at phone and desktop
+sizes, run `npm run check:layout` ("Checking the layout").
