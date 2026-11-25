@@ -1,0 +1,42 @@
+/* ==========================================================================
+   Info pages: /shipping-returns, the 404 page and /log.
+
+   Builds on site.css (.page-head, .prose, .link-list, .dl-rows, tables and
+   buttons) and only lays out the sections. Sections are grouped by space,
+   never boxed or ruled: the only hairlines are site.css's, on table rows and
+   .dl-rows. From 60em each section is a row of the 12-column grid, its h2
+   in columns 1 to 3 and its text in 4 to 10, at reading width.
+   ========================================================================== */
+
+/* The in-page contents under the h1 (/shipping-returns). */
+.info-toc { margin-top: var(--s-3); }
+
+.info-sections { display: grid; row-gap: var(--s-7); }
+.info-section { display: grid; gap: var(--s-3); align-items: baseline; }
+.info-section > :not(h2) { min-width: 0; max-width: var(--measure); }
+.info-end { display: grid; justify-items: start; margin-top: var(--s-7); }
+
+@media (min-width: 60em) {
+  .info-sections { row-gap: var(--s-8); }
+  .info-section, .info-end {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--col-gap);
+  }
+  .info-section > h2 { grid-column: 1 / span 3; }
+  .info-section > :not(h2), .info-end > * { grid-column: 4 / span 7; }
+  .info-end { margin-top: var(--s-8); }
+}
+
+/* The shipping table: row labels read as text, the rate column is tabular
+   and right-aligned (site.css .num). */
+.info-section tbody th { font-weight: 400; }
+.info-section table + p { margin-top: var(--s-4); }
+
+/* /log renders its weeks in JS, so main holds the first viewport while they
+   arrive and the footer never shows in it first (spec §1). */
+.info-log { min-height: calc(100svh - var(--header-h)); }
+
+/* 404: one reading column. The text links sit a little further apart than a
+   button row's 12px, so the two underlines don't run together. */
+.info-404 .wrap > * { max-width: var(--measure); }
+.info-404 .btn-row { column-gap: var(--s-5); }
