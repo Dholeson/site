@@ -3,28 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Controller Drift Test: Free Online Stick Tester | dhole.dev</title>
-  <meta name="description" content="Test a controller for stick drift in your browser: plug in a gamepad and get the exact rest offset and jitter of each stick. Free, nothing installed or uploaded." />
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+  <title>Controller Drift Tester: measure stick drift in your browser | dhole.dev</title>
+  <meta name="description" content="Plug in a controller and measure where its sticks rest and how much they jitter, in your browser. Nothing is uploaded." />
   <link rel="canonical" href="https://dhole.dev/projects/drift-tester" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
   <meta property="og:url" content="https://dhole.dev/projects/drift-tester" />
-  <meta property="og:title" content="Controller Drift Test: free, in your browser" />
-  <meta property="og:description" content="Plug in a gamepad and measure analogue stick drift in your browser. Nothing is uploaded." />
-  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:title" content="Controller Drift Tester" />
+  <meta property="og:description" content="Plug in a controller and measure where its sticks rest and how much they jitter, in your browser. Nothing is uploaded." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og-tools.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Controller Drift Test: free, in your browser" />
-  <meta name="twitter:description" content="Plug in a gamepad and measure analogue stick drift in your browser. Nothing is uploaded." />
-  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
-  <link rel="stylesheet" href="/assets/site.css" />
-  <link rel="stylesheet" href="/assets/pages.css" />
-  <link rel="stylesheet" href="/assets/demo.css" />
-  <script type="module" src="./drift-tester.entry.js"></script>
+  <meta name="twitter:title" content="Controller Drift Tester" />
+  <meta name="twitter:description" content="Plug in a controller and measure where its sticks rest and how much they jitter, in your browser. Nothing is uploaded." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-tools.png" />
+
+  <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
+  <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+  <link rel="stylesheet" href="/assets/drift.css?v=2" />
+  <script type="module" src="/projects/drift-tester.entry.js?v=2"></script>
+  <link rel="modulepreload" href="/projects/drift-tester.js" />
+  <link rel="modulepreload" href="/projects/drift-core.js" />
+  <link rel="modulepreload" href="/assets/chrome.js" />
+  <link rel="modulepreload" href="/assets/cart.js" />
   <!-- Structured data: a data block, never executed, so the CSP has nothing to block. -->
   <script type="application/ld+json">
   {
@@ -32,10 +38,10 @@
     "@type": "WebApplication",
     "name": "Controller Drift Tester",
     "url": "https://dhole.dev/projects/drift-tester",
-    "description": "Measures analogue stick drift in the browser: the rest offset and jitter of each stick, from the Gamepad API. Nothing is uploaded.",
+    "description": "Plug in a controller and measure where its sticks rest and how much they jitter, in your browser. Nothing is uploaded.",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
-    "browserRequirements": "A browser with the Gamepad API, such as a recent Chrome, Edge or Firefox",
+    "browserRequirements": "A browser with the Gamepad API, such as a recent Chrome, Edge, Firefox or Safari",
     "isAccessibleForFree": true,
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "publisher": { "@id": "https://dhole.dev/#org", "@type": "Organization", "name": "dhole.dev", "url": "https://dhole.dev/" }
@@ -44,82 +50,68 @@
 </head>
 <body>
   <header class="site-header"></header>
-  <section class="demo-header">
+  <main class="drift">
     <div class="wrap">
-      <p class="eyebrow"><a href="/projects">Projects</a> / Live demo</p>
-      <h1>Controller Drift Tester</h1>
-      <p class="lede">
-        Plug a controller into this device and see exactly where its sticks sit. Every
-        controller I sell gets measured here first.
-      </p>
-    </div>
-  </section>
+      <noscript><p class="notice noscript"><strong>This page needs JavaScript to show the drift tester.</strong> The <a href="/shipping-returns">shipping and returns</a> page works without it, and you can email <a href="mailto:support@dhole.dev">support@dhole.dev</a>.</p></noscript>
 
-  <main>
-    <div class="wrap">
-      <div class="notice error" id="no-support" hidden>
-        <strong>This browser does not support the Gamepad API.</strong>
-        Try a recent Chrome, Edge, or Firefox on a desktop.
+      <div class="page-head">
+        <h1>Controller Drift Tester</h1>
+        <p class="lede">Plug a controller into this device, let go of the sticks, and measure where they rest. Nothing is uploaded.</p>
+        <p class="drift-scope">This reads this controller, through this adapter, right now. It isn't a promise about how the stick will wear.</p>
       </div>
 
-      <div class="demo-stage" id="stage">
-        <div class="pad-status">
-          <span class="status low" id="status">Waiting for a controller</span>
-          <span class="dim" id="pad-name">Plug one in, then press any button on it.</span>
-        </div>
+      <!-- The tool holds a full viewport, so the method section below starts
+           out of view. Whatever appears when a pad connects or a measurement
+           finishes is added after the plots, inside this section, so nothing
+           already on screen moves. The status line stays one line long. -->
+      <section class="drift-tool" aria-label="Drift tester">
+        <ol class="steps">
+          <li>Plug in a controller and press any button on it, so the browser can see it. On a phone or tablet, pair a Bluetooth controller first.</li>
+          <li class="drift-platform">
+            <div>
+              <label for="drift-platform">What is it?</label>
+              <select id="drift-platform" autocomplete="off">
+                <option value="n64">Nintendo 64</option>
+                <option value="gamecube">GameCube</option>
+                <option value="other" selected>Something else</option>
+              </select>
+            </div>
+          </li>
+          <li>
+            <p>Let go of the sticks, then press Measure rest.</p>
+            <div class="btn-row">
+              <button type="button" class="btn-ink" id="drift-measure" disabled>Measure rest (2 s)</button>
+              <button type="button" class="btn" id="drift-reset">Reset</button>
+            </div>
+          </li>
+        </ol>
 
-        <div class="stick-grid">
-          <figure class="stick">
+        <p class="drift-status" id="drift-status" aria-live="polite">Waiting for a controller</p>
+
+        <div class="drift-plots" id="drift-plots" data-count="2">
+          <figure class="plot">
             <figcaption>Left stick</figcaption>
-            <canvas id="stick-0" aria-label="Left stick position plot"></canvas>
-            <div class="readout">
-              <div><span class="k">X</span><div class="v" id="r0-x">0.000</div></div>
-              <div><span class="k">Y</span><div class="v" id="r0-y">0.000</div></div>
-              <div><span class="k">Magnitude</span><div class="v" id="r0-mag">0.000</div></div>
-              <div><span class="k">Peak</span><div class="v" id="r0-peak">0.000</div></div>
-              <div><span class="k">Rest</span><div class="v" id="r0-rest">—</div></div>
-            </div>
+            <canvas width="358" height="358" role="img" aria-label="Left stick position"></canvas>
           </figure>
-
-          <figure class="stick">
+          <figure class="plot">
             <figcaption>Right stick</figcaption>
-            <canvas id="stick-1" aria-label="Right stick position plot"></canvas>
-            <div class="readout">
-              <div><span class="k">X</span><div class="v" id="r1-x">0.000</div></div>
-              <div><span class="k">Y</span><div class="v" id="r1-y">0.000</div></div>
-              <div><span class="k">Magnitude</span><div class="v" id="r1-mag">0.000</div></div>
-              <div><span class="k">Peak</span><div class="v" id="r1-peak">0.000</div></div>
-              <div><span class="k">Rest</span><div class="v" id="r1-rest">—</div></div>
-            </div>
+            <canvas width="358" height="358" role="img" aria-label="Right stick position"></canvas>
           </figure>
         </div>
 
-        <div class="demo-controls">
-          <button class="btn btn-primary" id="measure-btn" disabled>Measure rest (2s)</button>
-          <button class="btn" id="reset-btn">Reset</button>
-          <p class="demo-note" style="margin:0">
-            Let go of both sticks before measuring. The dot turns green inside the
-            deadzone and purple outside it.
-          </p>
-        </div>
+        <p class="drift-pad" id="drift-pad" hidden>Controller: <span class="id id--wrap"></span></p>
+        <div class="drift-readings" id="drift-readings" hidden></div>
+        <div class="drift-results" id="drift-results" hidden></div>
+        <p class="drift-store" id="drift-store" hidden>Need a controller? <a href="/store">See what's in the store</a>.</p>
+      </section>
 
-        <div id="verdict"></div>
-      </div>
+      <section class="drift-about prose">
+        <h2 id="method">How this is measured</h2>
+        <p id="drift-method">Measure rest samples each stick for 2 seconds. Rest offset is the distance from centre to the stick's average resting position, on the browser's scale where the edge of the stick's travel is 1. Jitter is how far the readings spread around that position (root mean square). The dashed ring is drawn at 0.08, a common size for a game's deadzone. Games set their own deadzones, so this page reports numbers without a grade. The dot shows the stick's current position; the fading trail is only a guide.</p>
 
-      <section class="section">
         <h2>How it works</h2>
-        <p class="muted" style="max-width:68ch">
-          The browser exposes each stick as a pair of axes from −1 to 1. This page polls
-          them once per animation frame, plots the position, and keeps a trail so
-          intermittent glitches are visible rather than flashing past. "Measure rest"
-          samples for two seconds while the sticks are untouched and reports the mean
-          distance from centre alongside the spread — a stick that reads 0.02 steady is
-          healthy; one that reads 0.15, or swings wildly, is worn.
-        </p>
-        <p class="muted" style="max-width:68ch">
-          Nothing is uploaded. It all runs in your browser.
-        </p>
-        <a class="btn btn-sm" href="/store">See tested controllers in the shop →</a>
+        <p>The browser reports each stick as a pair of axes, each running from &minus;1 to 1. This page reads them once per animation frame, plots the position and keeps a short trail, so a glitch that lasts a single frame stays on screen for a moment. Measure rest collects those readings for 2 seconds while the sticks are untouched, then works out the offset and jitter described above.</p>
+        <p>Nothing is uploaded. It all runs in your browser.</p>
       </section>
     </div>
   </main>

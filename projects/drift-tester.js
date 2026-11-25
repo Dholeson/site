@@ -1,235 +1,512 @@
-// Controller Drift Tester
+// Controller Drift Tester: the page.
 //
-// Reads the Gamepad API and plots both analogue sticks live. The useful part
-// is not the pretty dot -- it is the rest measurement: let go of the sticks,
-// hit "Measure rest", and it samples for two seconds to report how far from
-// centre the stick actually sits and how much it jitters. That is a number you
-// can put in a listing.
+// Reads the Gamepad API once per animation frame, plots each stick the
+// controller has, and on "Measure rest" samples the sticks for SAMPLE_MS and
+// reports each one's rest offset and jitter as numbers, with no grade. The
+// arithmetic, the stick list per platform, the copyable reading line and the
+// method prose are in drift-core.js; this file is the DOM and the canvas.
+//
+// Layout rule (spec §10.9): everything that appears when a pad connects or a
+// measurement finishes goes after the plots, inside .drift-tool, which holds a
+// full viewport. The status line above the plots only ever swaps one short
+// line for another, so a connect never pushes the plots down.
+//
+// The plot's colours come from site.css's custom properties. There are no
+// colour values in this file.
 
-const DEADZONE = 0.08;      // below this, most games ignore the stick entirely
-const TRAIL_MAX = 90;
-const SAMPLE_MS = 2000;
+import {
+  BANDS, DEFAULT_PLATFORM, PLATFORMS, SAMPLE_MS, TRAIL_MAX,
+  cleanPadId, formatAxis, formatDate, methodText, readingLine, sticksFor, summarise
+} from "./drift-core.js";
+
+const NOT_MEASURED = "Not measured yet";
+const FEEDBACK_MS = 2000;
+const STATUS = {
+  waiting: "Waiting for a controller",
+  connected: "Connected",
+  measuring: `Measuring for ${SAMPLE_MS / 1000} seconds`
+};
+const NO_SAMPLES =
+  `<strong>No readings came in during the ${SAMPLE_MS / 1000} seconds.</strong> ` +
+  "Keep the controller connected, press a button on it, and try again.";
+const UNSUPPORTED =
+  "<strong>This browser can't read controllers.</strong> " +
+  "Try a recent Chrome, Edge, Firefox or Safari.";
 
 const state = {
-  padIndex: null,
-  trails: [[], []],
-  peak: [0, 0],
-  rest: [null, null],
-  sampling: false
+  platform: DEFAULT_PLATFORM,
+  padIndex: null,   // the pad the connect event named, when there was one
+  pad: null,        // { index, id, axes } of the pad in use, or null
+  lastAxes: 4,      // axes count of the last pad seen; sizes the plots between pads
+  plotSticks: [],   // the sticks the plots currently show
+  trails: new Map(),   // stick key -> [[x, y], ...]
+  measured: new Map(), // stick key -> { summary, padId, date }
+  sampling: null,      // { started, index, sticks, samples: Map } while measuring
+  noSamples: false
 };
 
 const els = {};
+let plots = [];     // [{ stick, canvas, ctx, size }]
+let live = [];      // [{ index, x, y, lastX, lastY }] value cells updated every frame
+let colours = null;
+let dirty = true;   // the plots need drawing although no pad is moving them
 
 export function initDriftTester() {
-  for (const id of [
-    "status", "pad-name", "stage", "measure-btn", "reset-btn",
-    "verdict", "no-support"
-  ]) els[id] = document.getElementById(id);
+  for (const [k, id] of Object.entries({
+    platform: "drift-platform", measure: "drift-measure", reset: "drift-reset", status: "drift-status",
+    plots: "drift-plots", pad: "drift-pad", readings: "drift-readings", results: "drift-results",
+    store: "drift-store", method: "drift-method"
+  })) els[k] = document.getElementById(id);
+  if (!els.plots) return;
 
-  els.canvases = [document.getElementById("stick-0"), document.getElementById("stick-1")];
-  els.readouts = [0, 1].map(i => ({
-    x:    document.getElementById(`r${i}-x`),
-    y:    document.getElementById(`r${i}-y`),
-    mag:  document.getElementById(`r${i}-mag`),
-    peak: document.getElementById(`r${i}-peak`),
-    rest: document.getElementById(`r${i}-rest`)
-  }));
+  // Generated copy. drift-tester.html carries the same text for crawlers and
+  // first paint (test/drift.test.js holds them equal), so these are no-ops.
+  setText(els.method, methodText());
+  setText(els.measure, `Measure rest (${SAMPLE_MS / 1000} s)`);
 
-  if (!("getGamepads" in navigator)) {
-    els["no-support"].hidden = false;
-    els.stage.hidden = true;
+  colours = readColours();
+  state.platform = PLATFORMS[els.platform.value] ? els.platform.value : DEFAULT_PLATFORM;
+  syncPlots();
+
+  if (typeof ResizeObserver === "function") {
+    new ResizeObserver(refit).observe(els.plots);
+  } else {
+    window.addEventListener("resize", refit);
+  }
+
+  if (typeof navigator.getGamepads !== "function") {
+    els.measure.disabled = true;
+    els.results.innerHTML = `<p class="notice">${UNSUPPORTED}</p>`;
+    els.results.hidden = false;
+    drawAll();
     return;
   }
 
-  els.canvases.forEach(fitCanvas);
-  window.addEventListener("resize", () => els.canvases.forEach(fitCanvas));
+  // Pad ids are set in Red Hat Mono. Start loading it now so it is ready by
+  // the time a pad connects (font-display: optional uses it only if it is).
+  try { document.fonts.load('400 1em "Red Hat Mono"').catch(() => {}); } catch { /* no FontFaceSet */ }
 
   window.addEventListener("gamepadconnected", e => { state.padIndex = e.gamepad.index; });
   window.addEventListener("gamepaddisconnected", e => {
     if (state.padIndex === e.gamepad.index) state.padIndex = null;
   });
+  els.platform.addEventListener("change", () => {
+    state.platform = PLATFORMS[els.platform.value] ? els.platform.value : DEFAULT_PLATFORM;
+    syncPlots();
+    if (state.pad) renderReadings();
+    renderResults();
+  });
+  els.measure.addEventListener("click", startMeasure);
+  els.reset.addEventListener("click", reset);
 
-  els["measure-btn"].addEventListener("click", measureRest);
-  els["reset-btn"].addEventListener("click", reset);
-
-  requestAnimationFrame(loop);
+  requestAnimationFrame(frame);
 }
 
-// Canvases must be sized in device pixels or the plot looks soft on any
-// screen with a DPR above 1.
-function fitCanvas(cv) {
-  const dpr = window.devicePixelRatio || 1;
-  const size = cv.clientWidth;
-  cv.width = size * dpr;
-  cv.height = size * dpr;
-  cv.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
-}
+// ---------- the pad ----------
 
 function activePad() {
-  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-  if (state.padIndex !== null && pads[state.padIndex]) return pads[state.padIndex];
-  // Fall back to the first connected pad, so it works even if the connect
-  // event fired before this page loaded.
-  for (const p of pads) if (p) { state.padIndex = p.index; return p; }
+  let pads = [];
+  try { pads = navigator.getGamepads() || []; } catch { return null; } // blocked by a permissions policy
+  const named = state.padIndex !== null ? pads[state.padIndex] : null;
+  if (named && named.connected !== false) return named;
+  // The connect event can fire before this page loads; take the first pad.
+  for (const p of pads) {
+    if (p && p.connected !== false) { state.padIndex = p.index; return p; }
+  }
   return null;
 }
 
-function loop() {
+const currentSticks = () => (state.pad ? sticksFor(state.platform, state.pad.axes) : []);
+
+function frame(now) {
   const pad = activePad();
-
-  if (!pad) {
-    els.status.textContent = "Waiting for a controller";
-    els.status.className = "status low";
-    els["pad-name"].textContent = "Plug one in, then press any button on it — browsers hide gamepads until you do.";
-    els["measure-btn"].disabled = true;
-    els.canvases.forEach((cv, i) => draw(cv, 0, 0, i));
-  } else {
-    els.status.textContent = "Connected";
-    els.status.className = "status in";
-    els["pad-name"].textContent = pad.id;
-    els["measure-btn"].disabled = state.sampling;
-
-    for (let i = 0; i < 2; i++) {
-      const x = pad.axes[i * 2] ?? 0;
-      const y = pad.axes[i * 2 + 1] ?? 0;
-      const mag = Math.hypot(x, y);
-
-      if (mag > state.peak[i]) state.peak[i] = mag;
-
-      const trail = state.trails[i];
-      trail.push([x, y]);
-      if (trail.length > TRAIL_MAX) trail.shift();
-
-      draw(els.canvases[i], x, y, i);
-
-      const r = els.readouts[i];
-      r.x.textContent = x.toFixed(3);
-      r.y.textContent = y.toFixed(3);
-      r.mag.textContent = mag.toFixed(3);
-      r.peak.textContent = state.peak[i].toFixed(3);
-      r.rest.textContent = state.rest[i] === null ? "—" : state.rest[i].offset.toFixed(3);
+  if (pad) {
+    const axes = pad.axes ? pad.axes.length : 0;
+    if (!state.pad || state.pad.index !== pad.index || state.pad.id !== pad.id || state.pad.axes !== axes) {
+      connect(pad, axes);
     }
+  } else if (state.pad) {
+    disconnect();
   }
 
-  requestAnimationFrame(loop);
-}
+  if (state.sampling) sample(pad, now);
 
-function draw(cv, x, y, idx) {
-  const ctx = cv.getContext("2d");
-  const w = cv.clientWidth;
-  const c = w / 2;
-  const r = w / 2 - 10;
-
-  ctx.clearRect(0, 0, w, w);
-
-  // Gate outline and crosshair
-  ctx.strokeStyle = "#2a3040";
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2); ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(c - r, c); ctx.lineTo(c + r, c);
-  ctx.moveTo(c, c - r); ctx.lineTo(c, c + r);
-  ctx.stroke();
-
-  // Deadzone ring -- inside this, a game would read the stick as centred.
-  ctx.strokeStyle = "#3b4459";
-  ctx.setLineDash([3, 4]);
-  ctx.beginPath(); ctx.arc(c, c, r * DEADZONE * 4, 0, Math.PI * 2); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Trail, oldest faintest
-  const trail = state.trails[idx];
-  ctx.strokeStyle = "#22d3ee";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  trail.forEach(([tx, ty], i) => {
-    const px = c + tx * r, py = c + ty * r;
-    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-  });
-  ctx.globalAlpha = 0.45;
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  // Current position
-  const px = c + x * r, py = c + y * r;
-  ctx.fillStyle = Math.hypot(x, y) > DEADZONE ? "#a78bfa" : "#34d399";
-  ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fill();
-}
-
-// Samples both sticks while (hopefully) untouched, then reports the mean
-// distance from centre and the spread around it.
-function measureRest() {
-  const pad = activePad();
-  if (!pad) return;
-
-  state.sampling = true;
-  els.verdict.innerHTML = `<div class="notice info">Measuring — hands off the sticks…</div>`;
-
-  const samples = [[], []];
-  const started = performance.now();
-
-  (function sample() {
-    const p = activePad();
-    if (p) {
-      for (let i = 0; i < 2; i++) {
-        const x = p.axes[i * 2] ?? 0, y = p.axes[i * 2 + 1] ?? 0;
-        samples[i].push(Math.hypot(x, y));
-      }
+  if (pad) {
+    for (const p of plots) {
+      const x = axis(pad, p.stick.axes[0]);
+      const y = axis(pad, p.stick.axes[1]);
+      let trail = state.trails.get(p.stick.key);
+      if (!trail) state.trails.set(p.stick.key, (trail = []));
+      trail.push([x, y]);
+      if (trail.length > TRAIL_MAX) trail.shift();
     }
-    if (performance.now() - started < SAMPLE_MS) return requestAnimationFrame(sample);
-
-    for (let i = 0; i < 2; i++) {
-      const s = samples[i];
-      const offset = s.reduce((a, b) => a + b, 0) / (s.length || 1);
-      const jitter = Math.max(...s) - Math.min(...s);
-      state.rest[i] = { offset, jitter };
+    for (const cell of live) {
+      const x = formatAxis(axis(pad, cell.axes[0]));
+      const y = formatAxis(axis(pad, cell.axes[1]));
+      if (x !== cell.lastX) cell.x.textContent = cell.lastX = x;
+      if (y !== cell.lastY) cell.y.textContent = cell.lastY = y;
     }
-    state.sampling = false;
-    renderVerdict();
-  })();
+  }
+  if (pad || dirty) { drawAll(pad); dirty = false; }
+  requestAnimationFrame(frame);
 }
 
-function renderVerdict() {
-  let drifting = false;
-  const rows = ["Left stick", "Right stick"].map((label, i) => {
-    const { offset, jitter } = state.rest[i];
-    const v = classify(offset, jitter);
-    if (v.cls !== "in") drifting = true;
-    return `<tr>
-      <td>${label}</td>
-      <td class="mono">${offset.toFixed(3)}</td>
-      <td class="mono">${jitter.toFixed(3)}</td>
-      <td class="status ${v.cls}">${v.text}</td>
-    </tr>`;
-  }).join("");
-
-  els.verdict.innerHTML = `
-    <table class="verdict-table">
-      <thead><tr><th>Stick</th><th>Rest offset</th><th>Jitter</th><th>Verdict</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <p class="dim" style="margin-top:.75rem">
-      Rest offset is how far from centre the stick sits untouched. Jitter is the spread
-      across the sample. Anything under ${DEADZONE} sits inside a typical game's deadzone
-      and will not move your character on its own.
-    </p>${drifting ? `
-    <div class="notice info drift-cta">
-      <strong>Drifting stick?</strong> Every controller in the shop was measured on this
-      page before it was listed.
-      <div><a class="btn btn-sm btn-primary" href="/store">See tested controllers →</a></div>
-    </div>` : ""}`;
+function axis(pad, i) {
+  const v = pad.axes ? Number(pad.axes[i]) : NaN;
+  return Number.isFinite(v) ? v : 0;
 }
 
-function classify(offset, jitter) {
-  if (offset < DEADZONE / 2 && jitter < 0.02) return { cls: "in",  text: "Good" };
-  if (offset < DEADZONE)                      return { cls: "in",  text: "Within deadzone" };
-  if (offset < DEADZONE * 2)                  return { cls: "low", text: "Slight drift" };
-  return { cls: "out", text: "Significant drift" };
+function connect(pad, axes) {
+  // A different pad (or the same one reporting other axes) mid-measure
+  // spoils that measurement, as a disconnect does.
+  if (state.sampling) state.sampling.spoiled = true;
+  state.pad = { index: pad.index, id: String(pad.id ?? ""), axes };
+  state.lastAxes = axes;
+  state.trails.clear();
+  // Readings belong to the pad they were taken from.
+  for (const [key, m] of state.measured) if (m.padId !== state.pad.id) state.measured.delete(key);
+  setText(els.status, state.sampling ? STATUS.measuring : STATUS.connected);
+  setText(els.pad.querySelector(".id"), cleanPadId(state.pad.id) || "No id given");
+  els.pad.hidden = false;
+  syncPlots();
+  renderReadings();
+  renderResults();
+}
+
+function disconnect() {
+  state.pad = null;
+  state.trails.clear();
+  dirty = true;
+  setText(els.status, STATUS.waiting);
+  els.pad.hidden = true;
+  live = [];
+  els.readings.hidden = true;
+  els.readings.replaceChildren();
+  renderResults();
+}
+
+// ---------- measuring ----------
+
+function startMeasure() {
+  const sticks = currentSticks();
+  if (!state.pad || state.sampling || !sticks.length) return;
+  state.measured.clear();
+  state.noSamples = false;
+  state.sampling = {
+    started: performance.now(),
+    index: state.pad.index,
+    sticks,
+    samples: new Map(sticks.map(s => [s.key, []]))
+  };
+  setText(els.status, STATUS.measuring);
+  renderReadings();
+  renderResults();
+}
+
+function sample(pad, now) {
+  const s = state.sampling;
+  // A pad that goes away mid-measure spoils the whole reading: a partial one
+  // isn't a 2 s reading, and the line would say it was.
+  if (!pad || pad.index !== s.index || s.spoiled) { finishMeasure(false); return; }
+  const axes = pad.axes || [];
+  for (const st of s.sticks) {
+    const x = Number(axes[st.axes[0]]);
+    const y = Number(axes[st.axes[1]]);
+    if (Number.isFinite(x) && Number.isFinite(y)) s.samples.get(st.key).push([x, y]);
+  }
+  if (now - s.started >= SAMPLE_MS) finishMeasure(true);
+}
+
+function finishMeasure(complete) {
+  const s = state.sampling;
+  state.sampling = null;
+  const date = formatDate(new Date());
+  let any = false;
+  if (complete && state.pad) {
+    for (const st of s.sticks) {
+      const summary = summarise(s.samples.get(st.key));
+      if (!summary) continue;
+      state.measured.set(st.key, { summary, padId: state.pad.id, date });
+      any = true;
+    }
+  }
+  state.noSamples = !any;
+  setText(els.status, state.pad ? STATUS.connected : STATUS.waiting);
+  if (state.pad) renderReadings();
+  renderResults();
 }
 
 function reset() {
-  state.trails = [[], []];
-  state.peak = [0, 0];
-  state.rest = [null, null];
-  els.verdict.innerHTML = "";
+  state.sampling = null;
+  state.measured.clear();
+  state.noSamples = false;
+  state.trails.clear();
+  setText(els.status, state.pad ? STATUS.connected : STATUS.waiting);
+  if (state.pad) renderReadings();
+  renderResults();
+  dirty = true;
+}
+
+// ---------- rendering ----------
+
+function setText(el, text) {
+  if (el && el.textContent !== text) el.textContent = text;
+}
+
+function el(tag, attrs = {}, text) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+// The plots show the platform's sticks that the pad has. Between pads they
+// keep the last pad's count, so unplugging doesn't reshuffle the page.
+function syncPlots() {
+  const sticks = sticksFor(state.platform, state.pad ? state.pad.axes : state.lastAxes);
+  const same = sticks.length === plots.length && sticks.every((s, i) => s.key === plots[i].stick.key);
+  const figures = [...els.plots.querySelectorAll("figure.plot")];
+  if (sticks.length === figures.length) {
+    // Reuse the figures: relabel in place.
+    plots = sticks.map((stick, i) => {
+      const fig = figures[i];
+      setText(fig.querySelector("figcaption"), stick.label);
+      const canvas = fig.querySelector("canvas");
+      canvas.setAttribute("aria-label", `${stick.label} position`);
+      const prev = plots[i] && plots[i].canvas === canvas ? plots[i] : null;
+      return prev ? Object.assign(prev, { stick }) : { stick, canvas, ctx: canvas.getContext("2d"), size: 0 };
+    });
+  } else {
+    plots = sticks.map(stick => {
+      const canvas = el("canvas", { width: "358", height: "358", role: "img", "aria-label": `${stick.label} position` });
+      const fig = el("figure", { class: "plot" });
+      fig.append(el("figcaption", {}, stick.label), canvas);
+      return { stick, canvas, ctx: canvas.getContext("2d"), size: 0 };
+    });
+    els.plots.replaceChildren(...plots.map(p => p.canvas.parentElement));
+  }
+  els.plots.dataset.count = String(plots.length);
+  els.plots.hidden = plots.length === 0;
+  for (const p of plots) fitCanvas(p);
+  if (!same) dirty = true;
+}
+
+// One block per stick the pad has: an h3 and its rows. Never one for a stick
+// the pad doesn't report.
+function renderReadings() {
+  const sticks = currentSticks();
+  live = [];
+  const blocks = sticks.map(stick => {
+    const m = state.measured.get(stick.key);
+    const block = el("section", { class: "drift-stick" });
+    const rows = el("dl", { class: "dl-rows" });
+    const x = el("span", { class: "num" }, "0.000");
+    const y = el("span", { class: "num" }, "0.000");
+    const value = text => (m ? el("span", { class: "num" }, text) : el("span", { class: "quiet" }, NOT_MEASURED));
+    for (const [label, node] of [
+      ["X", x], ["Y", y],
+      ["Rest offset", value(m && m.summary.offset.toFixed(3))],
+      ["Jitter", value(m && m.summary.jitter.toFixed(3))],
+      ["Samples", value(m && String(m.summary.n))]
+    ]) {
+      const dd = el("dd");
+      dd.append(node);
+      rows.append(el("dt", {}, label), dd);
+    }
+    block.append(el("h3", {}, stick.label), rows);
+    live.push({ axes: stick.axes, x, y, lastX: "0.000", lastY: "0.000" });
+    return block;
+  });
+  const parts = [el("h2", { class: "visually-hidden" }, "Readings")];
+  if (blocks.length) parts.push(...blocks);
+  else parts.push(el("p", {}, "This controller doesn't report any sticks to the browser, so there is nothing to measure."));
+  els.readings.replaceChildren(...parts);
+  els.readings.dataset.count = String(blocks.length);
+  els.readings.hidden = false;
+  els.measure.disabled = !blocks.length || !!state.sampling;
+}
+
+// One line and one "Copy reading" button per measured stick, or the
+// no-readings message. The store line follows, for the platforms it sells.
+function renderResults() {
+  els.measure.disabled = !state.pad || !!state.sampling || !currentSticks().length;
+  const sticks = state.pad ? currentSticks() : sticksFor(state.platform, state.lastAxes);
+  const done = sticks.filter(s => state.measured.has(s.key));
+
+  if (state.noSamples) {
+    els.results.replaceChildren(Object.assign(el("p", { class: "notice" }), { innerHTML: NO_SAMPLES }));
+    els.results.hidden = false;
+  } else if (done.length) {
+    const list = el("ul", { class: "drift-lines" });
+    done.forEach((stick, i) => {
+      const m = state.measured.get(stick.key);
+      const line = readingLine({
+        label: stick.label, offset: m.summary.offset, jitter: m.summary.jitter,
+        n: m.summary.n, padId: m.padId, date: m.date
+      });
+      const id = `drift-line-${i}`;
+      // The date is kept on one line; the text is exactly the line copied.
+      const p = el("p", { class: "drift-line", id });
+      const cut = line.lastIndexOf(m.date);
+      if (cut > 0) p.append(line.slice(0, cut), el("span", { class: "num" }, m.date), line.slice(cut + m.date.length));
+      else p.textContent = line;
+      const button = el("button", { type: "button", class: "btn", "aria-describedby": id }, "Copy reading");
+      const said = el("span", { class: "visually-hidden", "aria-live": "polite" });
+      button.addEventListener("click", () => copyReading(button, p, said));
+      const li = el("li");
+      li.append(p, button, said);
+      list.append(li);
+    });
+    els.results.replaceChildren(list);
+    els.results.hidden = false;
+  } else {
+    els.results.replaceChildren();
+    els.results.hidden = true;
+  }
+
+  els.store.hidden = !(PLATFORMS[state.platform].stocked && done.length && !state.noSamples);
+}
+
+// ---------- Copy reading ----------
+
+async function copyReading(button, p, said) {
+  const text = p.textContent;
+  let copied = false;
+  try {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    }
+  } catch { /* no permission, or not a secure context: select it instead */ }
+  if (!copied) {
+    selectText(p);
+    try { copied = document.execCommand("copy"); } catch { copied = false; }
+  }
+  feedback(button, said, copied ? "Copied" : "Selected",
+    copied ? "Copied" : "The reading is selected, ready to copy.");
+}
+
+function selectText(node) {
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } catch { /* nothing to select with */ }
+}
+
+function feedback(button, said, label, message) {
+  clearTimeout(button._timer);
+  button.textContent = label;
+  said.textContent = message;
+  button._timer = setTimeout(() => {
+    button.textContent = "Copy reading";
+    said.textContent = "";
+  }, FEEDBACK_MS);
+}
+
+// ---------- the plot ----------
+
+function readColours() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = name => cs.getPropertyValue(name).trim();
+  return {
+    rule: v("--rule-c"), edge: v("--edge"), graphite: v("--graphite"), ink: v("--ink"),
+    font: `400 14px ${v("--font-text") || "sans-serif"}`
+  };
+}
+
+// Sized in device pixels from the column the canvas sits in, so it is never
+// wider than its column and never soft on a high-density screen.
+function fitCanvas(p) {
+  const size = p.canvas.clientWidth;
+  if (!size) return;
+  const dpr = window.devicePixelRatio || 1;
+  const px = Math.round(size * dpr);
+  if (p.canvas.width !== px) p.canvas.width = px;
+  if (p.canvas.height !== px) p.canvas.height = px;
+  p.ctx.setTransform(px / size, 0, 0, px / size, 0, 0);
+  p.size = size;
+}
+
+// A resize clears a canvas, so it is redrawn straight away rather than on the
+// next frame.
+function refit() {
+  for (const p of plots) fitCanvas(p);
+  drawAll();
+}
+
+function drawAll(pad = state.pad ? activePad() : null) {
+  for (const p of plots) {
+    const xy = pad ? [axis(pad, p.stick.axes[0]), axis(pad, p.stick.axes[1])] : null;
+    draw(p, xy, pad ? state.trails.get(p.stick.key) : null);
+  }
+}
+
+function draw(p, xy, trail) {
+  const { ctx, size: w } = p;
+  if (!w || !colours) return;
+  const c = w / 2;
+  const r = c - 8;
+  const at = v => c + v * r;
+  // Half-pixel offsets keep 1px lines crisp.
+  const crisp = v => Math.round(v) + 0.5;
+  ctx.clearRect(0, 0, w, w);
+
+  // The 0.25 grid, across the stick's square of travel.
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = colours.rule;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  for (let i = -4; i <= 4; i++) {
+    if (i === 0) continue;
+    const q = crisp(at(i / 4));
+    ctx.moveTo(q, at(-1)); ctx.lineTo(q, at(1));
+    ctx.moveTo(at(-1), q); ctx.lineTo(at(1), q);
+  }
+  ctx.stroke();
+
+  // Crosshair through centre.
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(Math.round(c), at(-1)); ctx.lineTo(Math.round(c), at(1));
+  ctx.moveTo(at(-1), Math.round(c)); ctx.lineTo(at(1), Math.round(c));
+  ctx.stroke();
+
+  // The edge of the stick's travel: 1 on the browser's scale.
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = colours.edge;
+  ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2); ctx.stroke();
+
+  // The dashed ring at BANDS.deadzone, labelled with its value.
+  const ring = r * BANDS.deadzone;
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = colours.graphite;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.arc(c, c, ring, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = colours.graphite;
+  ctx.font = colours.font;
+  ctx.textBaseline = "bottom";
+  ctx.textAlign = "left";
+  ctx.fillText(String(BANDS.deadzone), c + ring * 0.71 + 4, c - ring * 0.71 - 2);
+
+  if (!xy) return;
+
+  // The trail: the last TRAIL_MAX positions, in ink at 55%.
+  if (trail && trail.length > 1) {
+    ctx.strokeStyle = colours.ink;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    trail.forEach(([tx, ty], i) => (i ? ctx.lineTo(at(tx), at(ty)) : ctx.moveTo(at(tx), at(ty))));
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // The stick now: an 8px ink dot. It never changes colour.
+  ctx.fillStyle = colours.ink;
+  ctx.beginPath(); ctx.arc(at(xy[0]), at(xy[1]), 4, 0, Math.PI * 2); ctx.fill();
 }

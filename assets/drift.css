@@ -1,0 +1,133 @@
+/* ==========================================================================
+   The Controller Drift Tester (/projects/drift-tester). Loaded after
+   site.css; layout only, in site.css tokens. No colour values here: the plot
+   reads its colours from the same tokens (drift-tester.js).
+
+   Order on a phone: steps, status, plot(s), then whatever a connect or a
+   measurement adds (controller id, readings, results, store line). From
+   60em: 5 columns of steps, status and readings beside 7 columns of plots.
+   ========================================================================== */
+
+.drift-scope { margin-top: var(--s-3); max-width: var(--measure); }
+
+/* The tool holds a full viewport below the header, so content that arrives
+   with a pad or a measurement only ever grows into space that is already
+   there, and the method section starts below the first screen. */
+.drift-tool {
+  min-height: calc(100svh - var(--header-h));
+  padding-bottom: var(--s-7);
+}
+.drift-tool > * + * { margin-top: var(--s-5); }
+
+/* ---------- Steps ---------- */
+/* A real sequence, so a numbered list with the browser's own markers. */
+.steps {
+  display: grid;
+  gap: var(--s-4);
+  max-width: var(--measure);
+  margin: 0;
+  padding-left: 1.5em;
+}
+.steps li { padding-left: var(--s-1); }
+.steps li::marker { font-weight: 600; }
+.steps li > * + * { margin-top: var(--s-3); }
+/* Step 2: the question and its select share a row while they fit. */
+.steps li.drift-platform > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+.drift-platform label { font-weight: 500; }
+.drift-platform select { max-width: 100%; }
+
+/* One short line that is swapped, never lengthened, so the plots below it
+   never move when a pad connects. */
+.drift-status {
+  min-height: calc(1em * var(--lh-body));
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Plots ---------- */
+/* Square canvases on sweep, as wide as their column (one plot stops at
+   560px). Two plots stack on phones and sit side by side from 35em. */
+.drift-plots { display: grid; gap: var(--s-5); }
+.plot { min-width: 0; max-width: 560px; margin: 0; }
+.plot figcaption { margin-bottom: var(--s-2); font-weight: 500; }
+.plot canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 0;
+  background: var(--sweep);
+}
+@media (min-width: 35em) {
+  .drift-plots[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--col-gap); }
+}
+
+/* ---------- What a connect and a measurement add ---------- */
+.drift-pad { max-width: var(--measure); }
+
+/* One block per stick: an h3 and its rows. The values are short, so label
+   and value share a row at every width. Two blocks sit side by side from
+   35em; from 60em they share the 5-column left side, which is too narrow
+   for two, so they stack there again. */
+.drift-readings { display: grid; gap: var(--s-5); }
+.drift-stick { display: grid; gap: var(--s-2); min-width: 0; }
+.drift-stick .dl-rows { grid-template-columns: max-content minmax(0, 1fr); }
+.drift-stick .dl-rows dt,
+.drift-stick .dl-rows dd { padding: var(--s-3) 0; border-bottom: var(--rule); }
+.drift-stick .dl-rows dt { padding-right: var(--s-4); }
+@media (min-width: 35em) {
+  .drift-readings[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--col-gap); }
+}
+
+.drift-lines {
+  display: grid;
+  gap: var(--s-5);
+  max-width: var(--measure);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.drift-lines li { display: grid; gap: var(--s-2); justify-items: start; }
+.drift-line { overflow-wrap: anywhere; }
+.drift-line .num { white-space: nowrap; }
+.drift-results .notice { max-width: var(--measure); }
+
+/* ---------- From 60em: 5 and 7 columns ---------- */
+/* The left column stacks the steps, status and everything added later; the
+   plots span every row on the right and stay in view while the left scrolls.
+   The last row takes any spare height, so the left rows keep their own. */
+@media (min-width: 60em) {
+  .drift-tool {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: repeat(6, auto) 1fr;
+    column-gap: var(--col-gap);
+    align-items: start;
+  }
+  .drift-tool > * { grid-column: 1 / span 5; }
+  .drift-tool > .steps { grid-row: 1; }
+  .drift-tool > .drift-status { grid-row: 2; }
+  .drift-tool > .drift-pad { grid-row: 3; }
+  .drift-tool > .drift-readings { grid-row: 4; }
+  .drift-tool > .drift-results { grid-row: 5; }
+  .drift-tool > .drift-store { grid-row: 6; }
+  .drift-tool > .drift-readings[data-count="2"] { grid-template-columns: minmax(0, 1fr); }
+  .drift-tool > .drift-plots {
+    position: sticky;
+    top: var(--sticky-top);
+    grid-column: 6 / span 7;
+    grid-row: 1 / -1;
+    margin-top: 0;
+  }
+}
+
+/* ---------- Method ---------- */
+.drift-about { padding-top: var(--s-7); }
+.drift-about > h2:first-child { margin-top: 0; }
