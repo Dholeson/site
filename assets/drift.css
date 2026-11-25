@@ -56,7 +56,7 @@
 }
 
 /* ---------- Plots ---------- */
-/* Square canvases on sweep, as wide as their column (one plot stops at
+/* Square canvases on a panel, as wide as their column (one plot stops at
    560px). Two plots stack on phones and sit side by side from 35em. */
 .drift-plots { display: grid; gap: var(--s-5); }
 .plot { min-width: 0; max-width: 560px; margin: 0; }
@@ -67,8 +67,11 @@
   height: auto;
   aspect-ratio: 1 / 1;
   border-radius: 0;
-  background: var(--sweep);
+  background: var(--panel);
 }
+/* Contrast themes force the canvas's CSS background but not what is drawn
+   on it, so keep the token background behind the token strokes. */
+@media (forced-colors: active) { .plot canvas { forced-color-adjust: none; } }
 @media (min-width: 35em) {
   .drift-plots[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--col-gap); }
 }

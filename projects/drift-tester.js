@@ -16,7 +16,8 @@
 // their values; the controller's id line comes after them.
 //
 // The plot's colours come from site.css's custom properties. There are no
-// colour values in this file.
+// colour values in this file. When the theme changes, assets/theme.js
+// announces "dhole:theme", and the plots are redrawn from the tokens again.
 
 import {
   BANDS, DEFAULT_PLATFORM, PLATFORMS, SAMPLE_MS, TRAIL_MAX,
@@ -70,6 +71,8 @@ export function initDriftTester() {
   setText(els.measure, `Measure rest (${SAMPLE_MS / 1000} s)`);
 
   colours = readColours();
+  // The theme changed (assets/theme.js): read the tokens again and redraw.
+  window.addEventListener("dhole:theme", () => { colours = readColours(); drawAll(); });
   state.platform = PLATFORMS[els.platform.value] ? els.platform.value : DEFAULT_PLATFORM;
   syncPlots();
   renderReadings();

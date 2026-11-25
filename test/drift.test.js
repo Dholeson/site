@@ -5,6 +5,8 @@
 // empty measurement is no measurement, and a stick the pad doesn't have is
 // never listed. The page files are checked as text: one scale (BANDS), no
 // grade words, no colour values in the script, and the copy the spec fixes.
+// And the theme (dark-spec §6.1): the theme head and ?v=3, the plot redrawn
+// on "dhole:theme", its canvas on --panel, and kept so under forced colours.
 //
 // Run with:  npm test
 
@@ -258,20 +260,38 @@ test("the head: title, description, JSON-LD, og-tools.png and the shared snippet
   assert.match(HTML, /<meta property="og:image" content="https:\/\/dhole\.dev\/assets\/brand\/og-tools\.png" \/>/);
   assert.match(HTML, /<meta name="twitter:image" content="https:\/\/dhole\.dev\/assets\/brand\/og-tools\.png" \/>/);
   assert.ok(!HTML.includes("og.png"));
+  // The theme head (dark-spec §4.1): the dark theme-color first, since the
+  // first matching one wins; theme.js after the metas it rewrites and before
+  // every stylesheet, so data-theme is set before first paint and the plot's
+  // first draw reads the chosen theme's tokens. ?v=3: this release's new HTML
+  // needs its new CSS (spec §2.3).
   const order = [
     '<link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />',
     '<link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />',
     '<link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />',
+    '<meta name="color-scheme" content="light dark" />',
+    '<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)" data-dark />',
     '<meta name="theme-color" content="#ffffff" />',
-    '<link rel="stylesheet" href="/assets/site.css?v=2" />',
-    '<link rel="stylesheet" href="/assets/drift.css?v=2" />',
-    '<script type="module" src="/projects/drift-tester.entry.js?v=2"></script>'
+    '<script src="/assets/theme.js?v=3"></script>',
+    '<link rel="stylesheet" href="/assets/site.css?v=3" />',
+    '<link rel="stylesheet" href="/assets/drift.css?v=3" />',
+    '<script type="module" src="/projects/drift-tester.entry.js?v=3"></script>'
   ];
   let at = -1;
   for (const tag of order) {
     const i = HTML.indexOf(tag);
     assert.ok(i > at, `missing or out of order: ${tag}`);
     at = i;
+  }
+  assert.equal(HTML.match(/<meta name="theme-color"/g).length, 2, "exactly two theme-color metas");
+  assert.equal(HTML.match(/<script src=/g).length, 1, "theme.js is the one classic script");
+  // Every stylesheet and entry script is versioned; modulepreloads are not
+  // (they must name files that exist, and drift-tester.js stays unversioned:
+  // its one change, a listener, pairs safely with any HTML).
+  for (const m of HTML.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)) assert.match(m[1], /\?v=3$/, m[1]);
+  for (const m of HTML.matchAll(/<script type="module" src="([^"]+)"/g)) assert.match(m[1], /\?v=3$/, m[1]);
+  for (const m of HTML.matchAll(/<link rel="modulepreload" href="([^"]+)"/g)) {
+    assert.ok(!m[1].includes("?"), `${m[1]}: preloads stay unversioned`);
   }
   assert.ok(!/pages\.css|demo\.css|favicon\.svg|apple-touch-icon\.png/.test(HTML));
 });
@@ -342,6 +362,41 @@ test("drift.css: tokens only, the tool holds a viewport, 5/7 from 60em, side by 
   assert.match(CSS, /@media \(min-width: 35em\) \{\s*\.drift-plots\[data-count="2"\]/);
   assert.match(CSS, /@media \(min-width: 35em\) \{\s*\.drift-readings\[data-count="2"\]/);
   for (const m of CSS.matchAll(/font-size:\s*([^;]+);/g)) assert.fail(`drift.css sets a font size: ${m[1]}`);
+});
+
+// dark-spec §6.1. The canvas background is CSS, so it follows the theme by
+// itself; the strokes are pixels drawn with the tokens read at init, so they
+// only follow if the script reads the tokens again and redraws.
+section("the plot follows the theme");
+
+test("drift-tester.js redraws on dhole:theme: it re-reads the tokens, then calls drawAll()", () => {
+  const init = /export function initDriftTester\(\) \{([\s\S]*?)\n\}/.exec(JS)[1];
+  const listener = 'window.addEventListener("dhole:theme", () => { colours = readColours(); drawAll(); });';
+  assert.ok(init.includes(listener), "initDriftTester has no dhole:theme listener that re-reads the colours and redraws");
+  assert.equal(JS.split('addEventListener("dhole:theme"').length - 1, 1, "one dhole:theme listener");
+  // Right after the first read, so it is in place before the early return
+  // for a browser without the Gamepad API (whose plots are drawn too).
+  const first = init.indexOf("colours = readColours();");
+  assert.ok(first >= 0 && init.indexOf(listener) > first, "the listener is added after the first readColours()");
+  assert.ok(init.indexOf(listener) < init.indexOf('typeof navigator.getGamepads !== "function"'), "the listener is added before the no-Gamepad return");
+  // drawAll() with no argument redraws from state: the live pad, if any, and
+  // its trail. readColours() reads every colour the plot draws with.
+  assert.match(JS, /function drawAll\(pad = state\.pad \? activePad\(\) : null\)/);
+  const reads = /function readColours\(\) \{([\s\S]*?)\n\}/.exec(JS)[1];
+  for (const token of ["--rule-c", "--edge", "--graphite", "--ink"]) assert.ok(reads.includes(`v("${token}")`), `readColours() doesn't read ${token}`);
+});
+
+test("drift.css: the canvas sits on --panel (not the unit-photo --sweep), and keeps it under forced colours", () => {
+  const css = CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+  const canvas = /(?:^|\})\s*\.plot canvas \{([^}]*)\}/.exec(css);
+  assert.ok(canvas, "no .plot canvas rule");
+  assert.match(canvas[1], /background: var\(--panel\);/, ".plot canvas background is not var(--panel)");
+  assert.ok(!/--sweep/.test(css), "drift.css names --sweep, which is for unit photos only");
+  // A contrast theme forces the canvas's CSS background but not its drawn
+  // strokes: with Dark chosen on a light forced palette the dot was 1.27:1.
+  assert.match(css, /@media \(forced-colors: active\) \{\s*\.plot canvas \{\s*forced-color-adjust: none;\s*\}\s*\}/,
+    "no forced-color-adjust: none on .plot canvas inside @media (forced-colors: active)");
+  assert.equal(css.split("forced-color-adjust").length - 1, 1, "forced-color-adjust only on the plot");
 });
 
 await run();
