@@ -25,10 +25,13 @@
   <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
   <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)" data-dark />
   <meta name="theme-color" content="#ffffff" />
-  <link rel="stylesheet" href="/assets/site.css?v=2" />
-  <link rel="stylesheet" href="/assets/home.css?v=2" />
-  <script type="module" src="/assets/entry/home.js?v=2"></script>
+  <script src="/assets/theme.js?v=3"></script>
+  <link rel="stylesheet" href="/assets/site.css?v=3" />
+  <link rel="stylesheet" href="/assets/home.css?v=3" />
+  <script type="module" src="/assets/entry/home.js?v=3"></script>
   <!-- Without JS the shelf is never checked, so the status line offers the store instead. -->
   <noscript><style>.shelf-checking { display: none; }</style></noscript>
   <link rel="modulepreload" href="/assets/chrome.js" />
@@ -77,6 +80,9 @@
             <!-- Two lines are held for this, so assets/home.js fills it without moving anything. -->
             <p class="index-status" id="shelf-status" aria-live="polite"><span class="shelf-checking">Checking what's on the shelf…</span><noscript><a href="/store">Open the store</a></noscript></p>
           </div>
+          <!-- From 60em, up to three listed units' first photos, filled by assets/home.js.
+               Hidden until then; the strip is absolutely placed, so the row keeps its height. -->
+          <div class="shelf-media" id="shelf-media" hidden></div>
         </section>
 
         <section class="index-row">
@@ -107,10 +113,16 @@
             <p>A six-track step sequencer built on raw Web Audio oscillators.</p>
             <p class="quiet">Built with Web Audio. No dependencies.</p>
           </div>
+          <!-- A theme pair (site.css .for-light / .for-dark): only the current
+               theme's picture shows, and both images are lazy, so only it is fetched. -->
           <a class="index-media" href="/projects/chiptune" tabindex="-1">
-            <picture>
-              <source media="(min-width: 60em)" srcset="/assets/home/chiptune.webp" width="720" height="405" />
-              <img src="/assets/home/chiptune-phone.webp" width="358" height="360" alt="The chiptune sequencer with its preloaded pattern: Play, Randomise and Clear, tempo, waveform and volume, and the step grid, starting with the Lead track" loading="lazy" decoding="async" />
+            <picture class="for-light">
+              <source media="(min-width: 60em)" srcset="/assets/home/chiptune-playing.webp" width="720" height="405" />
+              <img src="/assets/home/chiptune-playing-phone.webp" width="358" height="360" alt="The chiptune sequencer playing its preloaded pattern, with a dashed outline on the step being heard" loading="lazy" decoding="async" />
+            </picture>
+            <picture class="for-dark">
+              <source media="(min-width: 60em)" srcset="/assets/home/chiptune-playing-dark.webp" width="720" height="405" />
+              <img src="/assets/home/chiptune-playing-phone-dark.webp" width="358" height="360" alt="The chiptune sequencer playing its preloaded pattern, with a dashed outline on the step being heard" loading="lazy" decoding="async" />
             </picture>
           </a>
         </section>

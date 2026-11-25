@@ -4,8 +4,10 @@
    Tokens only: no colour values here (test/design.test.js). The index rows
    use the shared .index vocabulary in site.css: one column below 60em; from
    60em, 12 columns with the title in 3, the text in 5 and the capture in 4,
-   and a row without a capture gives its text 9. Rows are grouped by space
-   and the weight of their titles, never by rules or boxes.
+   and a row without a capture gives its text 9. The Store row's text is 5
+   columns in every shelf state, since #shelf-media follows it (the price of
+   no shift when the photos arrive). Rows are grouped by space and the
+   weight of their titles, never by rules or boxes.
    ========================================================================== */
 
 /* The status line and Listed now arrive after first paint. The status line
@@ -24,17 +26,32 @@ main.home { min-height: calc(100svh - var(--header-h)); }
   }
 }
 
-/* Captures sit on a square sweep panel, so a capture of a white page reads
-   as a picture rather than as controls on this page. Capped so no capture
-   outweighs the Store row: 240px wide (panel included) below 60em, the
-   4-column slot from 60em (376px at 1280). Below 60em the phone crop shows;
-   from 60em the desktop capture (the <source> in index.html). */
+/* Captures sit on a square panel (site.css), so a capture of the site's
+   own page reads as a picture rather than as controls on this page, in
+   either theme. Capped so no capture outweighs the Store row: 280px wide
+   (panel included) below 60em, the 4-column slot from 60em (376px at 1280).
+   Any narrower and the chiptune capture is too small to read as the tool;
+   at full width it reads as live controls. Below 60em the phone crop
+   shows; from 60em the desktop capture (the <source> in index.html). The
+   chiptune capture is a theme pair (site.css .for-light / .for-dark). */
 .home .index-media {
-  max-width: 240px;
+  max-width: 280px;
   padding: var(--s-3);
 }
 @media (min-width: 60em) {
   .home .index-media { max-width: none; }
+}
+
+/* Store row: up to three listed units' first photos (assets/home.js), from
+   60em only, in the row's 4-column media slot. The strip is absolutely
+   placed, so the row keeps the height its text gives it. Below 60em it is
+   never shown, and its lazy images are never fetched. Unit photos, so the
+   photo panel (--sweep), contain-fit, square. */
+.shelf-media { display: none; }
+@media (min-width: 60em) {
+  .home .shelf-media:not([hidden]) { display: block; grid-column: span 4; position: relative; align-self: stretch; }
+  .shelf-strip { position: absolute; inset: 0 0 auto 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); }
+  .shelf-strip img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; background: var(--sweep); object-fit: contain; }
 }
 
 /* After the index: the same space as between its rows. */

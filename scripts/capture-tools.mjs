@@ -1,13 +1,59 @@
 // npm run capture:tools: takes the tools' captures from the real pages.
 //
-// chiptune: the /projects and home index rows' pair (data/projects.js `shot`).
-//   desktop  /projects/chiptune at 1440x900, DPR 1: the transport and the
-//            grid, framed at 16:9 and scaled to 720x405
-//   phone    the same page at 390x844, DPR 1: the grid's width (358px),
-//            from 4px above the transport (Play, Randomise and Clear, then
-//            tempo, waveform and volume) to 4px below the Lead track, so it
-//            ends on a whole track; unscaled. Its height goes into
-//            data/projects.js and index.html.
+//   node scripts/capture-tools.mjs [chiptune] [discover-cleaner]   (default: both)
+//
+// chiptune: /projects/chiptune playing its own preloaded pattern, in both
+// themes. Six files, every one a real frame of the real page, taken after
+// Play was pressed and while the pattern sounds:
+//
+//   assets/home/chiptune-playing.webp                 720x405    desktop, light
+//   assets/home/chiptune-playing-dark.webp            720x405    desktop, dark
+//   assets/home/chiptune-playing-phone.webp           358xH      phone, light
+//   assets/home/chiptune-playing-phone-dark.webp      358xH      phone, dark
+//   assets/portfolio/chiptune-playing-wide.webp       1440x810   desktop, light
+//   assets/portfolio/chiptune-playing-wide-dark.webp  1440x810   desktop, dark
+//
+//   desktop  a 1440x900 window at DPR 2, caught while column 4 (step 5)
+//            plays: the transport's controls and the grid's labels and
+//            cells, padded 24px and grown to 16:9. That one frame is scaled
+//            to 720x405 (home and /projects) and to 1440x810 (the
+//            portfolio), so it must be at least 1440 device px wide.
+//   phone    a 390x844 window at DPR 1, caught while column 6 (step 7)
+//            plays: the grid's width (358px), from 4px above the transport
+//            (Play, now reading Stop, Randomise and Clear, then tempo,
+//            waveform and volume) to 4px below the Lead track, so it ends
+//            on a whole track. Unscaled; H is measured (360 today).
+//
+// The theme is the browser context's colorScheme with nothing stored, so
+// assets/theme.js follows the device; the script checks that html's
+// computed color-scheme is that theme. A dark twin is its light file's name
+// plus "-dark", at the same size: both themes take the same steps, so a
+// pair shows the same moment of the pattern.
+//
+// Taking a frame: load the page, reload until the text renders in Public
+// Sans (document.fonts.check() and the fonts Chromium used for the grid
+// labels and the Play button; it refuses otherwise), wait for the preloaded
+// pattern, press Play, move the pointer to (0, 0), off every cell, and blur.
+// Then poll every 15ms until the wanted column is the one playing,
+// screenshot it, and read the column again: the frame is kept only if the
+// column hasn't moved and Play reads "Stop". Otherwise wait for the pattern
+// to come round again (16 steps, about 1.8 s at the page's own 132 BPM,
+// which is left alone so the frame shows the page as it opens). A frame
+// gets 20 s of tries; each kept frame prints the attempt it was kept on. At
+// 20 s it exits 1, naming the file and the attempts made. All six frames
+// are taken before anything is written, so a failure writes nothing and no
+// pair is ever half new. A playhead that never moves (no AudioContext in
+// the browser) fails the same way.
+//
+// After writing: each file's pixel size from its WebP header, in a table,
+// checked against every place that names it (data/projects.js shot and
+// shot.dark; data/portfolio.js image, imageMobile and imageDark; the
+// <source> and <img> tags in index.html). A size mismatch, or a file that
+// still names one of the old captures, exits 1 and says what to update; a
+// file nothing names yet is a note. The script never edits a page or a data
+// file: copy the sizes it prints by hand. It deletes the captures this
+// replaced, assets/home/chiptune.webp and chiptune-phone.webp, and any
+// chiptune*.png in assets/home/ or assets/portfolio/.
 //
 // discover-cleaner: the phone views for /projects/discover-cleaner, the home
 // and /projects row and the case study, each shown below 60em through a
@@ -30,39 +76,20 @@
 // (test/tools.test.js, test/home.test.js and test/portfolio.test.js read the
 // files' headers).
 //
-//   node scripts/capture-tools.mjs [chiptune] [discover-cleaner]   (default: both)
-//
-// It serves the repo with scripts/lib/static-server.mjs (random port, the real
-// CSP), loads the page, then reloads it, so the font (font-display: optional)
-// is in place, and refuses to capture unless the text is rendered in Public
-// Sans: document.fonts.check() and the fonts Chromium actually used for the
-// grid labels and the Play button. It waits for the preloaded pattern before
-// each shot.
-//
-// Output: assets/home/chiptune.webp and chiptune-phone.webp, encoded with
-// sharp. When sharp can't be imported it writes .png instead (scaled in the
-// browser) and switches the two srcs in data/projects.js to .png. Either
-// way the other pair is deleted, so only the written extension is committed.
-// The Discover Cleaner views need sharp (they are cropped and encoded with
-// it, as WebP like the captures beside them); without it that part stops.
-//
-// Needs Playwright (scripts/lib/playwright.mjs), for example:
+// It serves the repo with scripts/lib/static-server.mjs (random port, the
+// real CSP). Both parts encode with sharp, which is required (it comes with
+// wrangler; otherwise npm i --no-save sharp, and keep it out of the commit):
+// lanczos3 where a frame is scaled, WebP at quality 90, effort 6, for the
+// chiptune files. Needs Playwright (scripts/lib/playwright.mjs), for example:
 //   PLAYWRIGHT_MODULE=/opt/node-tools/node_modules/playwright/index.js npm run capture:tools
-// Run it after any change to the sequencer's look, then commit the images.
+// Run it after any change to a tool's look, look at every file it wrote, and
+// commit them.
 
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { start, ROOT } from "./lib/static-server.mjs";
 import { loadChromium } from "./lib/playwright.mjs";
-
-const PAGE = "/projects/chiptune";
-const DESKTOP = { viewport: { width: 1440, height: 900 }, out: { width: 720, height: 405 } };
-const PHONE = { viewport: { width: 390, height: 844 }, out: null }; // unscaled: the frame's own size
-const PAD = 24;            // space kept round the controls in the desktop frame
-const TRACKS = 6;
-const STEPS = 16;
-const OUT_DIR = join(ROOT, "assets", "home");
-const DATA = join(ROOT, "data", "projects.js");
 
 const fail = msg => { throw new Error(`capture-tools: ${msg}`); };
 
@@ -70,10 +97,43 @@ async function loadSharp() {
   try {
     const mod = await import("sharp");
     return mod.default || mod;
-  } catch {
-    return null;
+  } catch (err) {
+    throw new Error("capture-tools: sharp is required (npm i --no-save sharp, kept out of the commit)", { cause: err });
   }
 }
+
+// ---------- Chiptune ----------
+
+const PAGE = "/projects/chiptune";
+const THEMES = ["light", "dark"];
+const TRACKS = 6;
+const STEPS = 16;
+const PAD = 24;            // CSS px kept round the controls in the desktop frame
+const PHONE_WIDTH = 358;   // the phone grid's width, and the phone crop's
+const POLL_MS = 15;
+const BUDGET_MS = 20000;   // per frame: about 11 turns of the 16-step pattern
+const WEBP = { quality: 90, effort: 6 };
+
+// The two frames each theme takes, and the files each one makes. A dark
+// twin's name is its light file's plus "-dark".
+const FRAMES = [
+  {
+    name: "desktop", viewport: { width: 1440, height: 900 }, dpr: 2, col: 4,
+    outs: [
+      { file: "assets/home/chiptune-playing.webp", width: 720, height: 405 },
+      { file: "assets/portfolio/chiptune-playing-wide.webp", width: 1440, height: 810 }
+    ]
+  },
+  {
+    name: "phone", viewport: { width: 390, height: 844 }, dpr: 1, col: 6,
+    outs: [{ file: "assets/home/chiptune-playing-phone.webp", width: null, height: null }] // unscaled
+  }
+];
+const themed = (file, theme) => (theme === "dark" ? file.replace(/\.webp$/, "-dark.webp") : file);
+
+// The captures this replaces: deleted after a run.
+const OLD = ["assets/home/chiptune.webp", "assets/home/chiptune-phone.webp"];
+const OLD_PNG_DIRS = ["assets/home", "assets/portfolio"];
 
 // The families Chromium rendered a node's text with (DevTools protocol).
 async function usedFonts(page, selector) {
@@ -91,9 +151,10 @@ async function usedFonts(page, selector) {
   }
 }
 
-// Load, reload, check the font, wait for the preloaded pattern.
-async function openSequencer(browser, base, viewport) {
-  const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
+// Load, reload until Public Sans renders, check the theme, wait for the
+// preloaded pattern. Returns the page with nothing hovered, focused or playing.
+async function openSequencer(browser, base, frame, theme) {
+  const context = await browser.newContext({ viewport: frame.viewport, deviceScaleFactor: frame.dpr, colorScheme: theme });
   const page = await context.newPage();
   const problems = [];
   page.on("console", m => { if (m.type() === "error") problems.push(m.text()); });
@@ -111,6 +172,14 @@ async function openSequencer(browser, base, viewport) {
     if (!ok && attempt === 2) fail(`text isn't rendered in Public Sans (labels: ${label.join(", ")}; Play: ${play.join(", ")})`);
   }
 
+  const scheme = await page.evaluate(() => ({
+    computed: getComputedStyle(document.documentElement).colorScheme,
+    stored: document.documentElement.getAttribute("data-theme")
+  }));
+  if (scheme.computed !== theme || scheme.stored !== null) {
+    fail(`${frame.name}, ${theme}: html's color-scheme is "${scheme.computed}"${scheme.stored ? ` with data-theme="${scheme.stored}"` : ""}, not "${theme}" from the device`);
+  }
+
   await page.waitForFunction(({ cells }) => document.querySelectorAll("#seq-grid .seq-cell").length === cells
     && document.querySelector('#seq-grid .seq-cell[aria-pressed="true"]'), { cells: TRACKS * STEPS });
   const state = await page.evaluate(() => ({
@@ -119,15 +188,11 @@ async function openSequencer(browser, base, viewport) {
     play: document.getElementById("play-btn").textContent.trim()
   }));
   if (state.on === 0 || state.playing || state.play !== "Play") fail(`unexpected state ${JSON.stringify(state)}`);
-  // Nothing hovered or focused.
-  await page.mouse.move(0, 0);
-  await page.evaluate(() => document.activeElement && document.activeElement.blur());
-  if (problems.length) fail(`the page logged errors: ${problems.join(" | ")}`);
-  return { context, page };
+  return { context, page, problems };
 }
 
 // The box round the transport's controls and the grid's labels and cells,
-// padded and grown to 16:9 (downwards, or to the right).
+// padded and grown to 16:9 (downwards, or to the right), in CSS px.
 async function desktopFrame(page) {
   const box = await page.evaluate(() => {
     const els = document.querySelectorAll(".seq-transport .btn-row > *, .seq-control, .seq-label, .seq-cell");
@@ -136,28 +201,23 @@ async function desktopFrame(page) {
       const q = el.getBoundingClientRect();
       l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom);
     }
-    return { l, t, r, b, pageW: document.documentElement.scrollWidth, pageH: document.documentElement.scrollHeight };
+    return { l, t, r, b };
   });
   let x = Math.floor(box.l - PAD), y = Math.floor(box.t - PAD);
   let w = Math.ceil(box.r + PAD) - x, h = Math.ceil(box.b + PAD) - y;
-  const ratio = DESKTOP.out.width / DESKTOP.out.height;
+  const ratio = 16 / 9;
   if (w / h > ratio) h = Math.round(w / ratio); else w = Math.round(h * ratio);
-  if (x < 0 || y < 0 || x + w > box.pageW || y + h > box.pageH) fail(`the frame ${x},${y} ${w}x${h} leaves the page`);
   return { x, y, width: w, height: h };
 }
 
 // The grid's width, from 4px above the transport to 4px below the Lead
 // track: the controls and one whole track, never a track cut in half.
-const PHONE_WIDTH = 358;
 async function phoneFrame(page) {
   const r = await page.evaluate(() => {
     const steps = document.querySelector(".seq-steps").getBoundingClientRect();
     const transport = document.querySelector(".seq-transport").getBoundingClientRect();
     const lead = document.querySelector(".seq-track").getBoundingClientRect();
-    return {
-      left: steps.left, width: steps.width, top: transport.top + window.scrollY, bottom: lead.bottom + window.scrollY,
-      transport: [transport.left, transport.right]
-    };
+    return { left: steps.left, width: steps.width, top: transport.top, bottom: lead.bottom, transport: [transport.left, transport.right] };
   });
   if (Math.round(r.width) !== PHONE_WIDTH) fail(`the phone grid is ${r.width}px wide, not ${PHONE_WIDTH}`);
   if (r.transport[0] < r.left - 0.5 || r.transport[1] > r.left + r.width + 0.5) fail("the transport is wider than the grid");
@@ -165,81 +225,175 @@ async function phoneFrame(page) {
   return { x: Math.round(r.left), y, width: PHONE_WIDTH, height: Math.ceil(r.bottom + 4) - y };
 }
 
-// Scale a PNG in the page with a canvas (the fallback when sharp is missing).
-async function scaleInBrowser(page, png, width, height) {
-  const data = await page.evaluate(async ({ b64, width, height }) => {
-    const img = new Image();
-    img.src = `data:image/png;base64,${b64}`;
-    await img.decode();
-    const c = document.createElement("canvas");
-    c.width = width; c.height = height;
-    const g = c.getContext("2d");
-    g.imageSmoothingEnabled = true;
-    g.imageSmoothingQuality = "high";
-    g.drawImage(img, 0, 0, width, height);
-    return c.toDataURL("image/png").split(",")[1];
-  }, { b64: png.toString("base64"), width, height });
-  return Buffer.from(data, "base64");
+// The column being heard (every track's cell in it is .playing), what Play
+// says, and whether the pointer is over a cell.
+const readPlayhead = () => {
+  const cols = [...document.querySelectorAll("#seq-grid .seq-cell.playing")].map(c => Number(c.dataset.col));
+  const col = cols.length && cols.every(c => c === cols[0]) ? cols[0] : -1;
+  return {
+    col, cells: cols.length,
+    play: document.getElementById("play-btn").textContent.trim(),
+    hovered: Boolean(document.querySelector(".seq-cell:hover"))
+  };
+};
+
+// Press Play, then catch the frame's column: one theme's one frame, as a
+// PNG at the frame's DPR. Throws after BUDGET_MS without a kept frame.
+async function catchFrame(browser, base, frame, theme) {
+  const label = themed(frame.outs[0].file, theme);
+  const { context, page, problems } = await openSequencer(browser, base, frame, theme);
+  try {
+    await page.click("#play-btn");
+    await page.mouse.move(0, 0);
+    await page.evaluate(() => document.activeElement && document.activeElement.blur());
+    const clip = await (frame.name === "desktop" ? desktopFrame(page) : phoneFrame(page));
+    const vp = frame.viewport;
+    if (clip.x < 0 || clip.y < 0 || clip.x + clip.width > vp.width || clip.y + clip.height > vp.height) {
+      fail(`${label}: the frame ${clip.x},${clip.y} ${clip.width}x${clip.height} leaves the ${vp.width}x${vp.height} window`);
+    }
+    for (const o of frame.outs) {
+      if (o.width && clip.width * frame.dpr < o.width) fail(`${label}: the frame is ${clip.width * frame.dpr} device px wide, under the ${o.width} of ${o.file}`);
+    }
+
+    const t0 = Date.now();
+    let attempts = 0;
+    while (Date.now() - t0 < BUDGET_MS) {
+      const before = await page.evaluate(readPlayhead);
+      if (before.col !== frame.col || before.cells !== TRACKS || before.hovered) {
+        await page.waitForTimeout(POLL_MS);
+        continue;
+      }
+      attempts++;
+      const png = await page.screenshot({ clip, animations: "disabled", caret: "hide" });
+      const after = await page.evaluate(readPlayhead);
+      if (after.col === frame.col && after.cells === TRACKS && after.play === "Stop" && !after.hovered) {
+        if (problems.length) fail(`${label}: the page logged errors: ${problems.join(" | ")}`);
+        return { png, clip, attempts, ms: Date.now() - t0 };
+      }
+      // The step moved on during the screenshot: wait for the pattern to
+      // come round to this column again.
+    }
+    fail(`${label}: no frame kept in ${BUDGET_MS / 1000} s; ${attempts} attempt${attempts === 1 ? "" : "s"} on column ${frame.col} (step ${frame.col + 1})${attempts ? "" : ", and the playhead never reached it (is the AudioContext running?)"}. Nothing was written.`);
+  } finally {
+    await context.close();
+  }
 }
 
-async function encode(sharp, page, png, out) {
-  if (!out) return sharp ? sharp(png).webp({ quality: 90, effort: 6 }).toBuffer() : png;
-  const { width, height } = out;
-  if (sharp) {
-    return sharp(png).resize(width, height, { fit: "fill", kernel: "lanczos3" }).webp({ quality: 90, effort: 6 }).toBuffer();
+// Pixel size from a WebP (VP8, VP8L or VP8X) header, as the tests read it.
+function webpSize(b) {
+  if (b.length < 30 || b.toString("ascii", 0, 4) !== "RIFF" || b.toString("ascii", 8, 12) !== "WEBP") return null;
+  const chunk = b.toString("ascii", 12, 16);
+  if (chunk === "VP8X") return { width: 1 + b.readUIntLE(24, 3), height: 1 + b.readUIntLE(27, 3) };
+  if (chunk === "VP8 ") return { width: b.readUInt16LE(26) & 0x3fff, height: b.readUInt16LE(28) & 0x3fff };
+  if (chunk === "VP8L") {
+    const bits = b.readUInt32LE(21);
+    return { width: 1 + (bits & 0x3fff), height: 1 + ((bits >>> 14) & 0x3fff) };
   }
-  const meta = { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
-  return meta.width === width && meta.height === height ? png : scaleInBrowser(page, png, width, height);
+  return null;
 }
 
-// Point data/projects.js and index.html at the extension written, and give
-// them the phone crop's height (its width is always PHONE_WIDTH).
-const INDEX = join(ROOT, "index.html");
-async function pointData(ext, phone) {
-  const other = ext === "webp" ? "png" : "webp";
-  for (const [file, size] of [
-    [DATA, [/(mobile: \{ src: "\/assets\/home\/chiptune-phone\.\w+", width: )\d+(, height: )\d+/, `$1${phone.width}$2${phone.height}`]],
-    [INDEX, [/(<img src="\/assets\/home\/chiptune-phone\.\w+" width=")\d+(" height=")\d+/, `$1${phone.width}$2${phone.height}`]]
-  ]) {
-    const text = await readFile(file, "utf8");
-    const next = text
-      .replaceAll(`/assets/home/chiptune.${other}"`, `/assets/home/chiptune.${ext}"`)
-      .replaceAll(`/assets/home/chiptune-phone.${other}"`, `/assets/home/chiptune-phone.${ext}"`)
-      .replace(size[0], size[1]);
-    if (!next.includes(`/assets/home/chiptune.${ext}"`) || !next.includes(`/assets/home/chiptune-phone.${ext}"`) || !size[0].test(next)) {
-      fail(`${file} has no chiptune shot to point at the captures`);
-    }
-    if (next !== text) {
-      await writeFile(file, next);
-      console.log(`${file.slice(ROOT.length + 1)}: chiptune shot now .${ext}, phone crop ${phone.width}x${phone.height}`);
+// Every place that names a capture with a size: [{ src, width, height, where }].
+async function namedSizes() {
+  const fresh = file => `${pathToFileURL(join(ROOT, file)).href}?t=${Date.now()}`;
+  const claims = [];
+  const claim = (src, width, height, where) => { if (src) claims.push({ src, width, height, where }); };
+
+  const { projects } = await import(fresh("data/projects.js"));
+  for (const p of projects) {
+    const s = p.shot;
+    if (!s) continue;
+    const where = `data/projects.js (${p.id})`;
+    claim(s.src, s.width, s.height, `${where} shot`);
+    if (s.mobile) claim(s.mobile.src, s.mobile.width, s.mobile.height, `${where} shot.mobile`);
+    // A dark twin has its light file's size.
+    if (s.dark) {
+      claim(s.dark.src, s.width, s.height, `${where} shot.dark.src`);
+      if (s.mobile) claim(s.dark.mobile, s.mobile.width, s.mobile.height, `${where} shot.dark.mobile`);
     }
   }
+
+  const { work } = await import(fresh("data/portfolio.js"));
+  for (const w of work) {
+    const where = `data/portfolio.js (${w.id})`;
+    claim(w.image, w.imageWidth, w.imageHeight, `${where} image`);
+    const m = w.imageMobile;
+    if (m) claim(m.src, m.width, m.height, `${where} imageMobile`);
+    if (w.imageDark) {
+      claim(w.imageDark.src, w.imageWidth, w.imageHeight, `${where} imageDark.src`);
+      if (m) claim(w.imageDark.mobile, m.width, m.height, `${where} imageDark.mobile`);
+    }
+  }
+
+  const html = await readFile(join(ROOT, "index.html"), "utf8");
+  for (const t of html.matchAll(/<(source|img)\b([^>]*)>/g)) {
+    const attr = n => (new RegExp(`\\b${n}="([^"]*)"`).exec(t[2]) || [])[1];
+    const src = attr(t[1] === "img" ? "src" : "srcset");
+    const line = html.slice(0, t.index).split("\n").length;
+    claim(src, Number(attr("width")), Number(attr("height")), `index.html:${line} <${t[1]}>`);
+  }
+  return claims;
 }
 
 async function captureChiptune(browser, base, sharp) {
-  const ext = sharp ? "webp" : "png";
-  if (!sharp) console.warn("capture-tools: sharp isn't installed, so writing PNG (scaled in the browser).");
-  const written = [];
-  let phone = null;
-  for (const [shot, frameOf, name] of [[DESKTOP, desktopFrame, "chiptune"], [PHONE, phoneFrame, "chiptune-phone"]]) {
-    const { context, page } = await openSequencer(browser, base, shot.viewport);
-    try {
-      const clip = await frameOf(page);
-      const png = await page.screenshot({ clip, fullPage: true, animations: "disabled", caret: "hide" });
-      const out = await encode(sharp, page, png, shot.out);
-      const size = shot.out || { width: clip.width, height: clip.height };
-      if (!shot.out) phone = size;
-      await writeFile(join(OUT_DIR, `${name}.${ext}`), out);
-      written.push(`assets/home/${name}.${ext}`);
-      console.log(`${name}.${ext}: ${size.width}x${size.height}, ${out.length} bytes, from ${clip.width}x${clip.height} at ${clip.x},${clip.y} of a ${shot.viewport.width}px page`);
-    } finally {
-      await context.close();
+  // Every frame first; nothing is written unless all of them were kept.
+  const kept = [];
+  for (const theme of THEMES) {
+    for (const frame of FRAMES) {
+      const shot = await catchFrame(browser, base, frame, theme);
+      const files = frame.outs.map(o => themed(o.file, theme));
+      console.log(`${files.join(" and ")}: kept on attempt ${shot.attempts}, ${(shot.ms / 1000).toFixed(1)} s in (${theme}, column ${frame.col} playing, Play reads Stop)`);
+      kept.push({ theme, frame, ...shot });
     }
   }
-  const other = ext === "webp" ? "png" : "webp";
-  for (const name of ["chiptune", "chiptune-phone"]) await rm(join(OUT_DIR, `${name}.${other}`), { force: true });
-  await pointData(ext, phone);
-  return written;
+  // A pair is the same frame in two themes: the same layout, so the same box.
+  for (const frame of FRAMES) {
+    const [a, b] = THEMES.map(t => kept.find(k => k.theme === t && k.frame === frame).clip);
+    if (JSON.stringify(a) !== JSON.stringify(b)) fail(`the ${frame.name} frame differs between the themes: ${JSON.stringify(a)} and ${JSON.stringify(b)}`);
+  }
+
+  const written = [];
+  for (const { theme, frame, png, clip } of kept) {
+    for (const o of frame.outs) {
+      const out = o.width
+        ? await sharp(png).resize(o.width, o.height, { fit: "fill", kernel: "lanczos3" }).webp(WEBP).toBuffer()
+        : await sharp(png).webp(WEBP).toBuffer();
+      const file = themed(o.file, theme);
+      await writeFile(join(ROOT, file), out);
+      written.push({ file, bytes: out.length, from: `${clip.width}x${clip.height} CSS px at ${clip.x},${clip.y}, DPR ${frame.dpr}` });
+    }
+  }
+
+  // The captures these replace.
+  const gone = [...OLD];
+  for (const dir of OLD_PNG_DIRS) {
+    for (const f of await readdir(join(ROOT, dir))) if (/^chiptune.*\.png$/.test(f)) gone.push(`${dir}/${f}`);
+  }
+  for (const f of gone) await rm(join(ROOT, f), { force: true });
+
+  // Sizes from the headers, against everything that names the files.
+  const claims = await namedSizes();
+  const problems = [], notes = [];
+  console.log("\nfile                                                 size       bytes   from");
+  for (const w of written) {
+    const size = webpSize(await readFile(join(ROOT, w.file)));
+    if (!size) fail(`${w.file} isn't a WebP file`);
+    console.log(`${w.file.padEnd(52)} ${`${size.width}x${size.height}`.padEnd(10)} ${String(w.bytes).padStart(6)}   ${w.from}`);
+    const named = claims.filter(c => c.src === `/${w.file}`);
+    if (!named.length) notes.push(`note: nothing names /${w.file} yet`);
+    for (const c of named) {
+      if (c.width !== size.width || c.height !== size.height) {
+        problems.push(`${c.where} says ${c.width}x${c.height} for /${w.file}, which is ${size.width}x${size.height}`);
+      }
+    }
+  }
+  for (const c of claims) {
+    if (OLD.some(f => c.src === `/${f}`)) problems.push(`${c.where} still names /${c.src.slice(1)}, which this capture replaced and deleted`);
+  }
+  console.log("");
+  for (const n of notes) console.log(n);
+  if (problems.length) fail(`the files were written, but these places need updating:\n  ${problems.join("\n  ")}`);
+  console.log(`Every place that names these files states their sizes. Deleted (if present): ${gone.join(", ")}.`);
+  return written.map(w => w.file);
 }
 
 // ---------- Discover Cleaner ----------

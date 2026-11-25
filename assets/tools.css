@@ -3,8 +3,10 @@
    Cleaner landing. Linked after site.css (the drift tester has drift.css).
 
    Tokens only: no colour values here (test/design.test.js). Rows and
-   sections are grouped by space, with no rules or boxes; the only panels
-   are the sequencer's cells (controls) and the code block.
+   sections are grouped by space, with no rules or boxes. Every panel here
+   is --panel, in both themes: the capture frames, the sequencer's cells
+   (controls) and the code block. The photo-panel token is for unit photos
+   only (site.css), and no tool page shows one.
    ========================================================================== */
 
 /* A section of a tool page after the page head. Its first h2 (in .prose)
@@ -21,14 +23,16 @@
 
 /* Rows use the shared .index vocabulary (site.css). Below 60em: title,
    capture, text, in DOM order.
-   A capture sits on a square sweep panel, so a picture of the sequencer's
-   white page never reads as the live controls. Below 35em the panel runs to
-   the screen's edges and the 358px phone crop shows at its own size; from
-   35em the panel stops at the 720px file's size plus its padding. */
+   A capture sits on a square panel, so a picture of the sequencer's page
+   never reads as the live controls, in either theme. Below 35em the panel
+   runs to the screen's edges and the 358px phone crop shows at its own
+   size; from 35em the panel stops at the 720px file's size plus its
+   padding. The chiptune capture is a theme pair (site.css, .for-light and
+   .for-dark): only the current theme's picture shows. */
 .tool-row > .index-media {
   margin: 0 calc(-1 * var(--gutter));
   padding: var(--s-4) var(--gutter);
-  background: var(--sweep);
+  background: var(--panel);
 }
 @media (min-width: 35em) {
   .tool-row > .index-media { max-width: calc(45rem + 2 * var(--s-4)); margin: 0; padding: var(--s-4); }
@@ -100,7 +104,9 @@
   max-width: 30rem;
 }
 
-/* Off: sweep inside an edge border. Off on a beat: sweep-dk. On: ink.
+/* Off: panel inside an edge border. Off on a beat: panel-dk, darker than
+   panel in both themes, because the page says "The darker squares mark
+   each beat" (test/design.test.js holds it). On: ink.
    The column being heard: a 2px dashed ink ring, 1px out, so it shows round
    an ink cell too. Dashed, so it never looks like the solid focus ring; the
    focus rule comes after it, so a focused cell keeps its solid ring while
@@ -113,9 +119,9 @@
   padding: 0;
   border: 1px solid var(--edge);
   border-radius: var(--radius);
-  background: var(--sweep);
+  background: var(--panel);
 }
-.seq-cell.beat { background: var(--sweep-dk); }
+.seq-cell.beat { background: var(--panel-dk); }
 .seq-cell[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); }
 .seq-cell:hover { border-color: var(--ink); }
 .seq-cell.playing { outline: 2px dashed var(--ink); outline-offset: 1px; }
@@ -144,10 +150,14 @@
 .dc-actions { margin-top: var(--s-5); }
 .dc-actions-note { max-width: var(--measure); margin-top: var(--s-3); }
 
-/* Screenshots: square, on sweep, each with a 16px caption under it. */
+/* Screenshots: square, each in a 12px panel frame in both themes, with a
+   16px caption under it. The demo's own interface is near-black, so the
+   frame keeps its buttons from reading as live controls on this page. The
+   frame is the image's padding: the box's width and height attributes size
+   its content, so the frame costs no layout shift. */
 .dc-shots { display: grid; gap: var(--s-7); }
 .dc-shots figure { display: grid; gap: var(--s-3); align-content: start; }
-.dc-shots img { height: auto; border-radius: 0; background: var(--sweep); }
+.dc-shots img { height: auto; padding: var(--s-3); border-radius: 0; background: var(--panel); }
 .dc-shots figcaption { max-width: var(--measure); }
 
 /* Below 60em only the phone view of Now shows; the laptop view is lazy, so
@@ -176,14 +186,14 @@
   .dc-more img { max-width: none; }
 }
 
-/* Run it yourself: real commands, on a square sweep block that scrolls
-   sideways inside itself on a phone. */
+/* Run it yourself: real commands, on a square panel that scrolls sideways
+   inside itself on a phone. */
 .dc-run > * + * { margin-top: var(--s-4); }
 .dc-run pre {
   max-width: min(100%, 48rem);
   padding: var(--s-4);
   border-radius: 0;
-  background: var(--sweep);
+  background: var(--panel);
   color: var(--ink);
   line-height: var(--lh-body);
 }

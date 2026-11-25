@@ -4,9 +4,14 @@
 //
 // What's pinned: the data carries no colours and every button names where
 // it goes; every capture exists at the pixel size the data states (read from
-// the file's own header), so the reserved box matches the image; the
-// sequencer draws in CSS tokens only; and the three pages carry the
-// redesign's head (og-tools.png, no eyebrow, no old stylesheets).
+// the file's own header), so the reserved box matches the image, and a dark
+// twin is its light file's name plus "-dark" at the same size; the chiptune
+// shot is the mid-playback pair in both themes (dark-spec §8.1, §9.3), and the
+// captures it replaced are gone; a shot with `dark` renders as the §7 theme
+// pair, both lazy; the sequencer draws in CSS tokens only, every panel on
+// --panel and beat cells on the darker --panel-dk; and the three pages carry
+// the theme head (dark-spec §4.1) and ?v=3 (§2.3) beside the redesign's head
+// (og-tools.png, no eyebrow, no old stylesheets).
 //
 // Run with:  npm test
 
@@ -23,6 +28,17 @@ const read = f => readFileSync(join(ROOT, f), "utf8");
 const { section, test, run } = harness();
 
 const PAGES = ["projects.html", "projects/chiptune.html", "projects/discover-cleaner.html"];
+// dark-spec §4.1: the theme head, where the single #ffffff theme-color and
+// the site.css link used to be. theme.js is a classic script after the
+// metas it rewrites and before every stylesheet.
+const THEME_HEAD = [
+  '<meta name="color-scheme" content="light dark" />',
+  '<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)" data-dark />',
+  '<meta name="theme-color" content="#ffffff" />',
+  '<script src="/assets/theme.js?v=3"></script>',
+  '<link rel="stylesheet" href="/assets/site.css?v=3" />'
+].join("\n  ");
+const CHIPTUNE_ALT = "The chiptune sequencer playing its preloaded pattern, with a dashed outline on the step being heard";
 const ENTRIES = ["assets/entry/projects.js", "projects/chiptune.entry.js", "projects/discover-cleaner.entry.js"];
 const HEX = /#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\b/i;
 const QUOTED_HEX = /["'`]#(?:[0-9a-f]{3}|[0-9a-f]{6})["'`]/i;
@@ -51,10 +67,20 @@ function imageSize(file) {
   throw new Error(`${file}: not a PNG or WebP file`);
 }
 
-const shotsOf = p => (p.shot ? [
-  { src: p.shot.src, width: p.shot.width, height: p.shot.height },
-  ...(p.shot.mobile ? [{ src: p.shot.mobile.src, width: p.shot.mobile.width, height: p.shot.mobile.height }] : [])
-] : []);
+// Every file a shot names, with its stated size. A dark twin (shot.dark,
+// paths only) has its light file's size.
+const shotsOf = p => {
+  const s = p.shot;
+  if (!s) return [];
+  const m = s.mobile;
+  return [
+    { src: s.src, width: s.width, height: s.height },
+    ...(m ? [{ src: m.src, width: m.width, height: m.height }] : []),
+    ...(s.dark ? [{ src: s.dark.src, width: s.width, height: s.height, light: s.src }] : []),
+    ...(s.dark && m ? [{ src: s.dark.mobile, width: m.width, height: m.height, light: m.src }] : [])
+  ];
+};
+const darkName = src => src.replace(/\.(webp|png)$/, "-dark.$1");
 
 section("data/projects.js");
 
@@ -99,10 +125,13 @@ test("the drift tester has no shot, and its old all-zeros captures are gone", ()
   }
 });
 
-test("every shot file exists at the pixel size the data states (from its header)", () => {
-  let n = 0;
+test("every shot file exists at the pixel size the data states (from its header), dark twins included", () => {
+  let n = 0, dark = 0;
   for (const p of projects) {
     if (p.shot) assert.ok(p.shot.alt && p.shot.alt.trim(), `${p.id}: no alt`);
+    if (p.shot && p.shot.dark) {
+      assert.deepEqual(Object.keys(p.shot.dark).sort(), ["mobile", "src"], `${p.id}: shot.dark is { src, mobile }, paths only`);
+    }
     for (const s of shotsOf(p)) {
       assert.match(s.src, /^\/assets\/home\/[\w-]+\.(webp|png)$/, `${p.id}: ${s.src}`);
       const file = join(ROOT, s.src);
@@ -110,26 +139,57 @@ test("every shot file exists at the pixel size the data states (from its header)
       const size = imageSize(file);
       assert.equal(size.type, s.src.split(".").pop(), `${s.src}: the extension doesn't match the file`);
       assert.deepEqual([size.width, size.height], [s.width, s.height], `${s.src}: stated ${s.width}x${s.height}`);
+      // check:layout finds pairs by this name (dark-spec §7).
+      if (s.light) { assert.equal(s.src, darkName(s.light), `${p.id}: a dark twin is its light file's name plus -dark`); dark++; }
       n++;
     }
   }
-  assert.ok(n >= 4, "expected the desktop and phone captures of two tools");
+  assert.ok(n >= 6, "expected the desktop and phone captures of two tools, and the chiptune pair's dark twins");
+  assert.equal(dark, 2, "the chiptune shot's two dark twins");
 });
 
+// dark-spec §8.1 and §9.3: /projects/chiptune mid-playback, in both themes.
 // The phone crop runs from the transport to the end of the Lead track, so
-// it ends on a whole track; one alt has to be true of both files.
-test("the chiptune shot is 720x405 and 358 wide on a phone, with an alt true of both crops, and only the written extension exists", () => {
+// it ends on a whole track; one alt has to be true of both crops and both
+// themes, and it says what a frame taken while the pattern plays shows.
+test("the chiptune shot is the playing pair: 720x405 and 358 wide on a phone, the dark twins at the same sizes (from the headers), and the new alt", () => {
   const { shot } = projects.find(p => p.id === "chiptune");
+  assert.equal(shot.src, "/assets/home/chiptune-playing.webp");
+  assert.equal(shot.mobile.src, "/assets/home/chiptune-playing-phone.webp");
+  assert.deepEqual(shot.dark, { src: "/assets/home/chiptune-playing-dark.webp", mobile: "/assets/home/chiptune-playing-phone-dark.webp" });
   assert.deepEqual([shot.width, shot.height, shot.mobile.width], [720, 405, 358]);
   assert.ok(shot.mobile.height > 300 && shot.mobile.height < 420, `phone crop height ${shot.mobile.height}: the transport and one whole track`);
-  assert.equal(shot.alt, "The chiptune sequencer with its preloaded pattern: Play, Randomise and Clear, tempo, waveform and volume, and the step grid, starting with the Lead track");
-  assert.ok(!/six tracks|sixteen steps/.test(shot.alt), "the phone crop shows one track");
-  const ext = shot.src.split(".").pop();
-  assert.equal(shot.mobile.src.split(".").pop(), ext);
-  const other = ext === "webp" ? "png" : "webp";
-  for (const f of [`chiptune.${other}`, `chiptune-phone.${other}`]) {
-    assert.ok(!existsSync(join(ROOT, "assets", "home", f)), `assets/home/${f} should not exist next to the .${ext} pair`);
+  for (const [light, dark] of [[shot.src, shot.dark.src], [shot.mobile.src, shot.dark.mobile]]) {
+    const a = imageSize(join(ROOT, light)), b = imageSize(join(ROOT, dark));
+    assert.equal(a.type, "webp", `${light}: WebP (capture-tools writes no PNG)`);
+    assert.deepEqual([b.type, b.width, b.height], [a.type, a.width, a.height], `${dark} is ${b.width}x${b.height}, its light twin ${a.width}x${a.height}`);
   }
+  assert.equal(shot.alt, CHIPTUNE_ALT);
+  assert.ok(!/six tracks|sixteen steps/.test(shot.alt), "the phone crop shows one track");
+});
+
+// The captures the playing pair replaced: gone from disk, with no PNG left
+// beside them (capture-tools no longer has a PNG fallback), and named by no
+// page, stylesheet or module. The capture script itself may name them (it
+// deletes them); tests may too.
+test("the old chiptune captures are gone and unreferenced", () => {
+  for (const f of ["chiptune.webp", "chiptune-phone.webp"]) {
+    assert.ok(!existsSync(join(ROOT, "assets", "home", f)), `assets/home/${f} still exists`);
+  }
+  for (const dir of ["assets/home", "assets/portfolio"]) {
+    for (const f of readdirSync(join(ROOT, dir))) assert.ok(!/^chiptune.*\.png$/.test(f), `${dir}/${f}: a PNG capture`);
+  }
+  const hits = [];
+  const walk = dir => {
+    for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+      if (e.name.startsWith(".") || e.name === "node_modules" || e.name === "league-ify" || e.name === "discover-cleaner-demo") continue;
+      const rel = dir ? `${dir}/${e.name}` : e.name;
+      if (e.isDirectory()) { if (rel !== "test") walk(rel); continue; }
+      if (/\.(html|js|css)$/.test(e.name) && /home\/chiptune(-phone)?\.(webp|png)/.test(read(rel))) hits.push(rel);
+    }
+  };
+  walk("");
+  assert.deepEqual(hits, [], "files still naming the old chiptune captures");
 });
 
 section("/projects rows (assets/projects-page.js)");
@@ -150,6 +210,57 @@ test("a row is the title link, the capture, the text and a named button: no chip
   }
 });
 
+// dark-spec §7 and §9.3: a shot with `dark` is the theme pair inside the one
+// link, the light picture then the dark one, each with the desktop <source>
+// from 35em (as for a single capture on this page) and the phone crop as the
+// <img>, the same sizes and alt on both, both lazy even as the page's first
+// capture. A shot without `dark` is the single picture, exactly as before.
+const STUB = {
+  id: "stub", title: "Stub Tool", description: "A tool.", demo: "/projects/stub", cta: "Open the stub tool",
+  shot: {
+    src: "/assets/home/stub.webp", width: 720, height: 405,
+    mobile: { src: "/assets/home/stub-phone.webp", width: 358, height: 300 },
+    alt: "A stub & its \"alt\""
+  }
+};
+const STUB_DARK = { ...STUB, shot: { ...STUB.shot, dark: { src: "/assets/home/stub-dark.webp", mobile: "/assets/home/stub-phone-dark.webp" } } };
+const squash = html => html.replace(/>\s+</g, "><").trim();
+const mediaOf = html => (/<a class="index-media"[\s\S]*?<\/a>/.exec(html) || [""])[0];
+
+test("toolRow renders the theme pair for a shot with `dark`: both pictures lazy, same sizes and alt, light first", () => {
+  const alt = "A stub &amp; its &quot;alt&quot;";
+  const pic = (cls, src, phone, lazy) => `<picture${cls ? ` class="${cls}"` : ""}>` +
+    `<source media="(min-width: 35em)" srcset="${src}" width="720" height="405" />` +
+    `<img src="${phone}" width="358" height="300" alt="${alt}"${lazy ? ' loading="lazy"' : ""} decoding="async" /></picture>`;
+  for (const eager of [true, false]) {
+    const html = toolRow(STUB_DARK, { eager });
+    assert.equal(squash(mediaOf(html)), '<a class="index-media" href="/projects/stub" tabindex="-1">' +
+      pic("for-light", "/assets/home/stub.webp", "/assets/home/stub-phone.webp", true) +
+      pic("for-dark", "/assets/home/stub-dark.webp", "/assets/home/stub-phone-dark.webp", true) + "</a>", `eager ${eager}`);
+    assert.equal((html.match(/class="index-media"/g) || []).length, 1, "one link round both pictures");
+    assert.ok(!/prefers-color-scheme/.test(html), "never a colour-scheme <source>");
+  }
+  // Without `dark`: one picture with no class, eager only when asked.
+  assert.equal(squash(mediaOf(toolRow(STUB, { eager: true }))), '<a class="index-media" href="/projects/stub" tabindex="-1">' +
+    pic("", "/assets/home/stub.webp", "/assets/home/stub-phone.webp", false) + "</a>");
+  assert.equal(squash(mediaOf(toolRow(STUB))), '<a class="index-media" href="/projects/stub" tabindex="-1">' +
+    pic("", "/assets/home/stub.webp", "/assets/home/stub-phone.webp", true) + "</a>");
+  assert.ok(!/for-light|for-dark/.test(toolRow(STUB)), "no pair without shot.dark");
+});
+
+test("the chiptune row on /projects is the pair of the playing captures", () => {
+  const html = toolRow(projects.find(p => p.id === "chiptune"), { eager: true });
+  const pics = [...html.matchAll(/<picture class="(for-light|for-dark)">([\s\S]*?)<\/picture>/g)];
+  assert.deepEqual(pics.map(m => m[1]), ["for-light", "for-dark"]);
+  assert.match(pics[0][2], /srcset="\/assets\/home\/chiptune-playing\.webp" width="720" height="405"/);
+  assert.match(pics[0][2], /<img src="\/assets\/home\/chiptune-playing-phone\.webp" width="358" height="\d+"/);
+  assert.match(pics[1][2], /srcset="\/assets\/home\/chiptune-playing-dark\.webp" width="720" height="405"/);
+  assert.match(pics[1][2], /<img src="\/assets\/home\/chiptune-playing-phone-dark\.webp" width="358" height="\d+"/);
+  for (const m of pics) {
+    assert.ok(m[2].includes(`alt="${CHIPTUNE_ALT}" loading="lazy"`), `${m[1]}: the alt, lazy`);
+  }
+});
+
 test("rows escape their data", () => {
   const html = toolRow({ id: "x", title: "<b>", description: "\"&", demo: "/projects/x", cta: "Open <x>" });
   assert.ok(!html.includes("<b>") && !html.includes("Open <x>") && html.includes("&lt;b&gt;"));
@@ -157,18 +268,20 @@ test("rows escape their data", () => {
 
 section("The three pages");
 
-test("each page uses tools.css with ?v=2, og-tools.png, and no eyebrow, pages.css or demo.css", () => {
+test("each page has the theme head, then tools.css and its entry with ?v=3, og-tools.png, and no eyebrow, pages.css or demo.css", () => {
   for (const f of PAGES) {
     const html = read(f);
-    assert.ok(html.includes('href="/assets/site.css?v=2"'), `${f}: site.css?v=2`);
-    assert.ok(html.includes('href="/assets/tools.css?v=2"'), `${f}: tools.css?v=2`);
-    assert.match(html, /<script type="module" src="\/[^"]+\.js\?v=2"><\/script>/, `${f}: the entry script with ?v=2`);
+    const head = (/<head>([\s\S]*?)<\/head>/.exec(html) || [, ""])[1];
+    assert.ok(head.includes(`\n  ${THEME_HEAD}\n  <link rel="stylesheet" href="/assets/tools.css?v=3" />\n  <script type="module" src="`), `${f}: the theme head of dark-spec §4.1, then tools.css?v=3 and the entry`);
+    assert.equal((head.match(/<meta name="theme-color"/g) || []).length, 2, `${f}: two theme-color metas`);
+    assert.equal((head.match(/<script\b/g) || []).length, 2, `${f}: theme.js and the entry module, nothing else`);
+    assert.match(head, /<script type="module" src="\/[^"]+\.js\?v=3"><\/script>/, `${f}: the entry script with ?v=3`);
+    assert.ok(!/\?v=2\b/.test(html), `${f}: still ?v=2 somewhere`);
     assert.ok(!/pages\.css|demo\.css/.test(html), `${f}: links an old stylesheet`);
     assert.ok(!/eyebrow/.test(html), `${f}: an eyebrow`);
     assert.ok(html.includes('content="https://dhole.dev/assets/brand/og-tools.png"'), `${f}: og-tools.png`);
     assert.ok(!/brand\/og\.png|favicon\.svg|apple-touch-icon\.png/.test(html), `${f}: an old brand file`);
     assert.ok(html.includes('href="/assets/brand/icon.svg"') && html.includes('href="/assets/brand/icon-180.png"'), `${f}: icons`);
-    assert.ok(html.includes('<meta name="theme-color" content="#ffffff" />'), `${f}: theme-color`);
     assert.ok(html.includes('rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2"'), `${f}: font preload`);
   }
 });
@@ -195,8 +308,13 @@ test("the JS-rendered pages carry a noscript notice; the page heads have a title
   assert.match(read("projects.html"), /<div id="tools" class="index"><\/div>/);
 });
 
-test("every entry module calls mountChrome('tools')", () => {
+test("every entry module calls mountChrome('tools'); /projects imports its renderer as ../projects-page.js?v=3", () => {
   for (const f of ENTRIES) assert.match(read(f), /mountChrome\("tools"\)/, f);
+  // dark-spec §2.3: the renderer's behaviour changed (the pair), so an old
+  // cached copy must not render into the new page.
+  const entry = read("assets/entry/projects.js");
+  assert.match(entry, /^import \{ renderProjects \} from "\.\.\/projects-page\.js\?v=3";$/m);
+  assert.deepEqual([...entry.matchAll(/from "([^"]+\?[^"]*)"/g)].map(m => m[1]), ["../projects-page.js?v=3"], "nothing else versioned");
 });
 
 test("the Discover Cleaner landing links the demo exactly twice, from a .btn-ink and a .btn", () => {
@@ -280,6 +398,31 @@ test("cells: a dashed playhead that can't be mistaken for focus, and a pattern t
 });
 
 section("assets/tools.css");
+
+// dark-spec §3.2, §6.2 and §9.3: everything a tool page puts on a panel is
+// --panel, in both themes; --sweep is for unit photos, and no tool shows one.
+// Beat cells are --panel-dk, which the design guard holds darker than --panel
+// in both themes, because the page says so.
+test("panels: the capture frame, sequencer cells, Discover Cleaner's screenshots and the code block on --panel; beat cells on --panel-dk; no --sweep", () => {
+  const css = read("assets/tools.css");
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const rule = sel => {
+    const m = new RegExp(`(?:^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]*)\\}`).exec(code);
+    assert.ok(m, `no ${sel} rule`);
+    return m[1];
+  };
+  assert.match(rule(".tool-row > .index-media"), /background: var\(--panel\);/);
+  assert.match(rule(".seq-cell"), /background: var\(--panel\);/);
+  assert.match(rule(".seq-cell.beat"), /background: var\(--panel-dk\);/);
+  assert.match(rule(".dc-run pre"), /background: var\(--panel\);/);
+  // The 12px frame round each Discover Cleaner screenshot, in both themes.
+  const shots = rule(".dc-shots img");
+  assert.match(shots, /padding: var\(--s-3\);/);
+  assert.match(shots, /background: var\(--panel\);/);
+  assert.match(shots, /border-radius: 0;/);
+  assert.ok(!/--sweep/.test(css), "tools.css names --sweep or --sweep-dk");
+  assert.ok(read("projects/chiptune.html").includes("The darker squares mark each beat, every four steps."), "the sequencer note, word for word");
+});
 
 test("tokens only: no colour values, shadows, gradients, uppercase or radius above 4px", () => {
   const css = read("assets/tools.css").replace(/\/\*[\s\S]*?\*\//g, "");

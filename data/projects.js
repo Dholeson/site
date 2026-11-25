@@ -10,16 +10,22 @@
 //   builtWith    one plain line under the description
 //   tags, status, year  kept as data; no page shows them as chips
 //   shot         optional. A capture of the tool's own page:
-//                { src, width, height, alt, mobile: { src, width, height } }.
+//                { src, width, height, alt, mobile: { src, width, height },
+//                  dark: { src, mobile } }.
 //                The mobile crop comes from the tool's phone layout, so it
 //                stays readable at 358px wide. width and height are the files'
 //                pixel sizes (test/tools.test.js reads them from the headers).
 //                A <picture> has one alt for both files, so `alt` names only
 //                what the desktop capture and the phone crop both show.
+//                `dark` is optional: the same two frames in the dark theme,
+//                paths only, since a dark twin is its light file's size and
+//                name plus "-dark". Only a capture of the site's own light
+//                interface has one (the chiptune sequencer); the rows then
+//                show the current theme's pair (.for-light / .for-dark).
 //
 // Shots must be real captures of the real page: no mock-ups, no drawings, no
 // empty readouts standing in for a result, no account details. The chiptune
-// pair and the Discover Cleaner phone crop are made by `npm run
+// pairs and the Discover Cleaner phone crop are made by `npm run
 // capture:tools` (scripts/capture-tools.mjs). A tool
 // with no real capture has no shot, and its row is text only.
 
@@ -73,10 +79,11 @@ export const projects = [
     cta: "Open the sequencer",
     builtWith: "Built with Web Audio. No dependencies.",
     shot: {
-      // /projects/chiptune as it opens, captured by scripts/capture-tools.mjs.
-      src: "/assets/home/chiptune.webp", width: 720, height: 405,
-      mobile: { src: "/assets/home/chiptune-phone.webp", width: 358, height: 360 },
-      alt: "The chiptune sequencer with its preloaded pattern: Play, Randomise and Clear, tempo, waveform and volume, and the step grid, starting with the Lead track"
+      // /projects/chiptune mid-playback, in both themes, captured by scripts/capture-tools.mjs.
+      src: "/assets/home/chiptune-playing.webp", width: 720, height: 405,
+      mobile: { src: "/assets/home/chiptune-playing-phone.webp", width: 358, height: 360 },
+      dark: { src: "/assets/home/chiptune-playing-dark.webp", mobile: "/assets/home/chiptune-playing-phone-dark.webp" },
+      alt: "The chiptune sequencer playing its preloaded pattern, with a dashed outline on the step being heard"
     }
   }
 ];

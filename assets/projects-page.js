@@ -7,6 +7,15 @@
 // (assets/tools.css). An entry without a shot is a text-only row. No glyphs,
 // chips or arrows.
 //
+// A shot with `dark` (the chiptune sequencer, a capture of the site's own
+// light interface) is a theme pair: two <picture>s in the one link, the
+// light one (.for-light) then the dark one (.for-dark), with the same sizes
+// and alt. site.css shows only the current theme's, by the same selectors as
+// the dark tokens, so a theme chosen in the footer wins over the device.
+// Both images are lazy, even in the page's first capture, so the hidden one
+// is never fetched. Never a <source> whose media query asks for the
+// device's colour scheme: it would ignore the visitor's choice.
+//
 // The row classes are the shared .index vocabulary in site.css; tools.css
 // places them for this page.
 
@@ -15,17 +24,29 @@ import { esc } from "./esc.js";
 
 // The phone crop below 35em, the desktop capture from 35em. width and height
 // on both <source> and <img> reserve the box before the image arrives.
-// The capture sits on a sweep panel and opens the tool, so a click on the
-// pictured controls goes to the real ones. It is left out of the tab order:
-// the title and the button already lead there.
-function capture(shot, href, { eager }) {
+// `src` and `mobileSrc` are the files: the light ones, or a dark twin's,
+// which has the light file's size.
+function picture(shot, { cls, src, mobileSrc, lazy }) {
   const m = shot.mobile;
   const img = m || shot;
+  return `<picture${cls ? ` class="${cls}"` : ""}>
+        ${m ? `<source media="(min-width: 35em)" srcset="${esc(src)}" width="${esc(shot.width)}" height="${esc(shot.height)}" />` : ""}
+        <img src="${esc(m ? mobileSrc : src)}" width="${esc(img.width)}" height="${esc(img.height)}" alt="${esc(shot.alt)}"${lazy ? ` loading="lazy"` : ""} decoding="async" />
+      </picture>`;
+}
+
+// The capture sits on a panel and opens the tool, so a click on the
+// pictured controls goes to the real ones. It is left out of the tab order:
+// the title and the button already lead there. A theme pair is always lazy;
+// a single capture is eager only as the page's first.
+function capture(shot, href, { eager }) {
+  const light = { src: shot.src, mobileSrc: shot.mobile && shot.mobile.src };
+  const pictures = shot.dark
+    ? [picture(shot, { cls: "for-light", ...light, lazy: true }),
+      picture(shot, { cls: "for-dark", src: shot.dark.src, mobileSrc: shot.dark.mobile, lazy: true })]
+    : [picture(shot, { ...light, lazy: !eager })];
   return `<a class="index-media" href="${href}" tabindex="-1">
-      <picture>
-        ${m ? `<source media="(min-width: 35em)" srcset="${esc(shot.src)}" width="${esc(shot.width)}" height="${esc(shot.height)}" />` : ""}
-        <img src="${esc(img.src)}" width="${esc(img.width)}" height="${esc(img.height)}" alt="${esc(shot.alt)}"${eager ? "" : ` loading="lazy"`} decoding="async" />
-      </picture>
+      ${pictures.join("\n      ")}
     </a>`;
 }
 
