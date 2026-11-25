@@ -120,24 +120,34 @@ export function priceCart() {
   // Largest box in the order sets the rate; the checkout function decides
   // the real amount.
   const shipping = !items.length
-    ? { label: "—", cents: 0 }
+    ? { label: "", short: "", cents: 0 }
     : items.some(i => i.shippingClass === "console") ? SHIPPING.console : SHIPPING.small;
   return {
     items,
     unavailable,
     subtotalCents,
     shippingCents: shipping.cents,
+    // label is Stripe's wording (it names the dispatch promise); short is for
+    // the cart's totals row, which states that promise elsewhere.
     shippingLabel: shipping.label,
+    shippingShort: shipping.short ?? shipping.label,
     // Sales tax is calculated by Stripe at checkout, not here, so this total is
     // shown as "before tax" in the UI.
     totalCents: subtotalCents + shipping.cents
   };
 }
 
-// Keeps the header badge live on every page that includes it.
+// Keeps the header's cart link current on every page that includes it. The
+// link is one text node, "Cart" or "Cart (3)": a separate count element
+// would lose the space before it inside the flex nav.
 export function mountCartBadge() {
   const paint = () => {
     const n = countItems();
+    document.querySelectorAll("[data-cart-link]").forEach(el => {
+      el.textContent = n > 0 ? `Cart (${n})` : "Cart";
+    });
+    // The previous header's count span, for a page still running a cached
+    // copy of the old chrome.js. Remove after one release.
     document.querySelectorAll("[data-cart-count]").forEach(el => {
       el.textContent = n > 0 ? String(n) : "";
       el.style.display = n > 0 ? "inline-flex" : "none";

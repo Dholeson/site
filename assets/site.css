@@ -1,414 +1,607 @@
 /* ==========================================================================
-   dhole.dev design system
-   One stylesheet for the whole site: homepage, projects, demos, and shop.
-   Monospace for structure and labels (it suits a hardware/dev site), a
-   humanist sans for anything you actually have to read at length.
+   dhole.dev: the shared look. Every page links this file first, then its
+   area stylesheet (shop, home, tools, drift, portfolio, info).
+
+   Order: @font-face, tokens (:root), base, layout, components, utilities.
+
+   House rules, held by test/design.test.js:
+   - Colour values live only in the :root block. Everything else uses tokens.
+   - Light and neutral. Photos of the real unit carry the colour.
+   - Corners: var(--radius) on controls and .notice only. Photo panels are
+     square, on a sweep background.
+   - Hairlines (--rule) only under the header, over the footer, and on
+     .dl-rows, table rows and .cart-line. Everything else is grouped by space.
+   - No text under 16px. No shadows, blurs, glows or colour fades.
+   - --font-id only in .id. --buy-* and --kapton* only in .btn-buy rules.
    ========================================================================== */
 
-:root {
-  /* Surfaces, darkest to lightest */
-  --bg:        #0b0d12;
-  --bg-soft:   #10131a;
-  --surface:   #161a23;
-  --surface-2: #1e232e;
-  --border:    #2a3040;
-  --border-lit:#3b4459;
-
-  /* Text */
-  --fg:        #e6e9ef;
-  --fg-muted:  #98a1b3;
-  /* Between --fg and --fg-muted: body copy and links that must read easily.
-     11:1 on --bg, 9.8:1 on --surface. */
-  --fg-soft:   #bcc3d1;
-  --fg-dim:    #6b7488;
-
-  /* Accents */
-  --accent:      #8b5cf6;
-  --accent-lit:  #a78bfa;
-  --accent-dim:  #6d3fd4;
-  --cyan:        #22d3ee;
-  --amber:       #fbbf24;
-  --good:        #34d399;
-  --bad:         #f87171;
-
-  --radius:    10px;
-  --radius-lg: 16px;
-  --maxw:      1140px;
-
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-
-  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+/* ---------- Fonts (self-hosted, OFL 1.1; licences in /assets/fonts/) ----------
+   font-display: optional never swaps, so a late font can't shift the layout.
+   Every page preloads Public Sans, so it is almost always ready in time.
+   The two fallback faces are metric-matched, so the fallback breaks lines
+   about where the real face would. */
+@font-face {
+  font-family: "Public Sans";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: optional;
+  src: url("/assets/fonts/public-sans-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: "Red Hat Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: url("/assets/fonts/red-hat-mono-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: "Public Sans Fallback";
+  font-display: optional;
+  src: local("Arial"), local("Liberation Sans"), local("Arimo"), local("Helvetica");
+  size-adjust: 104.7%; ascent-override: 90.7%; descent-override: 21.5%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Red Hat Mono Fallback";
+  font-display: optional;
+  src: local("Courier New"), local("Liberation Mono"), local("Cousine"), local("Courier");
+  size-adjust: 100%; ascent-override: 101.8%; descent-override: 30.5%; line-gap-override: 0%;
 }
 
+/* ---------- Tokens ---------- */
+:root {
+  color-scheme: light;
+  /* Materials. Hex values live only in this block (guarded, §16). */
+  --paper:     #ffffff; /* page */
+  --sweep:     #f2f2f2; /* photo panels; set to the sampled corner grey of real photos later, keep R=G=B */
+  --sweep-dk:  #e6e6e6; /* pressed outline button fill; chiptune beat cells */
+  --ink:       #1b1b1b; /* text, headings, prices, links, focus ring, selection, money buttons */
+  --graphite:  #555555; /* secondary text at 16px; money-button hover */
+  --rule-c:    #d6d6d6; /* hairlines on data rows only */
+  --edge:      #8a8a8a; /* input and outline-button borders; must stay >= 3:1 on paper and sweep */
+  --kapton:    #e3a034; /* optional money fill, see below */
+  --kapton-dk: #cc8a1f; /* its hover */
+  --fault:     #a3261e; /* error text only */
+  /* The money buttons. Default: ink. After the owner's photo test (does yellowing read the same beside an
+     amber button as beside an ink one?) passes, switch to amber by changing these three lines to:
+     --buy-bg: var(--kapton); --buy-bg-hover: var(--kapton-dk); --buy-fg: var(--ink); */
+  --buy-bg: var(--ink); --buy-bg-hover: var(--graphite); --buy-fg: var(--paper);
+
+  --font-text: "Public Sans", "Public Sans Fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-id:   "Red Hat Mono", "Red Hat Mono Fallback", ui-monospace, Menlo, Consolas, monospace;
+  --t-body: 1rem; --t-h3: 1.25rem; --t-h2: 1.5625rem; --t-h1: 2rem; --t-display: 2.5rem;
+  --lh-body: 1.55; --lh-head: 1.2; --measure: 36rem;
+
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px;
+  --gutter: 16px; --page-max: 1176px; --col-gap: 24px;
+  --header-h: 61px; --sticky-top: 85px; --tap: 44px;
+
+  --radius: 4px;                       /* controls and the notice only; every photo panel is square (0) */
+  --rule: 1px solid var(--rule-c);
+  --focus-ring: 2px solid var(--ink); --focus-gap: 2px;
+  --ease: cubic-bezier(.2,0,0,1); --dur: 120ms;
+}
+@media (min-width: 48em) { :root { --gutter: 32px; } }
+@media (min-width: 75em) { :root { --gutter: 48px; } }
+@media (prefers-reduced-motion: reduce) { :root { --dur: 0ms; } }
+
+/* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* The 61px header plus 16px, so a jumped-to heading clears the sticky header. */
+  scroll-padding-top: calc(var(--header-h) + var(--s-4));
+  /* Scripts choose smooth or instant per call (instant under reduced motion). */
+  scroll-behavior: auto;
+}
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--sans);
-  font-size: 16px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 var(--t-body)/var(--lh-body) var(--font-text);
 }
-
-/* Anything that scrolls sideways does it inside its own box, never the page. */
-body { overflow-x: hidden; }
-
-a { color: var(--accent-lit); }
 
 h1, h2, h3, h4 {
-  font-family: var(--mono);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
   margin: 0;
+  font-weight: 500;
+  line-height: var(--lh-head);
+  text-wrap: balance;
 }
+h1 { font-size: var(--t-h1); }
+h2 { font-size: var(--t-h2); }
+h3 { font-size: var(--t-h3); }
+h4 { font-size: var(--t-body); }
+@media (min-width: 60em) { h1 { font-size: var(--t-display); } }
 
+p, ul, ol, dl, dd, figure, blockquote { margin: 0; }
+ul, ol { padding-left: 1.25em; }
+p, li, dd { text-wrap: pretty; }
+strong, b { font-weight: 600; }
+
+img, picture, video, canvas, svg { display: block; max-width: 100%; }
+img { height: auto; }
+
+a {
+  color: var(--ink);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+a:hover { text-decoration-thickness: 2px; }
+
+::selection { background: var(--ink); color: var(--paper); }
+
+:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-gap); }
+
+[hidden] { display: none !important; }
+
+/* Forms: 16px text (so phones don't zoom on focus), 44px tall, edge border.
+   Selects stay native. */
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+input:not([type="range"], [type="checkbox"], [type="radio"]), select, textarea {
+  min-height: var(--tap);
+  padding: 0 var(--s-3);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--t-body);
+  caret-color: var(--ink);
+}
+textarea { padding: var(--s-2) var(--s-3); }
+input[type="range"], input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); }
+input[type="range"] { min-height: var(--tap); }
+
+/* Real code only (the Discover Cleaner landing's run steps). The explicit
+   size keeps the browser's smaller monospace default from applying. */
+pre, code, kbd, samp { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1em; }
+pre { max-width: 100%; overflow: auto; }
+
+/* ---------- Layout ---------- */
+/* One centred column. Side margins: 16px, 32px from 48em, 48px from 75em
+   (52px at 1280, where the 1176px grid is 12 columns of 76px with 24px gaps). */
 .wrap {
-  max-width: var(--maxw);
+  max-width: calc(var(--page-max) + 2 * var(--gutter));
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 var(--gutter);
 }
 
-/* ---------- site header ---------- */
-
+/* ---------- Header ---------- */
+/* Pages ship an empty <header class="site-header"> as the first thing in
+   <body> and chrome.js fills it. A 60px bar plus a 1px rule = 61px, held
+   while it is still empty. */
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 50;
-  /* Pages ship an empty <header class="site-header"> that chrome.js fills;
-     this keeps its 60px + border reserved so nothing jumps when it does. */
-  min-height: 61px;
-  background: rgba(11,13,18,.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  z-index: 10;
+  min-height: var(--header-h);
+  background: var(--paper);
+  border-bottom: var(--rule);
 }
-
 .site-header .wrap {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--s-3);
   height: 60px;
 }
 
 .brand {
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: var(--tap);
+  color: var(--ink);
+  font-size: var(--t-body);
+  font-weight: 600;
   text-decoration: none;
-  letter-spacing: -0.03em;
   white-space: nowrap;
 }
+.brand:hover .brand-word { text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.mark-bg { fill: var(--ink); }
+.mark-fg { fill: var(--paper); }
 
-.brand .dot { color: var(--accent); }
+/* Below 24em (384px) the mark stands in for the wordmark, which stays the
+   link's accessible name: visually hidden, never display:none. */
+.brand-mark { display: block; width: 32px; height: 32px; }
+.brand-word {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (min-width: 24em) {
+  .brand-mark { display: none; }
+  .brand-word { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip-path: none; }
+}
+@media (min-width: 48em) { .brand { font-size: 1.125rem; } }
 
+/* The nav takes the rest of the bar. If text scaling ever makes it wider
+   than that, it scrolls inside itself and the page never does. */
 .site-nav {
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
   margin-left: auto;
-  font-family: var(--mono);
-  font-size: 0.875rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-
+.site-nav::-webkit-scrollbar { display: none; }
 .site-nav a {
-  color: var(--fg-soft);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 4px;
+  color: var(--ink);
+  font-weight: 500;
   text-decoration: none;
-  padding: 0.35rem 0;
-  border-bottom: 1px solid transparent;
   white-space: nowrap;
 }
+.site-nav a:hover { text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 0.35em; }
+.site-nav a[aria-current="page"] { text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; }
+/* The scrolling nav would clip a ring drawn outside the link, so draw it inside. */
+.site-nav a:focus-visible { outline-offset: -2px; }
+@media (min-width: 23.4375em) { .site-nav a { padding: 0 6px; } }
+@media (min-width: 48em) { .site-nav a { padding: 0 12px; } }
 
-.site-nav a:hover { color: var(--fg); }
-.site-nav a[aria-current="page"] {
-  color: var(--fg);
-  border-bottom-color: var(--accent);
+/* ---------- Footer ---------- */
+.site-footer {
+  margin-top: var(--s-8);
+  padding: var(--s-6) 0 var(--s-7);
+  border-top: var(--rule);
+}
+.site-footer-meta { margin-top: var(--s-2); color: var(--graphite); }
+
+/* A wrapping row of links, each a 44px target: the footer, and in-page contents. */
+.link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.link-list a { display: inline-flex; align-items: center; min-height: var(--tap); }
+
+/* ---------- Page head ---------- */
+/* Nothing sits above the h1: no eyebrow, no breadcrumb. */
+.page-head { padding: var(--s-5) 0 var(--s-5); }
+.page-head h1 { font-size: var(--t-h1); }
+.lede { margin-top: var(--s-3); max-width: var(--measure); color: var(--ink); }
+@media (min-width: 60em) {
+  .page-head { padding: var(--s-7) 0 var(--s-6); }
+  .page-head h1 { font-size: var(--t-display); }
 }
 
-.cart-link { position: relative; display: inline-flex; align-items: center; gap: .4rem; }
+.prose { max-width: var(--measure); }
+.prose > * + * { margin-top: var(--s-3); }
+.prose > h2 { margin-top: var(--s-7); }
+.prose > h3 { margin-top: var(--s-5); }
+.prose li + li { margin-top: var(--s-1); }
 
-.cart-badge {
-  display: none;
+/* ---------- Buttons ----------
+   .btn-buy   spends money: Add to cart, Check out, Return to your checkout.
+              52px tall, the full column width, 17/600. A <button> or a link.
+   .btn-ink   the page's one main action that doesn't spend money. 44px, inline.
+   .btn       outline, for everything else. .btn-wide makes it 52px and full width.
+   .btn-text  an underlined text button with a 44px hit area.
+   Labels name their action or destination. */
+.btn-buy {
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.2rem;
-  height: 1.2rem;
-  padding: 0 .35rem;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
-  font-size: .7rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-/* Mobile: let the nav scroll rather than wrap into a mess. */
-
-
-@media (max-width: 700px) {
-  .site-header .wrap { gap: .75rem; }
-  .site-nav { gap: .9rem; overflow-x: auto; scrollbar-width: none; }
-  .site-nav::-webkit-scrollbar { display: none; }
-}
-
-@media (max-width: 480px) {
-  .site-nav .nav-wide { display: none; }
-  .site-header .wrap { gap: .5rem; }
-  .site-nav { gap: .75rem; }
-}
-
-/* Small phones: a little less side padding in the header only, so Cart and
-   its count stay in view down to 360px. */
-@media (max-width: 400px) {
-  .site-header .wrap { padding: 0 1rem; }
-  .site-nav { gap: .6rem; }
-}
-
-/* ---------- layout ---------- */
-
-main { padding: 3rem 0 5rem; }
-
-.section { margin-bottom: 4.5rem; }
-
-.section-head {
-  display: flex;
-  align-items: baseline;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.section-head h2 { font-size: 1.4rem; }
-
-.section-head .more {
-  margin-left: auto;
-  font-family: var(--mono);
-  font-size: .85rem;
-  color: var(--fg-muted);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--s-2) var(--s-5);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--buy-bg);
+  color: var(--buy-fg);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: var(--lh-head);
+  text-align: center;
   text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
 }
-.section-head .more:hover { color: var(--accent-lit); }
+.btn-buy:hover { background: var(--buy-bg-hover); color: var(--buy-fg); }
+.btn-buy:disabled, .btn-buy[aria-disabled="true"] { background: var(--sweep); color: var(--graphite); cursor: default; }
 
-.eyebrow {
-  font-family: var(--mono);
-  font-size: .75rem;
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  color: var(--accent-lit);
-  margin-bottom: .75rem;
-}
-
-.lede { color: var(--fg-muted); font-size: 1.05rem; max-width: 60ch; }
-
-/* ---------- hero ---------- */
-
-.hero {
-  padding: 4.5rem 0 3.5rem;
-  border-bottom: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-
-.hero .wrap { position: relative; }
-
-.hero h1 {
-  font-size: clamp(2.1rem, 6vw, 3.4rem);
-  margin-bottom: 1rem;
-  max-width: 18ch;
-}
-
-.hero p { color: var(--fg-soft); font-size: 1.1rem; max-width: 56ch; }
-.hero p.eyebrow { color: var(--fg-muted); }
-
-.hero-actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 2rem; }
-
-/* Both hero buttons carry the same weight: same fill, size and height. */
-.hero-actions .btn { min-height: 48px; min-width: 12rem; padding: .7rem 1.4rem; font-size: .92rem; }
-
-/* Under the buttons, and quieter than them. */
-.hero .hero-note { color: var(--fg-muted); font-size: .9rem; max-width: 60ch; margin-top: 1.1rem; }
-
-@media (max-width: 700px) {
-  .hero { padding: 1.75rem 0 2.5rem; }
-}
-@media (max-width: 560px) {
-  .hero-actions { flex-direction: column; }
-  .hero-actions .btn { width: 100%; }
-}
-
-/* ---------- buttons ---------- */
-
-.btn {
+.btn-ink, .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: .5rem;
-  padding: .7rem 1.25rem;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: var(--s-1) var(--s-5);
   border-radius: var(--radius);
-  border: 1px solid var(--border-lit);
-  background: var(--surface);
-  color: var(--fg);
-  font-family: var(--mono);
-  font-size: .9rem;
+  font-size: var(--t-body);
   font-weight: 500;
+  line-height: var(--lh-head);
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
-  transition: border-color .15s, background .15s, transform .05s;
+}
+.btn-ink { border: 1px solid var(--ink); background: var(--ink); color: var(--paper); }
+.btn { border: 1px solid var(--edge); background: var(--paper); color: var(--ink); }
+.btn-ink:hover, .btn:hover { text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.btn:active, .btn[aria-pressed="true"] { background: var(--sweep-dk); }
+.btn-ink:disabled { border-color: var(--edge); background: var(--sweep); color: var(--graphite); cursor: default; text-decoration: none; }
+.btn:disabled { color: var(--graphite); cursor: default; text-decoration: none; }
+.btn.btn-wide { display: flex; width: 100%; min-height: 52px; }
+
+.btn-text {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: var(--t-body);
+  text-align: left;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.btn-text:hover { text-decoration-thickness: 2px; }
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
 }
 
-.btn:hover:not(:disabled) { border-color: var(--accent); background: var(--surface-2); }
-.btn:active:not(:disabled) { transform: translateY(1px); }
+/* ---------- Messages ---------- */
+/* The question line (questionLine() in assets/owner-block.js). */
+.ask { max-width: var(--measure); }
 
-.btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 600;
+/* A sweep panel. Its first sentence is <strong>; .notice--fault sets that
+   sentence in the error colour. */
+.notice {
+  max-width: var(--measure);
+  padding: var(--s-4);
+  border-radius: var(--radius);
+  background: var(--sweep);
+  color: var(--ink);
 }
-.btn-primary:hover:not(:disabled) { background: var(--accent-lit); border-color: var(--accent-lit); }
+.notice > * + * { margin-top: var(--s-2); }
+.notice--fault strong:first-child { color: var(--fault); }
+/* Inside <noscript> at the top of main, on pages that JS renders. */
+.noscript { margin: var(--s-5) 0; }
 
-.btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn-block { width: 100%; }
-.btn-sm { padding: .45rem .8rem; font-size: .8rem; }
+/* Empty states: no box. A heading, a few paragraphs, a row of buttons. */
+.empty {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+  justify-items: start;
+}
+.empty p { max-width: var(--measure); }
 
-/* ---------- cards ---------- */
+/* "Who you're buying from": rendered by assets/owner-block.js, and only
+   once the owner has given a name. */
+.owner { display: grid; gap: var(--s-3); justify-items: start; }
+.owner h2 { font-size: var(--t-h3); }
+.owner p { max-width: var(--measure); }
+.owner-photo {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+  background: var(--sweep);
+  object-fit: cover;
+}
 
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+/* ---------- Data rows ---------- */
+/* A <dl> of label and value: stacked on phones, two columns from 35em.
+   Rows may be bare dt/dd pairs or each wrapped in a <div>. */
+.dl-rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: var(--rule);
+}
+.dl-rows > div { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; }
+.dl-rows dt { padding-top: var(--s-3); color: var(--graphite); font-weight: 500; }
+.dl-rows dd { min-width: 0; padding: var(--s-1) 0 var(--s-3); border-bottom: var(--rule); overflow-wrap: anywhere; }
+.dl-rows dd > * + * { margin-top: var(--s-2); }
+@media (min-width: 35em) {
+  .dl-rows { grid-template-columns: 7.5rem minmax(0, 1fr); }
+  .dl-rows dt, .dl-rows dd { padding: var(--s-3) 0; border-bottom: var(--rule); }
+  .dl-rows dt { padding-right: var(--s-3); }
+}
+
+/* Tables: hairline rows; number cells (.num) right-aligned and tabular. */
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: var(--s-3) 0; border-bottom: var(--rule); text-align: left; vertical-align: top; }
+th { font-weight: 500; }
+:is(th, td) + :is(th, td) { padding-left: var(--s-4); }
+th.num, td.num { text-align: right; }
+tr.total th, tr.total td { border-top: 2px solid var(--ink); font-size: var(--t-h3); font-weight: 600; }
+
+/* ---------- Index (home and /projects) ---------- */
+/* Rows are separated by space and by the weight of the title, never by rules. */
+.index { display: grid; row-gap: var(--s-7); }
+.index-row { display: grid; gap: var(--s-3); align-items: start; }
+.index-title { font-size: var(--t-h2); font-weight: 500; }
+.index-text { display: grid; gap: var(--s-3); max-width: var(--measure); }
+.index-status { min-height: calc(2em * var(--lh-body)); }
+.index-media, .index-media img { display: block; border-radius: 0; background: var(--sweep); }
+.index-media img { width: 100%; height: auto; }
+@media (min-width: 60em) {
+  .index { row-gap: var(--s-8); }
+  .index-row { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); }
+  .index-title { grid-column: span 3; }
+  .index-text { grid-column: span 5; }
+  .index-media { grid-column: span 4; }
+  /* A row with no media: the text takes the rest of the row, at reading width. */
+  .index-text:last-child { grid-column: span 9; }
+}
+
+/* ---------- Unit cards (rendered only by assets/unit-card.js) ---------- */
+/* Photo; name and price; id and shipping; condition. No border, no chips,
+   no button, no hover lift. The name's link stretches over the whole card. */
+.unit-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-6) var(--col-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 35em) { .unit-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 60em) {
+  .unit-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .unit-cards--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.unit-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  transition: border-color .15s, transform .15s;
+  gap: var(--s-1);
+  min-width: 0;
 }
+.unit-card-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  margin-bottom: var(--s-2);
+  border-radius: 0;
+  background: var(--sweep);
+  object-fit: contain;
+}
+.unit-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--s-3);
+}
+/* Name and price share the row whenever the column fits a 12rem name beside
+   the price, and stack otherwise, so cards side by side always agree. */
+.unit-card-name { flex: 1 1 12rem; min-width: 0; font-size: var(--t-h3); font-weight: 500; overflow-wrap: anywhere; }
+.unit-card-name a::after, a.unit-card-name::after { content: ""; position: absolute; inset: 0; }
+.unit-card a:focus-visible { outline: none; }
+.unit-card a:focus-visible::after { outline: var(--focus-ring); outline-offset: var(--focus-gap); }
+.unit-card-price { font-size: var(--t-h2); font-weight: 600; line-height: var(--lh-head); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.unit-card-meta, .unit-card-condition { color: var(--graphite); }
+.unit-card-meta .id { color: var(--ink); }
 
-.card:hover { border-color: var(--border-lit); }
-
-.grid {
+/* Compact: a 120px photo column beside the text (home "Listed now", the
+   product page's "Also listed now"). */
+.unit-card--compact {
   display: grid;
-  gap: 1.25rem;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-rows: repeat(3, auto) 1fr;
+  column-gap: var(--s-3);
+  row-gap: var(--s-1);
+  align-items: start;
+}
+.unit-card--compact .unit-card-photo { grid-row: 1 / -1; grid-column: 1; width: 120px; height: 90px; margin: 0; }
+.unit-card--compact > :not(.unit-card-photo) { grid-column: 2; }
+.unit-card--compact .unit-card-name { font-size: var(--t-body); }
+.unit-card--compact .unit-card-price { font-size: var(--t-h3); }
+
+/* ---------- Photo panels ---------- */
+/* Square corners on sweep, contain-fit, so the whole unit always shows.
+   The shop's layout (columns, sticky gallery, pager) is in shop.css. */
+.strip {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: 0;
+  background: var(--sweep);
+}
+.strip::-webkit-scrollbar { display: none; }
+.strip:focus-visible { outline-offset: -2px; }
+.shot {
+  display: grid;
+  place-items: center;
+  flex: 0 0 100%;
+  aspect-ratio: 4 / 3;
+  margin: 0;
+  scroll-snap-align: start;
+  border-radius: 0;
+  background: var(--sweep);
+  color: var(--graphite);
+}
+.shot img { width: 100%; height: 100%; border-radius: 0; object-fit: contain; }
+
+/* Numbered thumbnails. Selected: the number goes to 600 with a 2px underline.
+   Focused: the ring around the whole button. The two never look alike. */
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-3) var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.thumbs button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: center;
+}
+.thumbs img { width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 0; background: var(--sweep); object-fit: contain; }
+.thumbs .n { display: block; margin-top: var(--s-1); font-variant-numeric: tabular-nums; }
+.thumbs [aria-current="true"] .n {
+  font-weight: 600;
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
 }
 
-.grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+/* Cart lines: a hairline between lines; the thumbnail is a square sweep panel. */
+.cart-line { border-bottom: var(--rule); }
+.cart-line img { border-radius: 0; background: var(--sweep); object-fit: contain; }
 
-/* ---------- tags / chips ---------- */
-
-.chips { display: flex; gap: .4rem; flex-wrap: wrap; }
-
-.chip {
-  font-family: var(--mono);
-  font-size: .7rem;
-  padding: .2rem .55rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--fg-muted);
+/* ---------- Utilities ---------- */
+/* Identifiers only (unit ids, a pad's id): a slashed zero, so O and 0 never mix. */
+.id {
+  font-family: var(--font-id);
+  font-weight: 400;
+  font-size-adjust: ex-height 0.517;
+  white-space: nowrap;
+}
+.id--wrap { white-space: normal; overflow-wrap: anywhere; }
+/* Prices, totals, counters and readings: Public Sans with even-width figures. */
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.quiet { color: var(--graphite); }
+.fault { color: var(--fault); }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
   white-space: nowrap;
 }
 
-.chip-accent { border-color: var(--accent-dim); color: var(--accent-lit); }
-.chip-live   { border-color: var(--good); color: var(--good); }
-
-/* ---------- status text ---------- */
-
-.status { font-family: var(--mono); font-size: .8rem; }
-.status.in   { color: var(--good); }
-.status.low  { color: var(--amber); }
-.status.out  { color: var(--bad); }
-
-/* ---------- notices ---------- */
-
-.notice {
-  border: 1px solid var(--border);
-  border-left-width: 3px;
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: .9rem 1.1rem;
-  margin-bottom: 1.25rem;
-  font-size: .92rem;
-}
-
-.notice.warn    { border-left-color: var(--amber); }
-.notice.error   { border-left-color: var(--bad); }
-.notice.success { border-left-color: var(--good); }
-.notice.info    { border-left-color: var(--accent); }
-
-/* ---------- forms ---------- */
-
-input, select, textarea {
-  font-family: inherit;
-  font-size: .9rem;
-  padding: .55rem .7rem;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--fg);
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-label { font-family: var(--mono); font-size: .78rem; color: var(--fg-muted); }
-
-/* Keyboard users must always be able to see where they are. */
-:focus-visible { outline: 2px solid var(--accent-lit); outline-offset: 2px; }
-
-/* ---------- empty state ---------- */
-
-.empty-state {
-  text-align: center;
-  padding: 4rem 1rem;
-  color: var(--fg-muted);
-}
-
-/* ---------- footer ---------- */
-
-.site-footer {
-  border-top: 1px solid var(--border);
-  padding: 2.5rem 0;
-  color: var(--fg-muted);
-  font-size: .85rem;
-}
-
-.site-footer .wrap {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.site-footer nav { margin-left: auto; display: flex; gap: 1.25rem; flex-wrap: wrap; }
-.site-footer a { color: var(--fg-soft); text-decoration: none; font-family: var(--mono); }
-.site-footer a:hover { color: var(--accent-lit); }
-
-/* ---------- utilities ---------- */
-
-.mono { font-family: var(--mono); }
-.muted { color: var(--fg-muted); }
-.dim { color: var(--fg-dim); font-size: .85rem; }
-.center { text-align: center; }
-
-.visually-hidden {
-  position: absolute; width: 1px; height: 1px;
-  padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-}
-
-/* Respect a reduced-motion preference across the whole site. */
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after {
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-  }
+  *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
 }
