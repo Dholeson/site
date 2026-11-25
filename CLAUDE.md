@@ -39,7 +39,7 @@ There is no build step. Cloudflare Pages is connected to this repo: merging to
 | `log.html` | Week-by-week build log |
 | `portfolio.html`, `case.html` | Portfolio grid, and one templated case-study page (`case.html?id=`) for job applications |
 | `data/portfolio.js` | Portfolio content — one block per project, drives both pages |
-| `data/products.js` | Hand-made catalogue — prices, stock, copy (not bench units) |
+| `data/products.js` | Hand-typed catalogue, for new interchangeable stock only (cables, kits) with real photos. **Empty since 2026-11-25**: every used item is a bench unit. Tests use stand-ins from `test/support/catalogue-fixture.js` |
 | `data/projects.js` | Project list |
 | `functions/api/checkout.js` | Stripe Checkout, as a Pages Function. Prices and holds bench units from D1 |
 | `functions/api/bench/[[path]].js` | Bench API RefurbOS calls (Bearer `BENCH_TOKEN`): photos, listings, withdraw, sales |
@@ -265,9 +265,10 @@ These are why a local session is more useful than a cloud one:
 2. **`SSL_ERROR_NO_CYPHER_OVERLAP`** was seen on a `*.pages.dev` preview URL in
    Firefox. Untriaged — most likely antivirus TLS scanning or a Firefox TLS
    setting, but nobody has actually loaded the production URL to check.
-3. **Hand-made products' images are illustrations, not photographs.** Bench
-   units carry the bench's real photos; the `data/products.js` items don't.
-   Buyers of used hardware expect real photos. Swap before taking real money.
+3. **The shelf is only as full as RefurbOS makes it.** The drawn placeholder
+   items came off sale on 2026-11-25; the owner is entering the real consoles
+   as bench units. Until some are listed, the store and homepage show an empty
+   shelf (by design, with held height so nothing jumps).
 4. **Search and shop accounts aren't set up.** Verify dhole.dev in Google
    Search Console (a Domain property, via a TXT record in Cloudflare DNS),
    submit `/sitemap.xml`, and add the shop to Google Merchant Center (free

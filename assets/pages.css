@@ -595,3 +595,12 @@
    the projects grid, which the static "More on dhole.dev" row sits under. */
 .product-loading { min-height: 100vh; }
 #projects-grid:empty { min-height: 100vh; }
+
+/* Store and homepage shelves: hold their height while live units load and
+   when nothing is listed (used units are listed one at a time, so an empty
+   shelf is normal), so the footer and sections below never jump. */
+.grid-hold { min-height: 60vh; display: block; }
+.shelf-hold { min-height: 20rem; display: block; }
+.shelf-empty { max-width: 56ch; margin: 0 auto; }
+.shelf-empty h2 { font-size: 1.3rem; margin-bottom: .5rem; }
+.shelf-empty .btn { margin: .25rem .35rem; }

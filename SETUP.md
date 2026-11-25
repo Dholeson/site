@@ -373,9 +373,13 @@ npx wrangler d1 execute dhole-workshop --remote --command "SELECT count(*) AS or
 
 ### Add or edit a product
 
-Refurbished units come from the bench app; you never add those here. For
-hand-made items it's all in `data/products.js`. Copy a block, give it a new
-unique `id` (never one like `ro-0042`, which is the bench's), deploy.
+Every used console, controller and memory card comes from the bench app,
+with photos of that exact unit; you never add those here. `data/products.js`
+is only for new, interchangeable stock you keep on the shelf (a cable, a
+cleaning kit), each with a real photo. It's empty today. To add one, copy
+the shape in its header comment, give it a new unique `id` (never one like
+`ro-0042`, which is the bench's), and deploy. A test refuses anything there
+that isn't new or that uses a drawing.
 The storefront, the cart, and the checkout function all read that one file, so
 there is nothing to keep in sync.
 
@@ -448,10 +452,9 @@ this scale.
 **Shipping is flat-rate per box size.** Console-sized or accessory-sized, and
 the largest item in the order decides. No weight-based or international rates.
 
-**The product images are illustrations, not photographs.** For used hardware,
-buyers expect photos of the actual unit, and some marketplaces require it. Swap
-them in before taking real money: drop files in `assets/store/` and point each
-product's `image` at them.
+**Used hardware is listed only from the bench.** The drawn placeholder items
+the store launched with are gone; until RefurbOS lists units, the store shows
+an empty shelf.
 
 ---
 

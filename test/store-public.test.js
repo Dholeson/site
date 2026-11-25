@@ -7,10 +7,14 @@ import assert from "node:assert/strict";
 import { onRequest as bench } from "../functions/api/bench/[[path]].js";
 import { onRequest as store } from "../functions/api/store/[[path]].js";
 import { products } from "../data/products.js";
+import { FIXTURE_PRODUCTS } from "./support/catalogue-fixture.js";
 import { harness } from "./support/harness.js";
 import {
   TOKEN, makeEnv, call, jpeg, imageName, pushListing, holdDirect, iso
 } from "./support/store-fixtures.js";
+
+// The live catalogue is empty; a stand-in gives the products.js shape to compare.
+products.push(...FIXTURE_PRODUCTS);
 
 const { section, test, run } = harness();
 

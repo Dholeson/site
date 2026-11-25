@@ -7,7 +7,7 @@
 import { formatMoney, CONDITION_LABELS, SHIPPING } from "../data/products.js";
 import { CHECKOUT_ENDPOINT, SUPPORT_EMAIL } from "./store-config.js";
 import { getCart, addToCart, setQty, removeFromCart, priceCart, inCart } from "./cart.js";
-import { allProducts, findAny, isBenchId, loadBench, reloadBench } from "./catalogue.js";
+import { allProducts, benchState, findAny, isBenchId, loadBench, reloadBench } from "./catalogue.js";
 import { esc } from "./esc.js";
 
 const productHref = id => `/product?id=${encodeURIComponent(id)}`;
@@ -74,6 +74,16 @@ function wireAdd(container) {
 
 // ---------- catalogue ----------
 
+// Used hardware is listed one unit at a time from the bench, so an empty
+// shelf is a normal state, not an error.
+const SHELF_EMPTY = `<div class="empty-state shelf-empty">
+  <h2>Nothing on the shelf right now</h2>
+  <p>Every console here is one specific unit, refurbished and photographed on the bench,
+    and it goes up when it's finished. Check back soon.</p>
+  <p><a class="btn" href="/projects/drift-tester">Test your own controller's sticks</a>
+    <a class="btn" href="/shipping-returns">How units are tested</a></p>
+</div>`;
+
 export function renderStore() {
   const grid = document.getElementById("product-grid");
   const countEl = document.getElementById("result-count");
@@ -106,10 +116,18 @@ export function renderStore() {
     if (sortSel.value === "price-desc") list = [...list].sort((a, b) => b.priceCents - a.priceCents);
     if (sortSel.value === "name")       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
 
-    countEl.textContent = `${list.length} item${list.length === 1 ? "" : "s"}`;
+    const state = benchState();
+    const waiting = state === "idle" || state === "loading";
+    countEl.textContent = waiting && !list.length ? "" : `${list.length} item${list.length === 1 ? "" : "s"}`;
 
+    // Until the live units answer, and when there are none, the grid keeps a
+    // page's worth of height so the footer below never jumps.
+    grid.classList.toggle("grid-hold", !list.length);
     if (!list.length) {
-      grid.innerHTML = `<div class="empty-state"><p>Nothing matches that filter.</p></div>`;
+      grid.innerHTML = waiting ? `<p class="muted">Loading what's on the shelf…</p>`
+        : allProducts().length ? `<div class="empty-state"><p>Nothing matches that filter.</p></div>`
+        : state === "failed" ? `<div class="empty-state"><p>The shelf couldn't be loaded just now. Refresh to try again.</p></div>`
+        : SHELF_EMPTY;
       return;
     }
 
@@ -123,13 +141,12 @@ export function renderStore() {
   fillPlatforms();
   apply();
 
-  // The hand-made catalogue shows at once; the live units join it when they
-  // arrive. If they can't be fetched, the page stays as it is.
+  // The hand-typed catalogue shows at once; the live units join it when they
+  // arrive. If they can't be fetched, the page says so.
   loadBench().then(state => {
-    if (state === "ok") {
-      fillPlatforms();
-      apply();
-    } else if (notice) {
+    fillPlatforms();
+    apply();
+    if (state !== "ok" && notice && allProducts().length) {
       notice.innerHTML = `<div class="notice info">
         Some refurbished units couldn't be loaded just now. Refresh to try again.
       </div>`;

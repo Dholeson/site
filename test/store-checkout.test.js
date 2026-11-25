@@ -9,10 +9,13 @@ import { onRequest as checkout } from "../functions/api/checkout.js";
 import { onRequest as bench } from "../functions/api/bench/[[path]].js";
 import { reserveUnits } from "../lib/store-db.js";
 import { products } from "../data/products.js";
+import { FIXTURE_PRODUCTS } from "./support/catalogue-fixture.js";
 import { harness } from "./support/harness.js";
 import { makeEnv, call, pushListing, row, holdDirect, iso, TOKEN } from "./support/store-fixtures.js";
 
 const { section, test, run } = harness();
+// The live catalogue is empty; stand-ins exercise a mixed bench + catalogue cart.
+products.push(...FIXTURE_PRODUCTS);
 const smallItem = products.find(p => p.shippingClass === "small");
 
 // Replaces fetch (the only thing checkout fetches is Stripe) for one test.

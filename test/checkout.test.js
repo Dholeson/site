@@ -5,10 +5,17 @@
 
 import assert from "node:assert/strict";
 import { products } from "../data/products.js";
+import { FIXTURE_PRODUCTS } from "./support/catalogue-fixture.js";
 import {
   priceOrder, shippingFor, toForm, buildSessionPayload, benchIdsIn
 } from "../lib/checkout-core.js";
 import { isBenchId } from "../lib/store-db.js";
+
+// The live catalogue as shipped, before the stand-ins go in (checked below).
+const LIVE = [...products];
+// The live catalogue is (nearly) empty: used hardware is all bench units. The
+// stand-ins exercise the hand-typed catalogue's pricing and stock code.
+products.push(...FIXTURE_PRODUCTS);
 
 const consoleItem = products.find(p => p.shippingClass === "console");
 const smallItem   = products.find(p => p.shippingClass === "small");
@@ -198,6 +205,14 @@ test("a sold, withdrawn, live-held or unknown bench unit is refused with 409", (
   // A hold whose time has passed counts as available.
   const lapsed = benchUnit("ro-0042", { status: "reserved", reservedUntil: "2026-11-23T11:59:59.999Z" });
   assert.equal(priceOrder([{ id: "ro-0042", qty: 1 }], { bench: stock(lapsed), now: NOW }).error, undefined);
+});
+
+test("the live catalogue holds only new stock with real photos: used hardware is bench units", () => {
+  for (const p of LIVE) {
+    assert.equal(p.condition, "new", `${p.id}: used items are listed from RefurbOS, not data/products.js`);
+    assert.ok(!/\.svg$/i.test(p.image), `${p.id}: needs a real photo, not a drawing`);
+    assert.ok(!isBenchId(p.id), `${p.id}: looks like a bench id`);
+  }
 });
 
 test("bench ids are their own namespace: never in products.js, never priced from it", () => {

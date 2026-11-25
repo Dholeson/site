@@ -56,8 +56,20 @@ function renderFeaturedProducts() {
   // Lead with things actually in stock -- nothing sells a shop like a sold-out row.
   // Bench units come first: one of a kind, with real photos. Three fills the
   // desktop grid exactly; a fourth wrapped to a lonely second row.
-  const paint = () => {
+  const paint = state => {
     const inStock = allProducts().filter(p => p.stock > 0);
+    // Hold the row's height while loading and when the shelf is empty, so the
+    // sections below don't jump when units arrive.
+    el.classList.toggle("shelf-hold", !inStock.length);
+    if (!inStock.length) {
+      el.innerHTML = state === "ok"
+        ? `<div class="empty-state shelf-empty"><p>Nothing on the shelf right now. New units go up as they come off the bench.</p>
+             <p><a class="btn btn-sm" href="/store">See the store</a></p></div>`
+        : state === "failed"
+          ? `<div class="empty-state shelf-empty"><p><a href="/store">See what's in the store</a></p></div>`
+          : `<p class="muted">Loading what's on the shelf…</p>`;
+      return;
+    }
     const bench = inStock.filter(p => p.source === "bench");
     const rest = inStock.filter(p => p.source !== "bench").sort((a, b) => b.priceCents - a.priceCents);
     const featured = [...bench, ...rest].slice(0, 3);
@@ -77,8 +89,8 @@ function renderFeaturedProducts() {
     </article>`).join("");
   };
   // The hand-made catalogue shows at once; live units replace it if they load.
-  paint();
-  loadBench().then(state => { if (state === "ok") paint(); });
+  paint("loading");
+  loadBench().then(paint);
 }
 
 // Small inline marks so the homepage has something to look at without shipping

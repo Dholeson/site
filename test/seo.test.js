@@ -23,7 +23,12 @@ import {
 } from "../lib/seo.js";
 import { sitemapListings } from "../lib/store-db.js";
 import { harness } from "./support/harness.js";
+import { FIXTURE_PRODUCTS } from "./support/catalogue-fixture.js";
 import { ROOT, TOKEN, makeEnv, pushListing, holdDirect, iso, call } from "./support/store-fixtures.js";
+
+// The live catalogue is empty (used hardware is all bench units); stand-ins
+// exercise the hand-typed catalogue's heads and sitemap entries.
+products.push(...FIXTURE_PRODUCTS);
 
 const { section, test, run } = harness();
 const read = rel => readFileSync(join(ROOT, rel), "utf8");
