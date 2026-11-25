@@ -19,8 +19,10 @@ import {
 } from "../../../lib/http.js";
 import {
   LISTING_ID, IMAGE_NAME, WITHDRAW_REASONS, imageKey, imageUrl, productUrl, nowIso,
-  validateListing, upsertListing, withdrawListing, benchListings, salesAfter, effectiveStatus
+  validateListing, upsertListing, withdrawListing, benchListings, salesAfter, effectiveStatus,
+  recordImageSize
 } from "../../../lib/store-db.js";
+import { jpegSize } from "../../../lib/jpeg-size.js";
 
 const MIN_TOKEN_LENGTH = 32;
 const MAX_IMAGE_BYTES = 2_000_000;
@@ -87,6 +89,18 @@ async function putImage(request, env, name) {
   }
   if (!(bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)) {
     return json({ error: "That file isn't a JPEG (it doesn't start with FF D8 FF)." }, 415);
+  }
+
+  // Best effort, and never part of the response: remember the photo's pixel
+  // size for its link preview (lib/seo.js). It runs before the early return
+  // below, so a photo RefurbOS re-sends gets a size too. No D1 binding, bytes
+  // whose size can't be read, or no store_images table (migration 1002 not
+  // applied yet) leave the upload exactly as it was; the last only logs.
+  try {
+    const size = jpegSize(bytes);
+    if (size && env.DB) await recordImageSize(env.DB, name, size);
+  } catch (err) {
+    console.error("Recording a photo's size failed:", err && (err.stack || err.message));
   }
 
   const key = imageKey(name);

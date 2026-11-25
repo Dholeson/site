@@ -18,6 +18,13 @@
 // buy this unit" instead of an Add to cart that could only fail. Setting the
 // secret switches it off by itself. Bench heads carry <meta name="unit-status">.
 //
+// A bench unit's card photo declares its pixel size when store_images
+// (migrations/1002_store_images.sql) knows it, and gives way to the generic
+// card when it is under 900 px wide (lib/seo.js productHead). The bench API
+// records each photo's size on upload; a photo with no row yet is read here
+// once, from its first 128 KiB in R2, and recorded. Every step of that is
+// best effort: whatever fails, the head is the one it was without sizes.
+//
 // It never makes the page worse than the static file: if D1 is unbound or
 // fails, or the markers are missing, the shell goes out unchanged with 200.
 // Old /product.html?id= links reach here through Cloudflare's own 308 to
@@ -29,12 +36,62 @@
 // to _headers), plus X-Robots-Tag: noindex on *.pages.dev.
 
 import { findProduct } from "../data/products.js";
-import { LISTING_ID, effectiveStatus, getListing, isBenchId, nowIso, toProduct } from "../lib/store-db.js";
+import { jpegSize } from "../lib/jpeg-size.js";
+import {
+  IMAGE_NAME, LISTING_ID, effectiveStatus, getListing, imageKey, imageSize, isBenchId, nowIso,
+  recordImageSize, toProduct
+} from "../lib/store-db.js";
 import {
   PAGE_HEADERS, injectHead, isPagesDev, notFoundHead, productHead, shipToCountries, siteUrl, statusFor
 } from "../lib/seo.js";
 
 const BENCH_STATE = { available: "in-stock", reserved: "reserved", sold: "sold", withdrawn: "withdrawn" };
+
+// How much of a photo to read for its size: the frame header comes after the
+// APP segments (EXIF, ICC profile), each at most 64 KiB.
+const SIZE_PROBE_BYTES = 131072;
+
+const logFailure = (what, err) => console.error(`${what} failed:`, err && (err.stack || err.message));
+
+// Photo 1's { width, height } for the card, or null when it isn't known.
+// Never throws. A failed lookup (no store_images table before 1002 is
+// applied, or D1 trouble) is null, as before sizes existed; a photo with no
+// row is read from R2 and its size recorded for next time.
+async function photoSizeOf(row, env) {
+  let name;
+  try {
+    name = JSON.parse(row.images)[0];
+  } catch {
+    return null;
+  }
+  if (typeof name !== "string" || !IMAGE_NAME.test(name)) return null;
+
+  try {
+    const known = await imageSize(env.DB, name);
+    if (known) return known;
+  } catch (err) {
+    logFailure("Looking up a photo's size", err);
+    return null;
+  }
+
+  if (!env.STORE_IMAGES) return null;
+  let size;
+  try {
+    const obj = await env.STORE_IMAGES.get(imageKey(name), { range: { offset: 0, length: SIZE_PROBE_BYTES } });
+    if (!obj) return null;
+    size = jpegSize(new Uint8Array(await obj.arrayBuffer()));
+  } catch (err) {
+    logFailure("Reading a photo's size", err);
+    return null;
+  }
+  if (!size) return null;
+  try {
+    await recordImageSize(env.DB, name, size);
+  } catch (err) {
+    logFailure("Recording a photo's size", err);
+  }
+  return size;
+}
 
 // { status, head } for the page, or null when it can't be known (no D1).
 async function resolvePage(id, env) {
@@ -51,7 +108,8 @@ async function resolvePage(id, env) {
     if (!row) return missing;
     const state = BENCH_STATE[effectiveStatus(row, nowIso())];
     if (!state) return null;
-    return { status: statusFor(state), head: productHead(toProduct(row), { site, state, shipTo, checkout }) };
+    const photoSize = await photoSizeOf(row, env);
+    return { status: statusFor(state), head: productHead(toProduct(row), { site, state, shipTo, checkout, photoSize }) };
   }
 
   const p = findProduct(id);

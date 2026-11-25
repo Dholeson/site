@@ -331,7 +331,9 @@ test("a unit on sale: 200, its real photo on the card, every photo in the data",
   const og = metaContent(r.head, "og:image");
   assert.match(og, /^https:\/\/dhole\.dev\/api\/store\/img\/[0-9a-f]{64}\.jpg$/);
   assert.equal(metaContent(r.head, "twitter:image"), og);
-  assert.equal(metaContent(r.head, "og:image:width"), null, "a photo's size isn't known");
+  // The stand-in photos have no frame header, so their size is unknown and
+  // none is declared. test/image-size.test.js covers known sizes.
+  assert.equal(metaContent(r.head, "og:image:width"), null, "a photo of unknown size declares none");
   assert.equal(unitStatusOf(r.head), "available");
   // The name, then the id buyers quote back, then the price.
   assert.equal(text(titleOf(r.head)), "PlayStation 4 Slim 500GB — Jet Black (RO-0042): $229.00 | dhole.dev");
