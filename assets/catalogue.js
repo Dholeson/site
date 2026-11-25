@@ -54,7 +54,13 @@ function clean(l) {
 
 // Resolves to "ok" or "failed"; never rejects. One request per page load
 // unless reloadBench() is called.
-export function loadBench({ timeoutMs = 8000 } = {}) {
+//
+// The listings are cached for 30 s (functions/api/store), so a cached copy
+// can miss a unit that just went on sale or just came back from a lapsed
+// hold. fresh: true skips the browser cache for that request: the product
+// page asks for it when the server says a unit is available but the cached
+// list doesn't have it.
+export function loadBench({ timeoutMs = 8000, fresh = false } = {}) {
   if (pending) return pending;
   state = "loading";
   pending = (async () => {
@@ -63,6 +69,7 @@ export function loadBench({ timeoutMs = 8000 } = {}) {
     try {
       const res = await fetch(LISTINGS_ENDPOINT, {
         headers: { Accept: "application/json" },
+        cache: fresh ? "no-store" : "default",
         signal: ctrl ? ctrl.signal : undefined
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -81,9 +88,11 @@ export function loadBench({ timeoutMs = 8000 } = {}) {
   return pending;
 }
 
-export function reloadBench() {
+// A new request, whatever the last one returned. opts go through to
+// loadBench, so reloadBench({ fresh: true }) bypasses the cache.
+export function reloadBench(opts) {
   pending = null;
-  return loadBench();
+  return loadBench(opts);
 }
 
 export function benchState() {

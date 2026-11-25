@@ -1,0 +1,272 @@
+/* ==========================================================================
+   The shop's layout: /store, /product, /cart, /order-complete and
+   /checkout-cancelled. Loaded after site.css.
+
+   site.css owns the components (buttons, unit cards, the photo strip and
+   thumbnails, .dl-rows, tables, notices, the owner block); this file only
+   places them. Tokens only: no colour values here.
+
+   Layout shift: each page whose content arrives late holds its space
+   (main.store, #shelf, #product-main, #cart-main, main.order), and late
+   content replaces a held placeholder or goes after everything else.
+   ========================================================================== */
+
+/* ---------- Store ---------- */
+main.store { min-height: calc(100svh - var(--header-h)); }
+.shelf { min-height: 480px; }
+.shelf-count { margin-bottom: var(--s-5); }
+
+/* Empty: what the shelf is, how to ask for a console, and the drift tester.
+   Stacked on phones; 7 and 5 columns from 960px. */
+.shelf-empty { row-gap: var(--s-7); }
+.shelf-empty-main, .shelf-empty-side {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+  justify-items: start;
+  min-width: 0;
+}
+.shelf-empty-side .owner { margin-top: var(--s-5); }
+@media (min-width: 60em) {
+  .shelf-empty {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--col-gap);
+    align-items: start;
+  }
+  .shelf-empty-main { grid-column: span 7; }
+  .shelf-empty-side { grid-column: span 5; }
+}
+
+/* Filled once the listings settle, under the cards. */
+#store-after:not(:empty) {
+  display: grid;
+  gap: var(--s-6);
+  margin-top: var(--s-7);
+}
+
+/* ---------- Product ---------- */
+/* Holds a viewport of height while the unit loads, so the footer is never
+   on screen to be pushed down. */
+#product-main { min-height: 100vh; }
+/* The page's h1 is the unit's name, 20px below 960px: no h2 may be larger. */
+#product-main h2 { font-size: var(--t-h3); }
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+/* Photos run edge to edge on phones. */
+.unit-gallery { margin: 0 calc(-1 * var(--gutter)); }
+.unit-gallery .strip { border-radius: 0; }
+.shot img { background: var(--sweep); }
+
+/* The loading and "couldn't load" panel stands where the photos will be. */
+.shot--panel { padding: var(--s-4); text-align: center; }
+.panel-msg { display: grid; gap: var(--s-2); justify-items: center; color: var(--ink); }
+.panel-msg h1 { font-size: var(--t-h3); }
+
+.counter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: var(--tap);
+  padding: 0 var(--gutter);
+}
+.counter { font-variant-numeric: tabular-nums; }
+.pager { display: flex; gap: var(--s-2); }
+.pager .btn { width: var(--tap); height: var(--tap); padding: 0; }
+.pager .btn svg { display: block; }
+.pager .btn[aria-disabled="true"] { color: var(--graphite); cursor: default; }
+
+.unit-file {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  min-width: 0;
+}
+
+/* The buy block: name and id, condition, price, delivered total, flaws, the
+   primary action, terms. The price is always larger and heavier than the name. */
+.unit-title { font-size: var(--t-h3); font-weight: 500; overflow-wrap: anywhere; }
+.unit-title .id { margin-left: 0.35em; font-size: var(--t-body); }
+.unit-condition { margin-top: var(--s-2); color: var(--graphite); overflow-wrap: anywhere; }
+.unit-stock { margin-top: var(--s-1); }
+.unit .price {
+  margin-top: var(--s-4);
+  font-size: var(--t-h2);
+  font-weight: 600;
+  line-height: var(--lh-head);
+}
+.delivered { margin-top: var(--s-1); }
+.flaws { margin-top: var(--s-2); }
+.qty { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-3); }
+.qty input, .cart-qty input { width: 6rem; }
+.unit-buy > .btn-buy, .unit-buy > .btn-wide { margin-top: var(--s-4); }
+.checkout-off { margin-top: var(--s-2); max-width: var(--measure); }
+.terms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+}
+
+.unit-file section > h2 { margin-bottom: var(--s-3); }
+
+/* The record: references to photos are text buttons; each Looks line starts
+   with a small picture of the first photo it names, its number under it. */
+.ref {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.ref:hover { text-decoration-thickness: 2px; }
+/* "(photo 6)" stays on one line. */
+.ref-group { white-space: nowrap; }
+.looks {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.looks li {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: start;
+}
+.looks li.look-plain { grid-template-columns: minmax(0, 1fr); }
+.look-thumb {
+  display: block;
+  width: 64px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: center;
+}
+.look-thumb img {
+  width: 64px;
+  height: 48px;
+  border-radius: 0;
+  background: var(--sweep);
+  object-fit: contain;
+}
+.look-thumb .n { display: block; margin-top: var(--s-1); font-variant-numeric: tabular-nums; }
+.looks p, .unit-notes p, .unit-notes li { overflow-wrap: anywhere; }
+.unit-notes ul { margin-top: var(--s-3); }
+
+/* The buy action again, after the record, for phones. Not sticky. */
+.unit-again { display: grid; gap: var(--s-1); }
+.unit-again .price { margin-top: 0; }
+.unit-again .btn-buy, .unit-again .btn-wide { margin-top: var(--s-3); }
+
+.unit-also { margin-top: var(--s-7); }
+.unit-also h2 { margin-bottom: var(--s-4); }
+.unit-also .unit-cards { grid-template-columns: minmax(0, 1fr); }
+
+/* A unit that isn't for sale: what happened, and where to go. */
+.unit-state {
+  display: grid;
+  gap: var(--s-4);
+  justify-items: start;
+  max-width: var(--measure);
+  padding-top: var(--s-5);
+}
+.unit-state p { max-width: var(--measure); }
+.unit-listed:not(:empty) {
+  display: grid;
+  gap: var(--s-4);
+  justify-items: start;
+  margin-top: var(--s-7);
+}
+.unit-listed .unit-cards { width: 100%; }
+
+@media (min-width: 35em) {
+  .unit-also .unit-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 60em) {
+  .unit {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--col-gap);
+    align-items: start;
+    padding-top: var(--s-5);
+  }
+  /* The photos stay beside the file while it scrolls. */
+  .unit-gallery { position: sticky; top: var(--sticky-top); margin: 0; }
+  .counter-row { padding: 0; }
+  .unit-title { font-size: var(--t-h2); }
+  .unit .price { font-size: var(--t-h1); }
+  .unit-again { display: none; }
+  .unit-state { padding-top: var(--s-7); }
+}
+
+/* ---------- Cart ---------- */
+#cart-main { min-height: calc(100svh - var(--header-h)); }
+
+.cart-lines { margin: 0; padding: 0; list-style: none; }
+.cart-line {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: start;
+  padding: var(--s-4) 0;
+}
+.cart-line:first-child { padding-top: 0; }
+.cart-line img, .cart-line-ph {
+  display: block;
+  width: 96px;
+  height: 72px;
+  border-radius: 0;
+  background: var(--sweep);
+  object-fit: contain;
+}
+.cart-line--gone { grid-template-columns: 96px minmax(0, 1fr); }
+.cart-line-body { display: grid; gap: var(--s-1); justify-items: start; min-width: 0; }
+.cart-line-name { font-weight: 500; overflow-wrap: anywhere; }
+.cart-line-price { font-weight: 600; text-align: right; }
+.cart-qty { display: flex; align-items: center; gap: var(--s-3); }
+
+.cart-summary {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+  margin-top: var(--s-6);
+}
+.cart-notice:empty { display: none; }
+.cart-action { display: grid; gap: var(--s-2); }
+.cart-facts { display: grid; gap: var(--s-2); }
+
+@media (min-width: 60em) {
+  .cart-layout {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--col-gap);
+    align-items: start;
+  }
+  .cart-lines-col { grid-column: span 7; }
+  .cart-summary {
+    grid-column: span 5;
+    position: sticky;
+    top: var(--sticky-top);
+    margin-top: 0;
+  }
+}
+
+/* ---------- Order complete, checkout cancelled ---------- */
+main.order { min-height: calc(100svh - var(--header-h)); }
+.order-page { max-width: var(--measure); }
+.order-actions, .order-next { margin-top: var(--s-6); }
+.order-next:not(:empty) { display: grid; gap: var(--s-4); justify-items: start; }

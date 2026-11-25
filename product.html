@@ -3,42 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- seo:start: functions/product.js replaces everything down to seo:end with
-       this product's title, description, canonical URL, link-preview tags and
-       schema.org data (lib/seo.js). What's here is only the fallback. Never
-       give it a canonical: every product would claim to be that one page. -->
+  <!-- seo:start: functions/product.js replaces everything from here down to
+       the seo:end marker with this product's own title, description,
+       canonical URL, link-preview tags, schema.org data, unit-status and
+       checkout state (lib/seo.js). What's here is only the fallback, with no
+       claims in it. Never give it a canonical: every product would claim to
+       be that one page. -->
   <title>Product | dhole.dev</title>
-  <meta name="description" content="A retro console or accessory, opened, cleaned and tested before it was listed." />
+  <meta name="description" content="A refurbished retro console or controller from dhole.dev." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
-  <meta property="og:title" content="Tested retro consoles and accessories" />
-  <meta property="og:description" content="Consoles opened, cleaned, and boot-checked before they are listed. Controller sticks measured, not guessed." />
-  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:title" content="Refurbished retro consoles at dhole.dev" />
+  <meta property="og:description" content="A refurbished retro console or controller from dhole.dev." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og-site.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Tested retro consoles and accessories" />
-  <meta name="twitter:description" content="Consoles opened, cleaned, and boot-checked before they are listed. Controller sticks measured, not guessed." />
-  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta name="twitter:title" content="Refurbished retro consoles at dhole.dev" />
+  <meta name="twitter:description" content="A refurbished retro console or controller from dhole.dev." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-site.png" />
   <!-- seo:end -->
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
-  <link rel="stylesheet" href="/assets/site.css" />
-  <link rel="stylesheet" href="/assets/pages.css" />
+
+  <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
+  <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/assets/fonts/red-hat-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+  <link rel="stylesheet" href="/assets/shop.css?v=2" />
+  <script type="module" src="/assets/entry/product.js?v=2"></script>
   <link rel="modulepreload" href="/assets/chrome.js" />
-  <link rel="modulepreload" href="/assets/store.js" />
   <link rel="modulepreload" href="/assets/cart.js" />
   <link rel="modulepreload" href="/assets/catalogue.js" />
-  <link rel="modulepreload" href="/data/products.js" />
+  <link rel="modulepreload" href="/assets/product-page.js" />
+  <link rel="modulepreload" href="/assets/record.js" />
+  <link rel="modulepreload" href="/assets/unit-copy.js" />
+  <link rel="modulepreload" href="/assets/unit-card.js" />
+  <link rel="modulepreload" href="/assets/owner-block.js" />
+  <link rel="modulepreload" href="/assets/checkout-return.js" />
   <link rel="modulepreload" href="/assets/esc.js" />
   <link rel="modulepreload" href="/assets/store-config.js" />
-  <script type="module" src="/assets/entry/product.js"></script>
+  <link rel="modulepreload" href="/data/products.js" />
+  <link rel="modulepreload" href="/data/owner.js" />
 </head>
 <body>
   <header class="site-header"></header>
-  <main>
+  <main class="product">
     <div class="wrap">
-      <p class="eyebrow"><a href="/store">← Back to store</a></p>
+      <noscript><p class="notice noscript"><strong>This page needs JavaScript to show this unit's photos and price.</strong> The <a href="/shipping-returns">shipping and returns</a> page works without it, and you can email <a href="mailto:support@dhole.dev">support@dhole.dev</a>.</p></noscript>
       <div id="product-main"></div>
     </div>
   </main>

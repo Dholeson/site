@@ -139,7 +139,9 @@ test("builds a session payload with server-side prices and absolute image URLs",
   assert.equal(p.mode, "payment");
   // Trailing slash on siteUrl must not produce a doubled slash.
   assert.match(p.line_items[0].price_data.product_data.images[0], /^https:\/\/dhole\.dev\/assets\//);
-  assert.equal(p.success_url, "https://dhole.dev/order-complete.html?session_id={CHECKOUT_SESSION_ID}");
+  // The clean URLs, so the way back from Stripe isn't a 308.
+  assert.equal(p.success_url, "https://dhole.dev/order-complete?session_id={CHECKOUT_SESSION_ID}");
+  assert.equal(p.cancel_url, "https://dhole.dev/checkout-cancelled");
   assert.equal(p.automatic_tax, undefined, "tax must stay off unless explicitly enabled");
 });
 

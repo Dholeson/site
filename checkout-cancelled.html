@@ -3,25 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Checkout cancelled — dhole.dev</title>
+  <title>Checkout cancelled | dhole.dev</title>
   <meta name="robots" content="noindex" />
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
-  <link rel="stylesheet" href="/assets/site.css" />
-  <link rel="stylesheet" href="/assets/pages.css" />
-  <script type="module" src="/assets/entry/checkout-cancelled.js"></script>
+
+  <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
+  <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+  <link rel="stylesheet" href="/assets/shop.css?v=2" />
+  <script type="module" src="/assets/entry/checkout-cancelled.js?v=2"></script>
+  <link rel="modulepreload" href="/assets/chrome.js" />
+  <link rel="modulepreload" href="/assets/cart.js" />
+  <link rel="modulepreload" href="/assets/catalogue.js" />
+  <link rel="modulepreload" href="/assets/checkout-return.js" />
+  <link rel="modulepreload" href="/assets/esc.js" />
+  <link rel="modulepreload" href="/assets/store-config.js" />
+  <link rel="modulepreload" href="/data/products.js" />
 </head>
 <body>
   <header class="site-header"></header>
-  <main>
+  <main class="order">
     <div class="wrap">
-      <div class="notice warn"><strong>No payment was taken.</strong></div>
-      <h1>Checkout cancelled</h1>
-      <p class="muted">Your cart is exactly as you left it, so you can pick up where you stopped.</p>
-      <p style="margin-top:2rem">
-        <a class="btn btn-primary" href="/cart">Back to cart</a>
-        <a class="btn" href="/store">Keep shopping</a>
-      </p>
+      <div class="order-page">
+        <div class="page-head">
+          <h1>Checkout cancelled</h1>
+        </div>
+        <div class="prose">
+          <p>Nothing was charged.</p>
+        </div>
+        <!-- Filled by assets/entry/checkout-cancelled.js: the way back to that
+             checkout while it can still be live, or the cart. It is the last
+             thing on the page, so filling it moves nothing. -->
+        <div id="cancel-next" class="order-next">
+          <noscript><div class="btn-row"><a class="btn" href="/cart">Back to the cart</a></div></noscript>
+        </div>
+      </div>
     </div>
   </main>
 </body>

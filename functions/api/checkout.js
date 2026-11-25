@@ -48,7 +48,8 @@ export async function onRequest({ request, env }) {
   }
   if (!env.STRIPE_SECRET_KEY) {
     console.error("STRIPE_SECRET_KEY is not set for this Pages project.");
-    return json({ error: "Checkout is not configured." }, 500);
+    // code lets the cart say "isn't switched on yet" instead of a failure.
+    return json({ error: "Checkout is not configured.", code: "not_configured" }, 500);
   }
 
   let body;

@@ -1,13 +1,10 @@
-// The cart is cleared only here -- never before redirecting to Stripe, because
-// an abandoned checkout must leave the cart intact.
+// The cart is cleared only here, never before redirecting to Stripe: a
+// checkout left unpaid must leave the cart as it was. The saved way back to
+// that checkout (assets/checkout-return.js) goes too, since it's paid.
 import { mountChrome } from "../chrome.js";
 import { clearCart } from "../cart.js";
-import { SUPPORT_EMAIL } from "../store-config.js";
-import { esc } from "../esc.js";
+import { clearCheckout } from "../checkout-return.js";
 
-mountChrome("store");
+mountChrome("cart");
 clearCart();
-if (SUPPORT_EMAIL) {
-  document.getElementById("support").innerHTML =
-    `Questions about your order? Email <a href="mailto:${esc(SUPPORT_EMAIL)}">${esc(SUPPORT_EMAIL)}</a>.`;
-}
+clearCheckout();

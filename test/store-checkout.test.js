@@ -234,6 +234,8 @@ test("without STRIPE_SECRET_KEY, bench units are listed but checkout says not co
     const r = await buy(env, [{ id: "ro-0042", qty: 1 }]);
     assert.equal(r.status, 500);
     assert.equal(r.json.error, "Checkout is not configured.");
+    // The cart keys its "isn't switched on yet" notice on this.
+    assert.equal(r.json.code, "not_configured");
     assert.equal(stripe.calls.length, 0);
   });
   assert.equal(row(env, "ro-0042").status, "available");

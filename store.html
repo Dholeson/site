@@ -3,86 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Refurbished N64, SNES &amp; GameCube Consoles, Tested | dhole.dev</title>
-  <meta name="description" content="Retro consoles and controllers, opened, cleaned and boot-tested before they are listed, with stick drift measured. Flat-rate US shipping from $6." />
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+  <title>Refurbished retro consoles and controllers | dhole.dev</title>
+  <meta name="description" content="Refurbished retro game consoles and controllers, one unit per listing with photos of that unit. Shipping is $18.00 with a console or $6.00 for accessories." />
   <link rel="canonical" href="https://dhole.dev/store" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
   <meta property="og:url" content="https://dhole.dev/store" />
-  <meta property="og:title" content="Retro consoles, tested before they are listed" />
-  <meta property="og:description" content="Consoles opened, cleaned, and boot-checked before they are listed. Controller sticks measured, not guessed." />
-  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:title" content="Refurbished retro consoles and controllers" />
+  <meta property="og:description" content="One unit per listing, with photos of the unit you get. $18.00 shipping with a console, $6.00 for accessories on their own." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og-site.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Retro consoles, tested before they are listed" />
-  <meta name="twitter:description" content="Consoles opened, cleaned, and boot-checked before they are listed. Controller sticks measured, not guessed." />
-  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
-  <link rel="stylesheet" href="/assets/site.css" />
-  <link rel="stylesheet" href="/assets/pages.css" />
+  <meta name="twitter:title" content="Refurbished retro consoles and controllers" />
+  <meta name="twitter:description" content="One unit per listing, with photos of the unit you get. $18.00 shipping with a console, $6.00 for accessories on their own." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-site.png" />
+
+  <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
+  <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/assets/fonts/red-hat-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+  <link rel="stylesheet" href="/assets/shop.css?v=2" />
+  <script type="module" src="/assets/entry/store.js?v=2"></script>
   <link rel="modulepreload" href="/assets/chrome.js" />
-  <link rel="modulepreload" href="/assets/store.js" />
   <link rel="modulepreload" href="/assets/cart.js" />
   <link rel="modulepreload" href="/assets/catalogue.js" />
-  <link rel="modulepreload" href="/data/products.js" />
+  <link rel="modulepreload" href="/assets/unit-card.js" />
+  <link rel="modulepreload" href="/assets/unit-copy.js" />
+  <link rel="modulepreload" href="/assets/owner-block.js" />
+  <link rel="modulepreload" href="/assets/product-page.js" />
   <link rel="modulepreload" href="/assets/esc.js" />
   <link rel="modulepreload" href="/assets/store-config.js" />
-  <script type="module" src="/assets/entry/store.js"></script>
+  <link rel="modulepreload" href="/data/products.js" />
+  <link rel="modulepreload" href="/data/owner.js" />
 </head>
 <body>
   <header class="site-header"></header>
-  <section class="demo-header">
+  <main class="store">
     <div class="wrap">
-      <p class="eyebrow">Store · refurbished retro consoles</p>
-      <h1>Retro consoles, tested before they're listed</h1>
-      <p class="lede">
-        Everything is opened, cleaned, and boot-checked first. Controller sticks are
-        measured with the <a href="/projects/drift-tester">drift tester</a>, so
-        "no drift" means a reading rather than a guess.
-      </p>
-      <!-- Shipping figures mirror data/products.js SHIPPING; test/seo.test.js checks. -->
-      <ul class="trust-strip" aria-label="What every order gets">
-        <li><b>Opened, cleaned, boot-tested</b>Nothing is listed until it has been through a full boot. Every used unit is the exact one in its photos.</li>
-        <li><b>Flat-rate shipping</b>$18.00 for a console box, $6.00 for accessories. One box covers the order.</li>
-        <li><b>Ships in two business days</b>From the US, with a tracking number by email.</li>
-        <li><b>Consoles: 30-day power-on promise</b>If a console won't power on, there's a 30-day return window.</li>
-      </ul>
-      <p class="dim trust-more"><a href="/shipping-returns">Shipping, returns and how units are tested →</a></p>
-    </div>
-  </section>
-
-  <main>
-    <div class="wrap">
-      <div class="filters">
-        <label>Search
-          <input type="search" id="filter-search" placeholder="N64, controller…" />
-        </label>
-        <label>Platform
-          <select id="filter-platform"><option value="all">All platforms</option></select>
-        </label>
-        <label>Type
-          <select id="filter-category">
-            <option value="all">Everything</option>
-            <option value="console">Consoles</option>
-            <option value="accessory">Accessories</option>
-          </select>
-        </label>
-        <label>Sort
-          <select id="filter-sort">
-            <option value="default">Featured</option>
-            <option value="price-asc">Price: low to high</option>
-            <option value="price-desc">Price: high to low</option>
-            <option value="name">Name</option>
-          </select>
-        </label>
-        <span class="result-count" id="result-count"></span>
+      <noscript><p class="notice noscript"><strong>This page needs JavaScript to show what's on the shelf.</strong> The <a href="/shipping-returns">shipping and returns</a> page works without it, and you can email <a href="mailto:support@dhole.dev">support@dhole.dev</a>.</p></noscript>
+      <div class="page-head">
+        <h1>Refurbished consoles and controllers</h1>
+        <!-- The amounts mirror data/products.js SHIPPING; test/seo.test.js checks. -->
+        <p class="lede">Every listing is one unit, with photos of that unit. Shipping is $18.00 for an order with a console or $6.00 for accessories on their own, and orders ship within two business days. <a href="/shipping-returns">Shipping and returns</a></p>
       </div>
-
-      <div id="store-notice"></div>
-      <div class="grid" id="product-grid"></div>
+      <section id="shelf" class="shelf" aria-label="What's on the shelf">
+        <p class="quiet">Checking what's on the shelf…</p>
+      </section>
+      <div id="store-after"></div>
     </div>
   </main>
 </body>
