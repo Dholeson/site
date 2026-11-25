@@ -214,7 +214,14 @@ test("every screenshot is a real file at its stated pixel size, with alt text", 
     assert.ok(existsSync(file), `${w.id}: ${w.image} is missing`);
     assert.deepEqual(imageSize(file), [w.imageWidth, w.imageHeight], `${w.id}: imageWidth/imageHeight`);
     assert.ok(set(w.imageAlt), `${w.id}: imageAlt`);
+    if (w.imageMobile) {
+      const m = join(ROOT, w.imageMobile.src);
+      assert.ok(w.imageMobile.src.startsWith("/assets/portfolio/") && existsSync(m), `${w.id}: ${w.imageMobile.src} is missing`);
+      assert.deepEqual(imageSize(m), [w.imageMobile.width, w.imageMobile.height], `${w.id}: imageMobile width/height`);
+    }
   }
+  // At 390px a 1440px screenshot is a quarter size and unreadable.
+  assert.ok(findWork("discover-cleaner").imageMobile, "discover-cleaner has its phone crop");
 });
 
 test("profile and findWork keep working, including old ids", () => {
@@ -341,7 +348,8 @@ test("the list: every entry in order, Checked lines, the earlier group last, and
   assert.ok(groupAt > list.indexOf("/case?id=chiptune") && groupAt < list.indexOf("/case?id=osrs-skills"), "the group follows the main list");
   assert.equal(count(list, "<span class=\"quiet\">Checked:</span>"), work.filter(w => set(w.checked)).length);
   assert.equal(count(list, "<img "), work.filter(w => w.image).length, "one image per real screenshot");
-  assert.match(list, /<img src="\/assets\/portfolio\/discover-cleaner\.webp" alt="Discover Cleaner&#39;s Now page[^"]*" width="1440" height="900"/);
+  assert.ok(list.includes('<picture><source media="(min-width: 60em)" srcset="/assets/portfolio/discover-cleaner.webp" width="1440" height="900">'), "the screenshot from 60em");
+  assert.match(list, /<img src="\/assets\/portfolio\/discover-cleaner-phone\.webp" alt="Discover Cleaner&#39;s Now page[^"]*" width="374" height="491" loading="lazy"/);
   assert.ok(list.includes('<p class="quiet">Live demo; open source, 2026</p>'));
   assert.ok(list.includes('<a class="btn-text" href="/projects/drift-tester">Open the drift tester</a>'));
   assert.ok(list.includes('target="_blank" rel="noopener">Open the Show Finder</a>'));

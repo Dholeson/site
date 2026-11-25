@@ -33,7 +33,9 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
 .pf-list { margin-top: var(--s-6); }
 
 .pf-row { display: grid; gap: var(--s-3); align-content: start; min-width: 0; }
-.pf-title { font-size: var(--t-h2); font-weight: 500; }
+/* A grid item: "anywhere" lets a long word ("finnishspitz.org") break under
+   large text instead of widening the row's column past the screen. */
+.pf-title { font-size: var(--t-h2); font-weight: 500; overflow-wrap: anywhere; }
 /* The earlier group sits one step down, under its own h2. */
 .pf-earlier .pf-title { font-size: var(--t-h3); }
 .pf-body { display: grid; gap: var(--s-2); max-width: var(--measure); }
@@ -46,6 +48,14 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
   height: auto;
   border-radius: 0;
   background: var(--sweep);
+}
+/* A phone-layout crop (imageMobile) shows below 60em at its own width at
+   most, so a tablet doesn't blow it up; from 60em the screenshot fills. */
+.pf-media picture img,
+.case-shot picture img { max-width: 23.375rem; }
+@media (min-width: 60em) {
+  .pf-media picture img,
+  .case-shot picture img { max-width: none; }
 }
 
 .pf-earlier { margin-top: var(--s-5); }

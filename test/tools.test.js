@@ -116,10 +116,14 @@ test("every shot file exists at the pixel size the data states (from its header)
   assert.ok(n >= 4, "expected the desktop and phone captures of two tools");
 });
 
-test("the chiptune shot is 720x405 and 358x201 with the spec's alt, and only the written extension exists", () => {
+// The phone crop runs from the transport to the end of the Lead track, so
+// it ends on a whole track; one alt has to be true of both files.
+test("the chiptune shot is 720x405 and 358 wide on a phone, with an alt true of both crops, and only the written extension exists", () => {
   const { shot } = projects.find(p => p.id === "chiptune");
-  assert.deepEqual([shot.width, shot.height, shot.mobile.width, shot.mobile.height], [720, 405, 358, 201]);
-  assert.equal(shot.alt, "The chiptune sequencer with its preloaded pattern: six tracks of sixteen steps, the transport and tempo controls");
+  assert.deepEqual([shot.width, shot.height, shot.mobile.width], [720, 405, 358]);
+  assert.ok(shot.mobile.height > 300 && shot.mobile.height < 420, `phone crop height ${shot.mobile.height}: the transport and one whole track`);
+  assert.equal(shot.alt, "The chiptune sequencer with its preloaded pattern: Play, Randomise and Clear, tempo, waveform and volume, and the step grid, starting with the Lead track");
+  assert.ok(!/six tracks|sixteen steps/.test(shot.alt), "the phone crop shows one track");
   const ext = shot.src.split(".").pop();
   assert.equal(shot.mobile.src.split(".").pop(), ext);
   const other = ext === "webp" ? "png" : "webp";
@@ -207,6 +211,32 @@ test("the Discover Cleaner landing links the demo exactly twice, from a .btn-ink
   assert.ok(!/dc-header|dc-jobs|dc-stage|class="card/.test(html), "the old glow, counters or cards");
 });
 
+// At 390px a 1440px capture is a quarter size and its labels can't be read,
+// so below 60em Insights, Artist page and Library are their phone layouts
+// (npm run capture:tools); from 60em the laptop views, 3-up.
+test("the Discover Cleaner landing: each image states its file's real size, and the three views have phone crops below 60em", () => {
+  const html = read("projects/discover-cleaner.html");
+  let n = 0;
+  for (const m of html.matchAll(/<(img|source)\b([^>]*)>/g)) {
+    const attr = name => (new RegExp(`\\b${name}="([^"]*)"`).exec(m[2]) || [])[1];
+    const src = attr(m[1] === "img" ? "src" : "srcset");
+    if (!src || !src.startsWith("/assets/")) continue;
+    n++;
+    const size = imageSize(join(ROOT, src));
+    assert.deepEqual([Number(attr("width")), Number(attr("height"))], [size.width, size.height], `${src}: stated size`);
+  }
+  assert.ok(n >= 8, `${n} images`);
+  const more = html.slice(html.indexOf('<div class="dc-more">'));
+  const pictures = [...more.matchAll(/<picture>\s*<source media="\(min-width: 60em\)" srcset="([^"]+)"[^>]*>\s*<img src="([^"]+)"/g)];
+  assert.deepEqual(pictures.map(p => p[1].split("/").pop()), ["insights-report.webp", "artist.webp", "library-backlog.webp"]);
+  for (const p of pictures) assert.equal(p[2], p[1].replace(".webp", "-phone.webp"));
+  // One alt and one caption serve both captures. Library's phone crop is the
+  // backlog card alone (scripts/capture-tools.mjs), with no search field and
+  // no playing-now row, so neither may claim them.
+  const library = /<figure>\s*<picture>(?:(?!<\/figure>)[\s\S])*library-backlog(?:(?!<\/figure>)[\s\S])*<\/figure>/.exec(more)[0];
+  assert.ok(!/search|playing/i.test(library.replace(/<source\b[^>]*>|src="[^"]*"/g, "")), library);
+});
+
 section("Chiptune sequencer");
 
 test("chiptune.js has no quoted colour strings, no track colours and no inline --track-color", () => {
@@ -232,6 +262,21 @@ test("the CSS holds the empty grid for as many tracks as chiptune.js has", () =>
   assert.equal(held, tracks, "--tracks in assets/tools.css");
   assert.match(css, /\.seq-steps\s*\{[^}]*grid-template-columns:\s*repeat\(8, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(min-width: 64em\)[\s\S]*grid-template-columns:\s*repeat\(16, minmax\(0, 44px\)\)/);
+});
+
+// The playhead and the keyboard focus ring are both 2px ink rings, so the
+// playhead is dashed, and the focus rule comes after it: a focused cell keeps
+// its solid ring while the playhead passes. In a Windows contrast theme every
+// cell would look the same, so an on cell keeps a fill in the theme's text
+// colour (site.css tokens, so tools.css still names no colour).
+test("cells: a dashed playhead that can't be mistaken for focus, and a pattern that survives contrast themes", () => {
+  const css = read("assets/tools.css");
+  assert.match(css, /\.seq-cell\.playing \{ outline: 2px dashed var\(--ink\); outline-offset: 1px; \}\n\.seq-cell:focus-visible \{ outline: var\(--focus-ring\); outline-offset: var\(--focus-gap\); \}/);
+  const forced = /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/.exec(css);
+  assert.ok(forced, "a forced-colors block");
+  assert.match(forced[1], /\.seq-cell\[aria-pressed="true"\] \{ forced-color-adjust: none; border-color: var\(--forced-on\); background: var\(--forced-on\); \}/);
+  assert.match(forced[1], /\.seq-cell\.playing \{ outline-color: var\(--forced-mark\); \}/);
+  assert.match(read("assets/site.css"), /--forced-on: CanvasText; --forced-mark: Highlight;/);
 });
 
 section("assets/tools.css");

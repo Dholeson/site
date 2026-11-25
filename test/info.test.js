@@ -123,6 +123,40 @@ test("'US addresses only' is on the page if and only if wrangler.toml ships to \
   }
 });
 
+// Stripe isn't connected (CLAUDE.md, Outstanding 1), and every product page
+// says so. This page has to agree. Going live is SETUP.md Step 6, which takes
+// the paragraph out together with this test.
+test("paying: until Stripe is connected, the section opens by saying checkout is off, and SETUP.md says when to take that out", () => {
+  const paying = stripComments(sectionOf(SHIP, "paying"));
+  const paras = [...paying.matchAll(/<p>([\s\S]*?)<\/p>/g)].map(m => textOf(m[1]));
+  assert.equal(paras[0], "Online checkout isn't switched on yet. To buy a unit now, email support@dhole.dev with its id.");
+  assert.match(paying, /<p><strong>Online checkout isn't switched on yet\.<\/strong> To buy a unit now, email <a href="mailto:support@dhole\.dev">support@dhole\.dev<\/a> with its id\.<\/p>/);
+  // The rest reads right once checkout is on, so going live is one deletion.
+  for (const p of paras.slice(1)) assert.ok(!/switched on|not yet/i.test(p), p);
+  assert.ok(paras[1].startsWith("With online checkout, you pay by card on Stripe's checkout page."), paras[1]);
+  const setup = read("SETUP.md");
+  const golive = (/## Step 6[^\n]*\n([\s\S]*?)\n---/.exec(setup) || [, ""])[1];
+  assert.ok(golive.includes("shipping-returns.html") && golive.includes("Online checkout isn't switched on yet"),
+    "SETUP.md Step 6 tells the owner to take the paragraph out");
+});
+
+test("your data: the cart is kept until the order is paid (order-complete removes only the paid lines)", () => {
+  const text = textOf(sectionOf(SHIP, "data"));
+  assert.ok(text.includes("Your cart is kept in your own browser's local storage until your order is paid,"), text);
+  assert.ok(!/until you check out/.test(text));
+  assert.ok(!/you give Stripe/.test(text), "true whether the order came through Stripe or by email");
+});
+
+test("the receipt promise has its setup step: SETUP.md turns on Stripe's Customer emails, Successful payments", () => {
+  // Nothing in the Checkout Session asks Stripe for a receipt, so the
+  // dashboard setting is what makes these two sentences true.
+  assert.ok(textOf(sectionOf(SHIP, "paying")).includes("Stripe emails your receipt"));
+  assert.ok(textOf(bodyOf(read("order-complete.html"))).includes("Stripe has emailed your receipt."));
+  const setup = read("SETUP.md");
+  const step3 = (/## Step 3[^\n]*\n([\s\S]*?)\n---/.exec(setup) || [, ""])[1];
+  assert.ok(/Settings → Customer emails/.test(step3) && /Successful\s+payments/.test(step3), "SETUP.md Step 3: the receipt setting");
+});
+
 test("no other page or site script says 'addresses only'", () => {
   for (const f of siteFiles()) {
     if (f === "shipping-returns.html") continue;

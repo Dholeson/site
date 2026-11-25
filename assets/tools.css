@@ -101,8 +101,10 @@
 }
 
 /* Off: sweep inside an edge border. Off on a beat: sweep-dk. On: ink.
-   The column being heard: a 2px ink ring, 1px out, so it shows round an
-   ink cell too. */
+   The column being heard: a 2px dashed ink ring, 1px out, so it shows round
+   an ink cell too. Dashed, so it never looks like the solid focus ring; the
+   focus rule comes after it, so a focused cell keeps its solid ring while
+   the playhead passes. */
 .seq-cell {
   display: block;
   width: 100%;
@@ -116,8 +118,17 @@
 .seq-cell.beat { background: var(--sweep-dk); }
 .seq-cell[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); }
 .seq-cell:hover { border-color: var(--ink); }
-.seq-cell.playing { outline: 2px solid var(--ink); outline-offset: 1px; }
+.seq-cell.playing { outline: 2px dashed var(--ink); outline-offset: 1px; }
 .seq-cell:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-gap); }
+
+/* Contrast themes replace every colour above, which would draw on, off and
+   beat cells alike. An on cell keeps a fill in the theme's text colour, and
+   the playhead takes its highlight colour. */
+@media (forced-colors: active) {
+  .seq-cell[aria-pressed="true"] { forced-color-adjust: none; border-color: var(--forced-on); background: var(--forced-on); }
+  .seq-cell.playing { outline-color: var(--forced-mark); }
+  .seq-cell:focus-visible { outline-color: var(--forced-on); }
+}
 
 @media (min-width: 64em) {
   .seq { --track-gap: var(--cell-gap); }
@@ -144,7 +155,10 @@
 .dc-now-wide { display: none; }
 .dc-now-phone { width: min(100%, 15rem); }
 .dc-more { display: grid; gap: var(--s-6); }
-.dc-more img { width: 100%; }
+/* Below 60em each <picture> serves the view's phone layout (748px wide at
+   2x), shown at its own 374px at most so a tablet doesn't blow it up; from
+   60em the laptop capture fills its third. */
+.dc-more img { width: 100%; max-width: 23.375rem; }
 
 @media (min-width: 60em) {
   /* Now: the laptop view across 8 columns, the phone view in the other 4 at
@@ -159,6 +173,7 @@
   .dc-now-phone { grid-column: span 4; width: 60%; }
   /* Insights, Artist page and Library side by side. */
   .dc-more { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--col-gap); }
+  .dc-more img { max-width: none; }
 }
 
 /* Run it yourself: real commands, on a square sweep block that scrolls

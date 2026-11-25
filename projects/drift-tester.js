@@ -9,7 +9,11 @@
 // Layout rule (spec §10.9): everything that appears when a pad connects or a
 // measurement finishes goes after the plots, inside .drift-tool, which holds a
 // full viewport. The status line above the plots only ever swaps one short
-// line for another, so a connect never pushes the plots down.
+// line for another, so a connect never pushes the plots down. The readings
+// blocks are there from load, for the sticks the plots show, reading "No
+// controller yet" and "Not measured yet", so the tool's space is filled from
+// the start (no blank band before a pad connects) and a connect only swaps
+// their values; the controller's id line comes after them.
 //
 // The plot's colours come from site.css's custom properties. There are no
 // colour values in this file.
@@ -20,6 +24,7 @@ import {
 } from "./drift-core.js";
 
 const NOT_MEASURED = "Not measured yet";
+const NO_PAD = "No controller yet";
 const FEEDBACK_MS = 2000;
 const STATUS = {
   waiting: "Waiting for a controller",
@@ -67,6 +72,7 @@ export function initDriftTester() {
   colours = readColours();
   state.platform = PLATFORMS[els.platform.value] ? els.platform.value : DEFAULT_PLATFORM;
   syncPlots();
+  renderReadings();
 
   if (typeof ResizeObserver === "function") {
     new ResizeObserver(refit).observe(els.plots);
@@ -93,7 +99,7 @@ export function initDriftTester() {
   els.platform.addEventListener("change", () => {
     state.platform = PLATFORMS[els.platform.value] ? els.platform.value : DEFAULT_PLATFORM;
     syncPlots();
-    if (state.pad) renderReadings();
+    renderReadings();
     renderResults();
   });
   els.measure.addEventListener("click", startMeasure);
@@ -179,9 +185,7 @@ function disconnect() {
   dirty = true;
   setText(els.status, STATUS.waiting);
   els.pad.hidden = true;
-  live = [];
-  els.readings.hidden = true;
-  els.readings.replaceChildren();
+  renderReadings();
   renderResults();
 }
 
@@ -232,7 +236,7 @@ function finishMeasure(complete) {
   }
   state.noSamples = !any;
   setText(els.status, state.pad ? STATUS.connected : STATUS.waiting);
-  if (state.pad) renderReadings();
+  renderReadings();
   renderResults();
 }
 
@@ -242,7 +246,7 @@ function reset() {
   state.noSamples = false;
   state.trails.clear();
   setText(els.status, state.pad ? STATUS.connected : STATUS.waiting);
-  if (state.pad) renderReadings();
+  renderReadings();
   renderResults();
   dirty = true;
 }
@@ -292,16 +296,18 @@ function syncPlots() {
 }
 
 // One block per stick the pad has: an h3 and its rows. Never one for a stick
-// the pad doesn't report.
+// the pad doesn't report. With no pad, one per stick the plots show, with X
+// and Y reading "No controller yet": no number stands in for a reading.
 function renderReadings() {
-  const sticks = currentSticks();
+  const pad = state.pad;
+  const sticks = pad ? currentSticks() : sticksFor(state.platform, state.lastAxes);
   live = [];
   const blocks = sticks.map(stick => {
     const m = state.measured.get(stick.key);
     const block = el("section", { class: "drift-stick" });
     const rows = el("dl", { class: "dl-rows" });
-    const x = el("span", { class: "num" }, "0.000");
-    const y = el("span", { class: "num" }, "0.000");
+    const x = pad ? el("span", { class: "num" }, "0.000") : el("span", { class: "quiet" }, NO_PAD);
+    const y = pad ? el("span", { class: "num" }, "0.000") : el("span", { class: "quiet" }, NO_PAD);
     const value = text => (m ? el("span", { class: "num" }, text) : el("span", { class: "quiet" }, NOT_MEASURED));
     for (const [label, node] of [
       ["X", x], ["Y", y],
@@ -314,7 +320,7 @@ function renderReadings() {
       rows.append(el("dt", {}, label), dd);
     }
     block.append(el("h3", {}, stick.label), rows);
-    live.push({ axes: stick.axes, x, y, lastX: "0.000", lastY: "0.000" });
+    if (pad) live.push({ axes: stick.axes, x, y, lastX: "0.000", lastY: "0.000" });
     return block;
   });
   const parts = [el("h2", { class: "visually-hidden" }, "Readings")];
@@ -323,7 +329,7 @@ function renderReadings() {
   els.readings.replaceChildren(...parts);
   els.readings.dataset.count = String(blocks.length);
   els.readings.hidden = false;
-  els.measure.disabled = !blocks.length || !!state.sampling;
+  els.measure.disabled = !pad || !blocks.length || !!state.sampling;
 }
 
 // One line and one "Copy reading" button per measured stick, or the

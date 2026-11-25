@@ -120,6 +120,12 @@ part I genuinely cannot do for you.
 Staying in **test mode**, copy the test secret key from **Developers → API
 keys** (it starts with `sk_test_`).
 
+Turn on receipts: in **Settings → Customer emails**, switch on **Successful
+payments**. The order-complete page and `/shipping-returns` both tell the
+buyer that Stripe has emailed a receipt, and nothing in the checkout asks
+Stripe to send one, so this setting is what makes that true. Stripe sends
+these emails in live mode only; Step 6 checks one arrives.
+
 > Never put a secret key in this repo. It goes in a Pages secret in the next
 > step. Anyone holding that key can charge cards and issue refunds.
 
@@ -142,7 +148,9 @@ npx wrangler pages deploy .
 
 Nothing else to switch. With the key set, `functions/product.js` stops
 writing `<meta name="checkout" content="off">`, and product pages show Add to
-cart again by themselves.
+cart again by themselves. `/shipping-returns` keeps saying online checkout
+isn't switched on until you go live (Step 6, item 4): a test key can't take
+real cards.
 
 ---
 
@@ -166,7 +174,7 @@ lasts. It is remembered in that browser only.
 Once the bench is connected ("Live bench stock" below), run one more order
 with a bench unit in it. After paying, the unit disappears from the store and
 the bench app's next sync records the sale. A checkout abandoned on Stripe's
-page holds its unit until Stripe expires the session, about half an hour, and
+page holds its unit until Stripe expires the session, about 30 minutes, and
 then the unit is back on sale.
 
 ---
@@ -181,8 +189,16 @@ then the unit is back on sale.
    npx wrangler pages deploy .
    ```
 
+4. Take out the first paragraph of **Paying** in `shipping-returns.html`
+   ("Online checkout isn't switched on yet. To buy a unit now, email…"), and
+   the test in `test/info.test.js` that holds it there ("paying: until
+   Stripe is connected…"). The rest of that section already reads right with
+   checkout on. Product pages and the cart need nothing: they switched over
+   by themselves in Step 4. Commit, and let the deploy run.
+
 Buy something cheap on your own card and refund yourself. It is the only way to
-know the live path works.
+know the live path works. Check that Stripe's receipt reaches your inbox: the
+order-complete page promises one (Step 3, Customer emails).
 
 ---
 
@@ -626,7 +642,7 @@ GameCube minutes apart, both payments succeed and you have oversold. At stock
 **Refurbished units from the bench don't have that problem.** Each is one
 listing in the database. Checkout puts the unit on hold before sending the
 buyer to Stripe, so a second buyer is told it's on hold; the sale is recorded
-when Stripe says it's paid. The hold lasts about half an hour, the same as the
+when Stripe says it's paid. The hold lasts about 30 minutes, the same as the
 Stripe checkout page. The one gap: if a payment finishes in the last seconds
 of a hold just as someone else starts checking out, both can pay. The bench app
 flags that as "sold twice" so you can refund one.
@@ -639,9 +655,9 @@ address and tax registrations. Configure Stripe Tax first, then flip it, set
 to `/shipping-returns`, and redeploy. Whether you owe sales tax at all is a
 question for an accountant.
 
-**No order system beyond Stripe.** Stripe emails the customer a receipt and
-emails you a notification; you fulfil from the Stripe dashboard. Reasonable at
-this scale.
+**No order system beyond Stripe.** Stripe emails the customer a receipt (with
+Customer emails → Successful payments on, Step 3) and emails you a
+notification; you fulfil from the Stripe dashboard. Reasonable at this scale.
 
 **Shipping is flat-rate per box size.** Console-sized or accessory-sized, and
 the largest item in the order decides. No weight-based or international rates.

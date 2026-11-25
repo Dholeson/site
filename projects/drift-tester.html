@@ -15,10 +15,12 @@
   <meta property="og:image" content="https://dhole.dev/assets/brand/og-tools.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="dhole.dev/projects: tools that run in your browser" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Controller Drift Tester" />
   <meta name="twitter:description" content="Plug in a controller and measure where its sticks rest and how much they jitter, in your browser. Nothing is uploaded." />
   <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-tools.png" />
+  <meta name="twitter:image:alt" content="dhole.dev/projects: tools that run in your browser" />
 
   <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
@@ -61,9 +63,12 @@
       </div>
 
       <!-- The tool holds a full viewport, so the method section below starts
-           out of view. Whatever appears when a pad connects or a measurement
-           finishes is added after the plots, inside this section, so nothing
-           already on screen moves. The status line stays one line long. -->
+           out of view. The readings blocks are drawn from load (values "No
+           controller yet" and "Not measured yet"), so the tool's space is
+           filled before a pad connects. Whatever appears when a pad connects
+           or a measurement finishes (the controller's id, results, the store
+           line) is added after them, inside this section, so nothing already
+           on screen moves. The status line stays one line long. -->
       <section class="drift-tool" aria-label="Drift tester">
         <ol class="steps">
           <li>Plug in a controller and press any button on it, so the browser can see it. On a phone or tablet, pair a Bluetooth controller first.</li>
@@ -99,8 +104,8 @@
           </figure>
         </div>
 
-        <p class="drift-pad" id="drift-pad" hidden>Controller: <span class="id id--wrap"></span></p>
         <div class="drift-readings" id="drift-readings" hidden></div>
+        <p class="drift-pad" id="drift-pad" hidden>Controller: <span class="id id--wrap"></span></p>
         <div class="drift-results" id="drift-results" hidden></div>
         <p class="drift-store" id="drift-store" hidden>Need a controller? <a href="/store">See what's in the store</a>.</p>
       </section>

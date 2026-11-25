@@ -18,6 +18,9 @@
 //   image      optional real screenshot (put files in /assets/portfolio/),
 //              with imageWidth and imageHeight (its pixel size, so the page
 //              holds its space) and imageAlt. No stand-ins: no image is fine.
+//              imageMobile { src, width, height }, optional: the same view in
+//              its phone layout, shown below 60em, where a 1440px screenshot
+//              is too small to read. imageAlt must be true of both.
 //   tags       the "Built with" line           links    [{label, href, primary}];
 //                                                       a label names where it goes
 //   problem    one paragraph                   shipped  bullet list
@@ -96,6 +99,7 @@ export const work = [
     imageWidth: 1440,
     imageHeight: 900,
     imageAlt: "Discover Cleaner's Now page: the song playing, a countdown to when it clears from the backlog, and Like, Keep and Clear now buttons.",
+    imageMobile: { src: "/assets/portfolio/discover-cleaner-phone.webp", width: 374, height: 491 },
     tags: ["Python", "Flask", "SQLite", "Vanilla JS", "Spotify API", "Last.fm API", "Agent orchestration"],
     links: [
       { label: "Open the Discover Cleaner demo", href: "/projects/discover-cleaner-demo/", primary: true },
@@ -129,13 +133,13 @@ export const work = [
     ],
     outcome:
       "Rebuilt and open source, with 444 automated tests. Anyone can try the real interface in the browser, with no account and nothing to install.",
-    note: "Not affiliated with or endorsed by Spotify. The demo's listening history is my own, frozen on Oct 4, 2026."
+    note: "Not affiliated with or endorsed by Spotify. The demo's listening history is my own, frozen on October 4, 2026."
   },
 
   {
     id: "drift-tester",
     title: "Controller Drift Tester",
-    pitch: "Plug in a gamepad and get a measured number for how far its sticks have wandered.",
+    pitch: "Plug in a controller and get a measured number for how far its sticks rest off-centre.",
     kind: "Tools",
     year: 2026,
     role: "Solo: concept, direction and testing.",
@@ -147,8 +151,8 @@ export const work = [
     problem:
       "Used controllers get sold as \"no drift\" because someone wiggled the stick and shrugged. I wanted a number I could put in a listing.",
     shipped: [
-      "A live view of both sticks.",
-      "A two-second rest test: let go of the sticks and it measures how far off-centre they sit and how much they jitter."
+      "A live view of each stick the controller reports.",
+      "A 2-second rest test: let go of the sticks and it measures how far off-centre they sit and how much they jitter."
     ],
     decisions: [
       {
@@ -255,7 +259,7 @@ export const work = [
     tags: ["C#", "PowerShell", "Cloudflare Workers", "Prism Launcher", "Modrinth"],
     links: [{ label: "See the Lazy Sunday page", href: "/minecraft", primary: true }],
     problem:
-      "Modded Minecraft normally means installing a launcher and Java, keeping a mod list in sync by hand, and typing in a server address. That's five ways to lose a new player before they've joined, and my least technical friend was the one I was building it for.",
+      "Modded Minecraft normally means installing a launcher and Java, keeping a mod list in sync by hand, and typing in a server address. That's four ways to lose a new player before they've joined, and my least technical friend was the one I was building it for.",
     shipped: [
       "A one-time Windows installer. After that, clicking Play on the web page launches the game already joining the right server.",
       "Updates happen by themselves on every launch: the app, the launcher and that world's mods.",
@@ -361,8 +365,8 @@ export const work = [
   {
     id: "shop",
     group: "earlier",
-    title: "dhole.dev Shop",
-    pitch: "A storefront for refurbished retro consoles with real card checkout, designed so a buyer can't be overcharged and I can't be underpaid.",
+    title: "dhole.dev Store",
+    pitch: "A storefront for refurbished retro consoles, with a card checkout designed so a buyer can't be overcharged and I can't be underpaid.",
     kind: "Web apps",
     year: 2026,
     role: "Solo: design, direction and deployment.",
@@ -378,8 +382,9 @@ export const work = [
       "Take card payments without running a server, and without the price ever being something a buyer could tamper with.",
     shipped: [
       "Catalogue, product pages, a cart and Stripe checkout.",
-      "One catalogue file that both displays prices and charges them, so the two can never disagree.",
-      "16 automated tests on the money path, including one proving a tampered price is ignored."
+      "Live stock from my refurbishing app: each unit is listed once, with photos of that unit, and held while its buyer pays.",
+      "One source for each price that both displays it and charges it (the catalogue file for new stock, the store's database for refurbished units), so the two can never disagree.",
+      "Automated tests on the money path, including one proving a tampered price is ignored."
     ],
     decisions: [
       {
@@ -387,16 +392,12 @@ export const work = [
         body: "The buyer's browser never sends a price, only what they want and how many. The server looks up the price itself, so editing the page can change what you order but never what it costs."
       },
       {
-        title: "Back up claims with measurements",
-        body: "Used-controller listings quote readings from my own Drift Tester rather than 'works great'."
-      },
-      {
         title: "Write the gap down and ship",
-        body: "Stock doesn't count itself down yet, so two people could buy the last unit minutes apart. At this volume that's a known, written-down risk with a planned fix."
+        body: "Units are held during checkout, so two people can't buy the same one, except at one edge: a payment that completes just as its hold runs out, while a second buyer takes the unit. Both sales are recorded and the unit is flagged as sold twice, so the second buyer gets a full refund. At this volume that's a known, written-down risk."
       }
     ],
     outcome: "Built and tested. Card payments are being connected before launch.",
-    next: "Connect payments, replace the illustrations with photos of the actual units (buyers of used hardware expect them), then automatic stock counts."
+    next: "Connect payments."
   },
 
   {

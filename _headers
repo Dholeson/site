@@ -33,14 +33,19 @@
   Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://ddragon.leagueoflegends.com; font-src 'self'; connect-src 'self' https://ddragon.leagueoflegends.com; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
 
 # Hashed-by-content assets could be cached harder, but nothing here is
-# fingerprinted yet, so keep it short and let the CDN revalidate.
+# fingerprinted yet, so keep it short and let the CDN revalidate. The two
+# longer rules below also match /assets/*, so each detaches its value first,
+# as the CSP exceptions do; otherwise the two values are comma-joined and a
+# cache keeps the first, 600 s.
 /assets/*
   Cache-Control: public, max-age=600, must-revalidate
 
 /assets/store/*
+  ! Cache-Control
   Cache-Control: public, max-age=86400, must-revalidate
 
 /assets/brand/*
+  ! Cache-Control
   Cache-Control: public, max-age=604800, must-revalidate
 
 # Never cache anything static under /api/. Note that _headers rules don't

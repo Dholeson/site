@@ -21,8 +21,8 @@ import { onRequest as bench } from "../functions/api/bench/[[path]].js";
 import { products, SHIPPING, formatMoney } from "../data/products.js";
 import { work, findWork } from "../data/portfolio.js";
 import {
-  CASE_IMAGE, FALLBACK_IMAGE, PAGE_HEADERS, SITE_PAGES, STATES, caseHead, caseNotFoundHead, clip, decimal,
-  injectHead, itemCondition, jsonLd, notFoundHead, productHead, SEO_START, SEO_END
+  CARD_ALT, CASE_IMAGE, FALLBACK_IMAGE, PAGE_HEADERS, SITE_PAGES, STATES, caseHead, caseNotFoundHead, clip, decimal,
+  injectHead, itemCondition, jsonLd, lowerBenchId, notFoundHead, productHead, SEO_START, SEO_END
 } from "../lib/seo.js";
 import { sitemapListings } from "../lib/store-db.js";
 import { harness } from "./support/harness.js";
@@ -451,6 +451,40 @@ test("a withdrawn unit: 404, noindex, a 'No longer listed' card with no price", 
   assert.equal(text(metaContent(r.head, "description")), "This unit is no longer listed. See what's listed now at dhole.dev.");
 });
 
+test("lowerBenchId(): a unit id in any other case gives the lower-case one; anything else null", () => {
+  assert.equal(lowerBenchId("RO-0042"), "ro-0042");
+  assert.equal(lowerBenchId("Ro-123456"), "ro-123456");
+  for (const id of ["ro-0042", "RO-12", "RO-1234567", "RO-0042 ", "SNES-CONSOLE", "", null, undefined, 42]) {
+    assert.equal(lowerBenchId(id), null, String(id));
+  }
+});
+
+// Pages show the id as RO-0042, so a hand-made link may use it that way.
+test("a unit id not in lower case: 301 to the lower-case URL, the rest of the query kept, before D1", async () => {
+  const env = makeEnv();
+  await pushListing(bench, env, "ro-0042");
+  for (const [path, to] of [
+    ["/product?id=RO-0042", "/product?id=ro-0042"],
+    ["/product?id=Ro-0042", "/product?id=ro-0042"],
+    ["/product?id=RO-0042&utm_source=chat", "/product?id=ro-0042&utm_source=chat"],
+    ["/product?id=RO-9999", "/product?id=ro-9999"]
+  ]) {
+    const r = await page(env, path);
+    assert.equal(r.status, 301, path);
+    assert.equal(r.res.headers.get("Location"), to, path);
+    assert.equal(r.html, "", path);
+    for (const [k, v] of Object.entries(PAGE_HEADERS)) assert.equal(r.res.headers.get(k), v, `${path} ${k}`);
+  }
+  // Where it lands: the unit's own page.
+  assert.equal((await page(env, "/product?id=ro-0042")).status, 200);
+  // The redirect needs no D1, and HEAD gets it too; pages.dev still says noindex.
+  assert.equal((await page(makeEnv({ DB: undefined }), "/product?id=RO-0042")).status, 301);
+  assert.equal((await page(env, "/product?id=RO-0042", { method: "HEAD" })).status, 301);
+  assert.equal((await page(env, "/product?id=RO-0042", { host: "dhole-dev.pages.dev" })).res.headers.get("X-Robots-Tag"), "noindex");
+  // Malformed ids aren't redirected: they are simply not found.
+  assert.equal((await page(env, "/product?id=RO-1")).status, 404);
+});
+
 section("functions/product.js: never worse than the static file");
 
 test("no D1 binding: a bench id gets the shell unchanged, 200", async () => {
@@ -756,6 +790,28 @@ test("_headers keeps every *.pages.dev copy out of search, below /*", () => {
   }
 });
 
+// Pages applies every rule that matches and comma-joins a header set twice:
+// /assets/brand/og-site.png would go out as "max-age=600, ..., max-age=604800,
+// ..." and a cache keeps the first. Each longer-lived rule under /assets/
+// detaches the 600 s value first, the way the CSP exceptions detach theirs.
+test("_headers: each /assets/ rule below /assets/* detaches its Cache-Control before setting its own", () => {
+  const base = HEADER_RULES.findIndex(r => r.pattern === "/assets/*");
+  assert.ok(base >= 0, "/assets/* rule");
+  assert.deepEqual(HEADER_RULES[base].lines, [{ name: "Cache-Control", value: "public, max-age=600, must-revalidate" }]);
+  const more = HEADER_RULES.filter(r => r.pattern !== "/assets/*" && r.pattern.startsWith("/assets/"));
+  assert.deepEqual(more.map(r => r.pattern).sort(), ["/assets/brand/*", "/assets/store/*"]);
+  for (const r of more) {
+    assert.ok(HEADER_RULES.indexOf(r) > base, `${r.pattern} must stay below /assets/* (a detach only removes what earlier rules set)`);
+    const sets = r.lines.findIndex(l => l.name === "Cache-Control");
+    const detach = r.lines.findIndex(l => l.detach === "Cache-Control");
+    assert.ok(sets >= 0, `${r.pattern} sets Cache-Control`);
+    assert.ok(detach >= 0 && detach < sets, `${r.pattern}: "! Cache-Control" before its own value`);
+  }
+  // The seven-day brand cache is why changed cards and icons get new names.
+  assert.deepEqual(HEADER_RULES.find(r => r.pattern === "/assets/brand/*").lines,
+    [{ detach: "Cache-Control" }, { name: "Cache-Control", value: "public, max-age=604800, must-revalidate" }]);
+});
+
 test("_routes.json sends /product, /case and /sitemap.xml to their Functions, and nothing else new", () => {
   const routes = JSON.parse(read("_routes.json"));
   assert.deepEqual(routes.include, ["/api/*", "/product", "/sitemap.xml", "/case"]);
@@ -831,6 +887,36 @@ test("canonical and og:url name the clean URL; links and preloads don't use .htm
       assert.ok(existsSync(join(ROOT, m[1])), `${f}: preload ${m[1]} is missing`);
     }
   }
+});
+
+test("every page with an og:image describes it in og:image:alt and twitter:image:alt, in the card's own words", () => {
+  let n = 0;
+  for (const f of SITE_HTML) {
+    const html = read(f);
+    const og = metaContent(html, "og:image");
+    if (!og) continue;
+    n++;
+    const card = og.replace("https://dhole.dev", "");
+    assert.ok(CARD_ALT[card], `${f}: og:image ${og} is not one of the cards in lib/seo.js CARD_ALT`);
+    assert.equal(metaContent(html, "og:image:alt"), CARD_ALT[card], `${f}: og:image:alt`);
+    assert.equal(metaContent(html, "twitter:image"), og, `${f}: twitter:image`);
+    assert.equal(metaContent(html, "twitter:image:alt"), CARD_ALT[card], `${f}: twitter:image:alt (X reads only this one)`);
+  }
+  assert.ok(n >= 12, `only ${n} pages have an og:image`);
+});
+
+test("the Function heads carry twitter:image:alt equal to og:image:alt, card or photo", () => {
+  const heads = [
+    productHead(BENCH_UNIT), productHead(BENCH_UNIT, { photoSize: { width: 640, height: 480 } }),
+    productHead(BENCH_UNIT, { state: "sold" }), productHead(CATALOGUE_ITEM), caseHead(findWork("shop"))
+  ];
+  for (const h of heads) {
+    const alt = metaContent(h, "og:image:alt");
+    assert.ok(alt, h);
+    assert.equal(metaContent(h, "twitter:image:alt"), alt);
+  }
+  assert.equal(metaContent(heads[1], "twitter:image:alt"), CARD_ALT[FALLBACK_IMAGE.path], "a small photo gives way to og-site, and its alt");
+  assert.equal(metaContent(heads[4], "twitter:image:alt"), CARD_ALT[CASE_IMAGE.path]);
 });
 
 test("pages that use the shared chrome reserve its header", () => {

@@ -17,7 +17,7 @@ npm test                          # node test/run.mjs: every test/*.test.js (che
 npm run dev                       # wrangler pages dev . (Functions, local D1 + R2; see SETUP.md)
 npm run check:layout              # Playwright layout check of every page (not in npm test; see Testing)
 npm run sync:owner                # after editing data/owner.js or the portfolio profile (see Design system)
-npm run capture:tools             # re-take the chiptune captures after its UI changes
+npm run capture:tools             # re-take the tool captures (chiptune, Discover Cleaner phone crops) after a UI change
 npm run render:brand              # re-render the link-preview cards and icon-180.png from scripts/brand/
 npm run sync:discover-cleaner     # re-vendor the Discover Cleaner demo (see below)
 npx wrangler pages deploy .       # manual deploy (rarely needed)
@@ -41,7 +41,7 @@ without being listed anywhere.
 | `scripts/` | `sync-discover-cleaner.mjs`, the one vendoring script, plus the dev scripts below. None of them is part of the site (`robots.txt` disallows `/scripts/`) |
 | `scripts/sync-owner.mjs` | `npm run sync:owner`: writes `portfolio.html`'s owner block from `data/owner.js` and the portfolio profile, then runs `render-brand.mjs` |
 | `scripts/render-brand.mjs`, `scripts/brand/` | `npm run render:brand`: the three link-preview cards and `icon-180.png`, rendered over HTTP from the HTML templates in `scripts/brand/` |
-| `scripts/capture-tools.mjs` | `npm run capture:tools`: the chiptune captures in `assets/home/`, taken from the real page |
+| `scripts/capture-tools.mjs` | `npm run capture:tools`: the chiptune pair in `assets/home/`, taken from the real page, and the Discover Cleaner phone crops (`assets/projects/discover-cleaner/*-phone.webp`, `assets/home/discover-cleaner-now-phone.webp`, `assets/portfolio/discover-cleaner-phone.webp`) |
 | `scripts/check-layout.mjs`, `scripts/fixtures/` | `npm run check:layout`, and the listing fixtures it serves |
 | `scripts/lib/` | `static-server.mjs` (a Pages stand-in for the dev scripts: clean URLs, `_redirects`, the real CSP, `/product` and `/case` heads from fixtures), `playwright.mjs` (finds Playwright), `owner-markup.mjs` |
 | `store.html`, `product.html`, `cart.html` | Shop. `/product?id=ro-0042` renders a bench unit with a photo gallery |
@@ -62,7 +62,7 @@ without being listed anywhere.
 | `assets/shop.css`, `assets/home.css`, `assets/tools.css`, `assets/drift.css`, `assets/portfolio.css`, `assets/info.css` | One area stylesheet per page group, linked after `site.css`. Colours and type sizes only from the tokens |
 | `assets/fonts/` | Public Sans (variable) and Red Hat Mono 400, latin woff2, self-hosted, with their OFL licences |
 | `assets/brand/` | `og-site.png`, `og-tools.png`, `og-portfolio.png` (1200×630 link-preview cards) and `icon.svg`, `icon-180.png`. Rendered by `npm run render:brand` |
-| `assets/home/` | Real captures for the tool rows on home and `/projects` (desktop and phone crops). The chiptune pair is made by `npm run capture:tools` |
+| `assets/home/` | Real captures for the tool rows on home and `/projects` (desktop and phone crops). The chiptune pair and the Discover Cleaner phone crop are made by `npm run capture:tools` |
 | `log.html` | Week-by-week build log. Not in the nav or footer; kept until the owner decides |
 | `portfolio.html`, `case.html` | Portfolio list, and one templated case-study page (`/case?id=`) for job applications |
 | `data/portfolio.js` | Portfolio content — one block per project, drives both pages. Its `profile` (contact links) feeds `npm run sync:owner` |
@@ -415,11 +415,25 @@ HTML between `<!-- owner:start -->` and `<!-- owner:end -->`, and
 re-renders the link-preview cards, so `og-portfolio.png` shows the name
 (that step needs Playwright).
 
-**Re-run `npm run capture:tools` after a tool's UI changes.** Today it takes
-the chiptune pair in `assets/home/`, from the real page, and refuses unless
-Public Sans actually rendered. Commit the images; `test/tools.test.js` checks
-their pixel sizes against `data/projects.js`. Shots are real captures only: a
-tool without one gets a text-only row. After changing a template in
+**Re-run `npm run capture:tools` after a tool's UI changes** (and after
+re-vendoring the Discover Cleaner demo). It takes the chiptune pair in
+`assets/home/` from the real page, and refuses unless Public Sans actually
+rendered. It also makes the Discover Cleaner phone crops, which stand in
+below 60em for laptop captures too small to read at phone width:
+`insights-report-phone`, `artist-phone` and `library-backlog-phone` in
+`assets/projects/discover-cleaner/`, from the vendored demo at 390 px and
+DPR 2, and two crops of the committed `now-phone.webp`:
+`assets/home/discover-cleaner-now-phone.webp` (the home and `/projects` row)
+and `assets/portfolio/discover-cleaner-phone.webp` (the portfolio's
+`imageMobile`). That part needs sharp (`npm i --no-save sharp`). No frame
+shows an album cover, since the demo loads those from Spotify. Each
+`<picture>` has one alt (and on `/projects/discover-cleaner` one caption)
+for both of its files, so it names only what both show. Commit the images
+and copy the sizes it prints into `projects/discover-cleaner.html`,
+`data/projects.js`, `index.html` and `data/portfolio.js`:
+`test/tools.test.js`, `test/home.test.js` and `test/portfolio.test.js` check
+them against the files' headers. Shots are real captures only: a tool
+without one gets a text-only row. After changing a template in
 `scripts/brand/`, run `npm run render:brand` the same way.
 
 **Releases are cache-safe by hand.** `/assets/*` is cached for 600 s and
@@ -472,14 +486,23 @@ merging anything that changes rendering. It serves the repo with
 `scripts/lib/static-server.mjs` (random port, the real CSP, `/product` and
 `/case` heads written from `scripts/fixtures/listings.mjs`) and loads every
 page at 320, 360, 390 and 1280 px (plus 1440 for `/` and `/store`, 960 for the
-product page and chiptune), with listings delayed 1 s. It checks: no
-horizontal overflow; a 61 px header; layout shift 0.000; text at least 16 px;
-no heading larger than the h1; text contrast at least 4.5:1; no CSP errors;
-the product page's `[data-primary-action]` inside the first viewport with a
-120-character name; `/cart` never showing "$0.00"; and the drift tester with
-a stubbed 60-character gamepad. Options: `--units 0,1,5,failed`,
-`--checkout off`, `--slow-fonts` (fonts 2 s late; shift must stay 0),
-`--text-scale` (115% text), `--pages`, `--widths`. Playwright isn't a
+product page and chiptune, and phone landscape, 844×390, for the product
+page), with listings delayed 1 s. It checks: no horizontal overflow; a 61 px
+header; layout shift 0.000; text at least 16 px; no heading larger than the
+h1; text contrast at least 4.5:1; no CSP errors; the product page's
+`[data-primary-action]` inside the first viewport at 360, 390, 960 and 1280
+with a 120-character name (with `--units failed`, where the page has no buy
+action by design, its "Couldn't load this unit just now." message instead);
+the product page's photo panel and its counter row inside the first viewport
+at every size, phone landscape included (photos); `/cart` never showing
+"$0.00"; and the drift tester with a stubbed 60-character gamepad. Options:
+`--units 0,1,5,failed`, `--checkout off`, `--slow-fonts` (fonts 2 s late;
+shift must stay 0), `--text-scale`, `--pages`, `--widths`. `--text-scale`
+makes text bigger or wider at 320, 360 and 390 px three ways: html
+font-size 115%, WCAG 1.4.12 text spacing (line height 1.5, letter 0.12em,
+word 0.16em, paragraphs 2em apart), and the browser's own text size at 200%.
+For each it checks only that the page doesn't overflow and that Cart, with
+its count, shows in full inside the header nav. Playwright isn't a
 dependency of the site: install it yourself (the script's hint is
 `npm i -D playwright && npx playwright install chromium`; keep that out of
 the commit) or point `PLAYWRIGHT_MODULE` at an existing install:
@@ -488,11 +511,13 @@ the commit) or point `PLAYWRIGHT_MODULE` at an existing install:
 PLAYWRIGHT_MODULE=/opt/node-tools/node_modules/playwright/index.js npm run check:layout > layout.log 2>&1 &
 ```
 
-A full run is a few hundred page loads and takes minutes, so run it in the
+A run is 100 to 300 page loads and takes a few minutes, so run it in the
 background. `render:brand` and `capture:tools` find Playwright the same way.
-On 2026-11-25 every page passed 614 runs (default, 1 unit, slow fonts, 115%
-text, checkout off): overflow 0, header 61 px, layout shift 0.000, smallest
-text 16 px, worst text contrast 6.66:1.
+On 2026-11-25 every page passed 972 runs: default 153, `--units 1` 99,
+`--slow-fonts` 153, `--checkout off` 153 and `--units failed` 99 (overflow 0,
+header 61 px, layout shift 0.000, smallest text 16 px, worst text contrast
+6.66:1, fold and photos in view), and `--text-scale` 315 (115%, text spacing
+and 200% at 320, 360 and 390: overflow 0, Cart shown in full).
 
 check:layout never touches a Function, D1 or R2. Look at changes to those
 under `npm run dev`: on 2026-11-25 there, `/product?id=ro-0042` carried

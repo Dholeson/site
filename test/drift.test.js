@@ -312,9 +312,26 @@ test("the Measure button is the page's one .btn-ink; the entry mounts the Tools 
   assert.match(ENTRY, /mountChrome\("tools"\)/);
 });
 
-test("pad.id is shown in a wrapping .id span, after the plots", () => {
+test("pad.id is shown in a wrapping .id span, after the plots and the readings", () => {
   assert.ok(HTML.includes('<p class="drift-pad" id="drift-pad" hidden>Controller: <span class="id id--wrap"></span></p>'));
   assert.ok(HTML.indexOf('id="drift-pad"') > HTML.indexOf('id="drift-plots"'));
+  // The readings are on screen from load, so the line a connect adds goes
+  // after them (and in the row after them from 60em): nothing above moves.
+  assert.ok(HTML.indexOf('id="drift-pad"') > HTML.indexOf('id="drift-readings"'));
+  assert.match(CSS, /\.drift-tool > \.drift-readings \{ grid-row: 3; \}\s*\.drift-tool > \.drift-pad \{ grid-row: 4; \}/);
+});
+
+// Before a pad connects the tool's held space is filled by the readings
+// blocks for the sticks the plots show, not left blank (spec §10.9 allows
+// "Not measured yet"); X and Y say there's no controller rather than show 0.
+test("the readings blocks are drawn from load, with no number standing in for a reading", () => {
+  assert.ok(JS.includes('const NO_PAD = "No controller yet";'));
+  assert.match(JS, /syncPlots\(\);\s*renderReadings\(\);/, "initDriftTester draws the readings after the plots");
+  assert.match(JS, /const sticks = pad \? currentSticks\(\) : sticksFor\(state\.platform, state\.lastAxes\);/);
+  assert.match(JS, /pad \? el\("span", \{ class: "num" \}, "0\.000"\) : el\("span", \{ class: "quiet" \}, NO_PAD\)/);
+  assert.match(JS, /els\.measure\.disabled = !pad \|\| /, "no Measure without a pad");
+  const disconnect = /function disconnect\(\) \{([\s\S]*?)\n\}/.exec(JS)[1];
+  assert.ok(disconnect.includes("renderReadings();") && !disconnect.includes("readings.hidden = true"), "a disconnect keeps the blocks");
 });
 
 test("drift.css: tokens only, the tool holds a viewport, 5/7 from 60em, side by side from 35em", () => {

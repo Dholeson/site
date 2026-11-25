@@ -3,9 +3,10 @@
    site.css; layout only, in site.css tokens. No colour values here: the plot
    reads its colours from the same tokens (drift-tester.js).
 
-   Order on a phone: steps, status, plot(s), then whatever a connect or a
-   measurement adds (controller id, readings, results, store line). From
-   60em: 5 columns of steps, status and readings beside 7 columns of plots.
+   Order on a phone: steps, status, plot(s), the readings (there from load),
+   then whatever a connect or a measurement adds (controller id, results,
+   store line). From 60em: 5 columns of steps, status and readings beside 7
+   columns of plots.
    ========================================================================== */
 
 .drift-scope { margin-top: var(--s-3); max-width: var(--measure); }
@@ -23,6 +24,9 @@
 /* A real sequence, so a numbered list with the browser's own markers. */
 .steps {
   display: grid;
+  /* minmax(0, 1fr): under large text the select can't widen the column
+     past the screen; it shrinks to the column (max-width below). */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-4);
   max-width: var(--measure);
   margin: 0;
@@ -114,8 +118,8 @@
   .drift-tool > * { grid-column: 1 / span 5; }
   .drift-tool > .steps { grid-row: 1; }
   .drift-tool > .drift-status { grid-row: 2; }
-  .drift-tool > .drift-pad { grid-row: 3; }
-  .drift-tool > .drift-readings { grid-row: 4; }
+  .drift-tool > .drift-readings { grid-row: 3; }
+  .drift-tool > .drift-pad { grid-row: 4; }
   .drift-tool > .drift-results { grid-row: 5; }
   .drift-tool > .drift-store { grid-row: 6; }
   .drift-tool > .drift-readings[data-count="2"] { grid-template-columns: minmax(0, 1fr); }

@@ -15,10 +15,12 @@
   <meta property="og:image" content="https://dhole.dev/assets/brand/og-tools.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="dhole.dev/projects: tools that run in your browser" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Discover Cleaner" />
   <meta name="twitter:description" content="Clears songs from your Spotify to-listen playlist once you've heard them, and turns your listening history into reports. Live demo, no account needed." />
   <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-tools.png" />
+  <meta name="twitter:image:alt" content="dhole.dev/projects: tools that run in your browser" />
 
   <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
@@ -55,20 +57,35 @@
         </figure>
 
         <div class="dc-more">
+          <!-- Below 60em each view is its phone layout, captured from the demo
+               (npm run capture:tools), so its labels stay readable; from 60em
+               the laptop view of the same page. One alt and one caption fit
+               both: Library's phone crop is the backlog card alone (the
+               playing-now row below it shows an album cover, which a capture
+               never includes), so its caption names only what that card shows. -->
           <figure>
-            <img src="/assets/projects/discover-cleaner/insights-report.webp" width="1440" height="900" loading="lazy"
-              alt="A monthly Insights report: plays per day and the month's totals against the month before" />
+            <picture>
+              <source media="(min-width: 60em)" srcset="/assets/projects/discover-cleaner/insights-report.webp" width="1440" height="900" />
+              <img src="/assets/projects/discover-cleaner/insights-report-phone.webp" width="748" height="962" loading="lazy"
+                alt="A monthly Insights report: plays per day and the month's totals against the month before" />
+            </picture>
             <figcaption><strong>Insights.</strong> Reports for any week, month, year or all time, compared with the period before.</figcaption>
           </figure>
           <figure>
-            <img src="/assets/projects/discover-cleaner/artist.webp" width="1440" height="900" loading="lazy"
-              alt="The artist page for Dance Gavin Dance: plays, rank, first and last listen, longest streak" />
+            <picture>
+              <source media="(min-width: 60em)" srcset="/assets/projects/discover-cleaner/artist.webp" width="1440" height="900" />
+              <img src="/assets/projects/discover-cleaner/artist-phone.webp" width="748" height="1234" loading="lazy"
+                alt="The artist page for Dance Gavin Dance: plays, rank, first and last listen, longest streak" />
+            </picture>
             <figcaption><strong>Artist page.</strong> Your plays, rank, first and last listen, and streaks for every artist.</figcaption>
           </figure>
           <figure>
-            <img src="/assets/projects/discover-cleaner/library-backlog.webp" width="1440" height="900" loading="lazy"
-              alt="The backlog list in Library, with the song playing now and its countdown" />
-            <figcaption><strong>Library.</strong> The backlog itself: searchable, with the song playing now at the top.</figcaption>
+            <picture>
+              <source media="(min-width: 60em)" srcset="/assets/projects/discover-cleaner/library-backlog.webp" width="1440" height="900" />
+              <img src="/assets/projects/discover-cleaner/library-backlog-phone.webp" width="748" height="678" loading="lazy"
+                alt="The backlog in Library: tracks left, tracks cleared, and the auto-clear switch" />
+            </picture>
+            <figcaption><strong>Library.</strong> The backlog itself: how many tracks are left, how many have cleared, and whether auto-clear is on.</figcaption>
           </figure>
         </div>
       </section>
@@ -82,7 +99,7 @@
       <section class="tool-section prose">
         <h2>What it does</h2>
         <h3>Clears your backlog as you listen</h3>
-        <p>Point it at a playlist, say the one your Discover Weekly finds pile up in. Once a song from it has really played for a few seconds, it's removed, so the backlog shrinks by itself. You always see what will happen to the song playing and when, and you can keep it, clear it now, like it or undo a clear.</p>
+        <p>Point it at a playlist, say the one your Discover Weekly finds pile up in. Once a song from it has really played past a threshold, 15 to 30 seconds by default, it's removed, so the backlog shrinks by itself. You always see what will happen to the song playing and when, and you can keep it, clear it now, like it or undo a clear.</p>
         <h3>Shows your listening like Last.fm Pro</h3>
         <p>Reports for any week, month, year or all time, built from your whole Last.fm history plus what the app hears: top artists, albums and tracks with change against the period before, how much was new, your listening clock, streaks, and a year-in-music page.</p>
         <h3>Gives every artist a page</h3>
@@ -95,7 +112,7 @@
           <h3>Offline, in about a minute</h3>
           <p>The whole app on your computer with a simulated Spotify, so you need neither a Spotify account nor Premium. You need Python 3.10 or newer.</p>
         </div>
-        <pre tabindex="0" aria-label="Commands to run the offline demo"><code>git clone https://github.com/Dholeson/spotify-discover-cleaner.git
+        <pre role="region" tabindex="0" aria-label="Commands to run the offline demo"><code>git clone https://github.com/Dholeson/spotify-discover-cleaner.git
 cd spotify-discover-cleaner
 run.bat --demo     <span class="quiet"># Windows</span>
 ./run.sh --demo    <span class="quiet"># macOS and Linux</span></code></pre>
@@ -105,7 +122,7 @@ run.bat --demo     <span class="quiet"># Windows</span>
           <h3>With your own Spotify</h3>
           <ul>
             <li><strong>Spotify Premium</strong> on the account that creates the developer app. Spotify requires it.</li>
-            <li><strong>Your own Spotify developer app.</strong> It's free and takes about five minutes; the app's Setup screen walks you through it.</li>
+            <li><strong>Your own Spotify developer app.</strong> It's free and takes about 5 minutes; the app's Setup screen walks you through it.</li>
             <li><strong>Up to 5 users per app.</strong> A developer app in Development Mode is limited to 5 users, so friends either get added to yours or make their own.</li>
             <li><strong>Last.fm is optional</strong> but recommended: your whole scrobble history feeds the reports.</li>
           </ul>

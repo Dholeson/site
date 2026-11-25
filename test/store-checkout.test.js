@@ -112,7 +112,7 @@ test("sold, withdrawn, live-held and unknown units are a 409 that names the unit
   await call(bench, env, "POST", "/api/bench/listings/ro-0002/withdraw", { token: TOKEN, body: { reason: "pulled" } });
   holdDirect(env, "ro-0003", "cs_test_other", Date.now() + 600_000);
   await withStripe(undefined, async stripe => {
-    const cases = [["ro-0001", /just sold/], ["ro-0002", /no longer available/], ["ro-0003", /on hold/], ["ro-0404", /no longer available/]];
+    const cases = [["ro-0001", /just sold/], ["ro-0002", /no longer available/], ["ro-0003", /on hold.*Holds end about 30 minutes after checkout starts\./], ["ro-0404", /no longer available/]];
     for (const [id, re] of cases) {
       const r = await buy(env, [{ id, qty: 1 }]);
       assert.equal(r.status, 409, id);

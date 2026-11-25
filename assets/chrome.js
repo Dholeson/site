@@ -13,7 +13,9 @@
 // /store.html): the .html form costs every click a 308 redirect.
 //
 // The cart link is a single text node, "Cart" or "Cart (3)", kept current by
-// mountCartBadge() in cart.js. The mark carries no colour of its own:
+// mountCartBadge() in cart.js. It sits outside .nav-scroll, so when large
+// text makes the bar too narrow, only Store, Tools and Portfolio scroll and
+// Cart with its count is never clipped. The mark carries no colour of its own:
 // site.css fills .mark-bg with --ink and .mark-fg with --paper.
 
 import { mountCartBadge } from "./cart.js";
@@ -53,7 +55,7 @@ export function mountChrome(current = "") {
         </svg><span class="brand-word">dhole.dev</span>
       </a>
       <nav class="site-nav" aria-label="Main">
-        ${NAV.map(n => `<a href="${n.href}"${here(n.key)}>${n.label}</a>`).join("")}<a href="/cart" class="cart-link" data-cart-link${here("cart")}>Cart</a>
+        <div class="nav-scroll">${NAV.map(n => `<a href="${n.href}"${here(n.key)}>${n.label}</a>`).join("")}</div><a href="/cart" class="cart-link" data-cart-link${here("cart")}>Cart</a>
       </nav>
     </div>`;
 

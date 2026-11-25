@@ -14,10 +14,13 @@
 //                The mobile crop comes from the tool's phone layout, so it
 //                stays readable at 358px wide. width and height are the files'
 //                pixel sizes (test/tools.test.js reads them from the headers).
+//                A <picture> has one alt for both files, so `alt` names only
+//                what the desktop capture and the phone crop both show.
 //
 // Shots must be real captures of the real page: no mock-ups, no drawings, no
 // empty readouts standing in for a result, no account details. The chiptune
-// pair is taken by `npm run capture:tools` (scripts/capture-tools.mjs). A tool
+// pair and the Discover Cleaner phone crop are made by `npm run
+// capture:tools` (scripts/capture-tools.mjs). A tool
 // with no real capture has no shot, and its row is text only.
 
 export const projects = [
@@ -26,7 +29,7 @@ export const projects = [
     title: "Controller Drift Tester",
     tagline: "Plug in a controller and measure where its sticks rest when you let go.",
     description:
-      "Reads the browser's Gamepad API and plots each stick live. Let go of the sticks and Measure rest samples them for two seconds, then reports how far from centre each one sits and how much it jitters.",
+      "Reads the browser's Gamepad API and plots each stick live. Let go of the sticks and Measure rest samples them for 2 seconds, then reports how far from centre each one sits and how much it jitters.",
     demo: "/projects/drift-tester",
     tags: ["Gamepad API", "Canvas", "No dependencies"],
     status: "live",
@@ -49,10 +52,12 @@ export const projects = [
     builtWith: "Built with Python, the Spotify API, Last.fm and SQLite.",
     shot: {
       // The demo's Now panel, cropped from the project page's screenshots so
-      // the signed-in account name and avatar aren't in it.
+      // the signed-in account name and avatar aren't in it. The phone crop
+      // (the countdown and the first row of buttons) is cut from
+      // now-phone.webp by `npm run capture:tools`.
       src: "/assets/home/discover-cleaner-now.webp", width: 720, height: 405,
-      mobile: { src: "/assets/home/discover-cleaner-now-phone.webp", width: 358, height: 179 },
-      alt: "Discover Cleaner's Now panel: the song playing, a countdown to when it clears from the backlog, and Like & clear, Keep in backlog and Clear now buttons"
+      mobile: { src: "/assets/home/discover-cleaner-now-phone.webp", width: 358, height: 183 },
+      alt: "Discover Cleaner's Now panel: a countdown to when the song playing clears from the backlog, and the Like & clear and Keep in backlog buttons"
     }
   },
   {
@@ -60,7 +65,7 @@ export const projects = [
     title: "Chiptune Sequencer",
     tagline: "A six-track step sequencer built on raw Web Audio oscillators.",
     description:
-      "No samples and no audio library: every sound is a square, triangle or noise generator wired up at runtime. Draw a pattern, change the tempo and waveform, and listen.",
+      "No samples and no audio library: every sound is generated as it plays, with oscillators for the notes and white noise for the drums. Draw a pattern, change the tempo and waveform, and listen.",
     demo: "/projects/chiptune",
     tags: ["Web Audio", "Sequencer", "No dependencies"],
     status: "live",
@@ -70,8 +75,8 @@ export const projects = [
     shot: {
       // /projects/chiptune as it opens, captured by scripts/capture-tools.mjs.
       src: "/assets/home/chiptune.webp", width: 720, height: 405,
-      mobile: { src: "/assets/home/chiptune-phone.webp", width: 358, height: 201 },
-      alt: "The chiptune sequencer with its preloaded pattern: six tracks of sixteen steps, the transport and tempo controls"
+      mobile: { src: "/assets/home/chiptune-phone.webp", width: 358, height: 360 },
+      alt: "The chiptune sequencer with its preloaded pattern: Play, Randomise and Clear, tempo, waveform and volume, and the step grid, starting with the Lead track"
     }
   }
 ];

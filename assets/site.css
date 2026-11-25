@@ -67,6 +67,10 @@
      amber button as beside an ink one?) passes, switch to amber by changing these three lines to:
      --buy-bg: var(--kapton); --buy-bg-hover: var(--kapton-dk); --buy-fg: var(--ink); */
   --buy-bg: var(--ink); --buy-bg-hover: var(--graphite); --buy-fg: var(--paper);
+  /* Windows contrast themes (@media (forced-colors: active)) only: the
+     user's own system colours, for the few marks that must stay visible
+     when the browser replaces every colour above (the chiptune pattern). */
+  --forced-on: CanvasText; --forced-mark: Highlight;
 
   --font-text: "Public Sans", "Public Sans Fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-id:   "Red Hat Mono", "Red Hat Mono Fallback", ui-monospace, Menlo, Consolas, monospace;
@@ -112,6 +116,9 @@ h1, h2, h3, h4 {
   font-weight: 500;
   line-height: var(--lh-head);
   text-wrap: balance;
+  /* At 200% text a long word ("Refurbished", "finnishspitz.org") is wider
+     than a 320px screen: break it rather than widen the page. */
+  overflow-wrap: break-word;
 }
 h1 { font-size: var(--t-h1); }
 h2 { font-size: var(--t-h2); }
@@ -163,6 +170,9 @@ input[type="range"] { min-height: var(--tap); }
    size keeps the browser's smaller monospace default from applying. */
 pre, code, kbd, samp { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1em; }
 pre { max-width: 100%; overflow: auto; }
+/* An inline address ("http://127.0.0.1:8888") breaks anywhere rather than
+   widen the page under large text. A <pre> keeps its lines and scrolls. */
+code { overflow-wrap: anywhere; }
 
 /* ---------- Layout ---------- */
 /* One centred column. Side margins: 16px, 32px from 48em, 48px from 75em
@@ -228,15 +238,22 @@ pre { max-width: 100%; overflow: auto; }
 @media (min-width: 48em) { .brand { font-size: 1.125rem; } }
 
 /* The nav takes the rest of the bar. If text scaling ever makes it wider
-   than that, it scrolls inside itself and the page never does. */
+   than that, Store, Tools and Portfolio scroll inside .nav-scroll and the
+   page never does. Cart stays outside it at its full width, so the link
+   that holds the order (and its count) is never clipped. */
 .site-nav {
   display: flex;
   margin-left: auto;
   min-width: 0;
+}
+.nav-scroll {
+  display: flex;
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
-.site-nav::-webkit-scrollbar { display: none; }
+.nav-scroll::-webkit-scrollbar { display: none; }
+.site-nav .cart-link { flex-shrink: 0; }
 .site-nav a {
   display: inline-flex;
   align-items: center;
@@ -262,7 +279,10 @@ pre { max-width: 100%; overflow: auto; }
 }
 .site-footer-meta { margin-top: var(--s-2); color: var(--graphite); }
 
-/* A wrapping row of links, each a 44px target: the footer, and in-page contents. */
+/* A wrapping row of links, each a 44px target (at least 44px wide too, so a
+   short word like "Tools" is): the footer, and in-page contents. The text
+   starts at the box's left edge, as .btn-text's does, so a short word keeps
+   the column edge and its target runs on to the right. */
 .link-list {
   display: flex;
   flex-wrap: wrap;
@@ -271,7 +291,7 @@ pre { max-width: 100%; overflow: auto; }
   padding: 0;
   list-style: none;
 }
-.link-list a { display: inline-flex; align-items: center; min-height: var(--tap); }
+.link-list a { display: inline-flex; align-items: center; min-width: var(--tap); min-height: var(--tap); }
 
 /* ---------- Page head ---------- */
 /* Nothing sits above the h1: no eyebrow, no breadcrumb. */
@@ -303,7 +323,9 @@ pre { max-width: 100%; overflow: auto; }
   width: 100%;
   min-height: 52px;
   padding: var(--s-2) var(--s-5);
-  border: 0;
+  /* Invisible here (the fill shows through it), but a contrast theme draws
+     it, so the money button keeps its outline there. */
+  border: 1px solid transparent;
   border-radius: var(--radius);
   background: var(--buy-bg);
   color: var(--buy-fg);
@@ -344,6 +366,7 @@ pre { max-width: 100%; overflow: auto; }
 .btn-text {
   display: inline-flex;
   align-items: center;
+  min-width: var(--tap);
   min-height: var(--tap);
   padding: 0;
   border: 0;
@@ -373,6 +396,7 @@ pre { max-width: 100%; overflow: auto; }
    sentence in the error colour. */
 .notice {
   max-width: var(--measure);
+  overflow-wrap: anywhere; /* an email address at 200% text is wider than a phone */
   padding: var(--s-4);
   border-radius: var(--radius);
   background: var(--sweep);
@@ -428,17 +452,18 @@ pre { max-width: 100%; overflow: auto; }
 
 /* Tables: hairline rows; number cells (.num) right-aligned and tabular. */
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th, td { padding: var(--s-3) 0; border-bottom: var(--rule); text-align: left; vertical-align: top; }
+th, td { padding: var(--s-3) 0; border-bottom: var(--rule); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
 th { font-weight: 500; }
 :is(th, td) + :is(th, td) { padding-left: var(--s-4); }
-th.num, td.num { text-align: right; }
+/* Amounts never break; the words beside them give way instead. */
+th.num, td.num { text-align: right; white-space: nowrap; }
 tr.total th, tr.total td { border-top: 2px solid var(--ink); font-size: var(--t-h3); font-weight: 600; }
 
 /* ---------- Index (home and /projects) ---------- */
 /* Rows are separated by space and by the weight of the title, never by rules. */
 .index { display: grid; row-gap: var(--s-7); }
 .index-row { display: grid; gap: var(--s-3); align-items: start; }
-.index-title { font-size: var(--t-h2); font-weight: 500; }
+.index-title { font-size: var(--t-h2); font-weight: 500; overflow-wrap: anywhere; }
 .index-text { display: grid; gap: var(--s-3); max-width: var(--measure); }
 .index-status { min-height: calc(2em * var(--lh-body)); }
 .index-media, .index-media img { display: block; border-radius: 0; background: var(--sweep); }
@@ -500,21 +525,35 @@ tr.total th, tr.total td { border-top: 2px solid var(--ink); font-size: var(--t-
 .unit-card-name a::after, a.unit-card-name::after { content: ""; position: absolute; inset: 0; }
 .unit-card a:focus-visible { outline: none; }
 .unit-card a:focus-visible::after { outline: var(--focus-ring); outline-offset: var(--focus-gap); }
+/* The ring goes round the whole card, but focus scrolls only the name link
+   into view. Above the name sit the 4:3 photo (75% of the card's width) and
+   its 8px margin, so the link keeps that much more room under the sticky
+   header (html's scroll-padding covers the header itself), and the photo
+   and the top of the ring stay in view. On a screen too short for all of
+   that, the margin stops where a name of up to five lines still fits above
+   the bottom edge: the link itself always shows. A compact card's name is
+   level with its photo, so it needs nothing extra. */
+.unit-card:not(.unit-card--compact) { container-type: inline-size; }
+.unit-card:not(.unit-card--compact):has(> .unit-card-photo) .unit-card-name a {
+  scroll-margin-top: max(0px, min(calc(75cqw + var(--s-2) + var(--focus-gap)), calc(100svh - var(--header-h) - var(--s-4) - 6em)));
+}
 .unit-card-price { font-size: var(--t-h2); font-weight: 600; line-height: var(--lh-head); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .unit-card-meta, .unit-card-condition { color: var(--graphite); }
 .unit-card-meta .id { color: var(--ink); }
 
 /* Compact: a 120px photo column beside the text (home "Listed now", the
-   product page's "Also listed now"). */
+   product page's "Also listed now"). The text column is never narrower than
+   its widest unbreakable part (the price, under 200% text on a 320px
+   screen); the photo gives way instead, keeping its 4:3. */
 .unit-card--compact {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 120px) minmax(min-content, 1fr);
   grid-template-rows: repeat(3, auto) 1fr;
   column-gap: var(--s-3);
   row-gap: var(--s-1);
   align-items: start;
 }
-.unit-card--compact .unit-card-photo { grid-row: 1 / -1; grid-column: 1; width: 120px; height: 90px; margin: 0; }
+.unit-card--compact .unit-card-photo { grid-row: 1 / -1; grid-column: 1; margin: 0; }
 .unit-card--compact > :not(.unit-card-photo) { grid-column: 2; }
 .unit-card--compact .unit-card-name { font-size: var(--t-body); }
 .unit-card--compact .unit-card-price { font-size: var(--t-h3); }

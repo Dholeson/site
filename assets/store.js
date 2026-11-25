@@ -62,7 +62,10 @@ export function renderStore() {
       shelf.innerHTML = state === "failed" ? FAILED() : EMPTY();
       return;
     }
-    shelf.innerHTML = `<p class="shelf-count">${countLine(list)}</p>
+    // The cards' names are h3s; this h2 gives them a section, as the empty
+    // shelf's h2 does, for anyone moving through the page by heading.
+    shelf.innerHTML = `<h2 class="visually-hidden">On the shelf</h2>
+      <p class="shelf-count">${countLine(list)}</p>
       <div class="unit-cards">${list.map(p => unitCard(p)).join("")}</div>`;
     if (after) after.innerHTML = `${questionLine()}${ownerBlock({ heading: "Who you're buying from" })}`;
   });

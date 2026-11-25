@@ -57,9 +57,21 @@ main.store { min-height: calc(100svh - var(--header-h)); }
   gap: var(--s-5);
 }
 
-/* Photos run edge to edge on phones. */
+/* Photos run edge to edge on phones. In phone landscape, or a desktop
+   window zoomed past 150%, a full-width 4:3 panel is taller than the
+   screen, so below 960px the panel stops where it, the gap and the counter
+   row still fit in the viewport, and contain-fit letterboxes the photo on
+   sweep. A portrait phone never reaches the cap. width: 100% keeps the
+   loading panel full width (the cap would otherwise narrow it to 4:3), and
+   the fixed track holds the photo to the capped height instead of the
+   height its own 4:3 would give it. */
 .unit-gallery { margin: 0 calc(-1 * var(--gutter)); }
 .unit-gallery .strip { border-radius: 0; }
+.unit-gallery .shot {
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  width: 100%;
+  max-height: calc(100svh - var(--header-h) - var(--s-1) - var(--tap));
+}
 .shot img { background: var(--sweep); }
 
 /* The loading and "couldn't load" panel stands where the photos will be. */
@@ -67,12 +79,16 @@ main.store { min-height: calc(100svh - var(--header-h)); }
 .panel-msg { display: grid; gap: var(--s-2); justify-items: center; color: var(--ink); }
 .panel-msg h1 { font-size: var(--t-h3); }
 
+/* A gap above the row keeps the pager's outlines off the photo panel: 4px
+   on phones, where the buy action must stay above the fold at 360x780 with
+   a 120-character name, and 8px from 960px. */
 .counter-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
   min-height: var(--tap);
+  margin-top: var(--s-1);
   padding: 0 var(--gutter);
 }
 .counter { font-variant-numeric: tabular-nums; }
@@ -194,6 +210,9 @@ main.store { min-height: calc(100svh - var(--header-h)); }
 
 @media (min-width: 35em) {
   .unit-also .unit-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* The record's labels are longer than the case facts' (site.css gives
+     .dl-rows 7.5rem): "Marks and wear" needs 8.5rem to stay on one line. */
+  .unit-record .dl-rows { grid-template-columns: 8.5rem minmax(0, 1fr); }
 }
 
 @media (min-width: 60em) {
@@ -206,7 +225,8 @@ main.store { min-height: calc(100svh - var(--header-h)); }
   }
   /* The photos stay beside the file while it scrolls. */
   .unit-gallery { position: sticky; top: var(--sticky-top); margin: 0; }
-  .counter-row { padding: 0; }
+  .unit-gallery .shot { max-height: none; }
+  .counter-row { margin-top: var(--s-2); padding: 0; }
   .unit-title { font-size: var(--t-h2); }
   .unit .price { font-size: var(--t-h1); }
   .unit-again { display: none; }
@@ -219,13 +239,13 @@ main.store { min-height: calc(100svh - var(--header-h)); }
 .cart-lines { margin: 0; padding: 0; list-style: none; }
 .cart-line {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) auto;
+  grid-template-columns: 96px minmax(0, 1fr);
   gap: var(--s-3);
   align-items: start;
   padding: var(--s-4) 0;
 }
 .cart-line:first-child { padding-top: 0; }
-.cart-line img, .cart-line-ph {
+.cart-line img {
   display: block;
   width: 96px;
   height: 72px;
@@ -233,14 +253,28 @@ main.store { min-height: calc(100svh - var(--header-h)); }
   background: var(--sweep);
   object-fit: contain;
 }
-.cart-line--gone { grid-template-columns: 96px minmax(0, 1fr); }
+/* A unit that can't be bought has no photo to show, and nothing stands in
+   for one: its sentence and Remove take the whole line. */
+.cart-line--gone { grid-template-columns: minmax(0, 1fr); }
 .cart-line-body { display: grid; gap: var(--s-1); justify-items: start; min-width: 0; }
-.cart-line-name { font-weight: 500; overflow-wrap: anywhere; }
-.cart-line-price { font-weight: 600; text-align: right; }
+/* Name and price share a row while the name keeps at least 8em; past that
+   (a narrow phone, or large browser text) the price wraps under the name
+   instead of drawing over it. */
+.cart-line-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+  justify-self: stretch;
+}
+.cart-line-name { flex: 1 1 8em; min-width: 0; font-weight: 500; overflow-wrap: anywhere; }
+.cart-line-price { flex: none; font-weight: 600; }
 .cart-qty { display: flex; align-items: center; gap: var(--s-3); }
 
 .cart-summary {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-4);
   align-content: start;
   margin-top: var(--s-6);
@@ -268,5 +302,9 @@ main.store { min-height: calc(100svh - var(--header-h)); }
 /* ---------- Order complete, checkout cancelled ---------- */
 main.order { min-height: calc(100svh - var(--header-h)); }
 .order-page { max-width: var(--measure); }
-.order-actions, .order-next { margin-top: var(--s-6); }
-.order-next:not(:empty) { display: grid; gap: var(--s-4); justify-items: start; }
+/* Paragraphs 12px apart, the buttons 32px below the last one, on both
+   pages: #cancel-next's paragraph continues the prose above it, and its
+   buttons come in their own .order-actions. */
+.order-next { margin-top: var(--s-3); }
+.order-actions { margin-top: var(--s-6); }
+.order-actions > .btn-buy + .btn-row { margin-top: var(--s-4); }

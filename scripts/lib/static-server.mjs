@@ -22,6 +22,8 @@
 //                  data/products.js item, else notFoundHead(); status as
 //                  functions/product.js gives it. checkout: "off" passes
 //                  checkout: false to productHead (no STRIPE_SECRET_KEY).
+//                  A unit id not in lower case gets the same 301 to the
+//                  lower-case URL (lib/seo.js lowerBenchId).
 //   /case?id=      caseHead / caseNotFoundHead when lib/seo.js exports them;
 //                  otherwise the shell as it is.
 // There is no API: /api/* answers a JSON 404 (check-layout intercepts the
@@ -172,6 +174,11 @@ export async function start({ port = 0, checkout = "on", root = ROOT, host = "12
       }
 
       if (path === "/product") {
+        const lower = seo.lowerBenchId(params.get("id"));
+        if (lower) {
+          params.set("id", lower);
+          return redirect(res, `/product?${params}`, 301);
+        }
         const shell = await readFile(join(root, "product.html"), "utf8");
         const page = productPage(shell, params.get("id"), checkout);
         return send(res, page.status, htmlHeaders(), page.html, head);

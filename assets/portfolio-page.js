@@ -19,10 +19,19 @@ const set = v => typeof v === "string" ? v.trim() !== "" : v !== undefined && v 
 const caseUrl = id => `/case?id=${encodeURIComponent(id)}`;
 const external = href => (/^https?:\/\//i.test(href) ? ' target="_blank" rel="noopener"' : "");
 
-// A real screenshot with its pixel size, or nothing.
+// A real screenshot with its pixel size, or nothing. With imageMobile (a
+// crop of the same view in its phone layout), that crop shows below 60em
+// and the screenshot from 60em, through one <picture> with one alt.
 function screenshot(w, cls, eager) {
   if (!set(w.image) || !(w.imageWidth > 0) || !(w.imageHeight > 0)) return "";
-  return `<figure class="${cls}"><img src="${esc(w.image)}" alt="${esc(w.imageAlt || "")}" width="${Number(w.imageWidth)}" height="${Number(w.imageHeight)}"${eager ? "" : ' loading="lazy"'} decoding="async"></figure>`;
+  const lazy = eager ? "" : ' loading="lazy"';
+  const alt = esc(w.imageAlt || "");
+  const m = w.imageMobile;
+  if (m && set(m.src) && m.width > 0 && m.height > 0) {
+    return `<figure class="${cls}"><picture><source media="(min-width: 60em)" srcset="${esc(w.image)}" width="${Number(w.imageWidth)}" height="${Number(w.imageHeight)}">` +
+      `<img src="${esc(m.src)}" alt="${alt}" width="${Number(m.width)}" height="${Number(m.height)}"${lazy} decoding="async"></picture></figure>`;
+  }
+  return `<figure class="${cls}"><img src="${esc(w.image)}" alt="${alt}" width="${Number(w.imageWidth)}" height="${Number(w.imageHeight)}"${lazy} decoding="async"></figure>`;
 }
 
 const statusLine = w => [w.status, w.year].filter(set).join(", ");

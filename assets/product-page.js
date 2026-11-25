@@ -124,9 +124,11 @@ function galleryHtml(p, images) {
   const n = images.length;
   const who = isBench(p) ? displayId(p.id) : p.name;
   const shots = images.map((src, i) => `<figure class="shot"><img src="${esc(src)}" alt="${esc(`${p.name}, photo ${i + 1} of ${n}`)}" width="1200" height="900" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} decoding="async"></figure>`).join("");
+  // One photo: nothing to swipe, so the strip is a plain box inside the
+  // named section, not a second region with the same name.
   if (n === 1) {
     return `<section class="unit-gallery" aria-label="${esc(`Photo of ${who}`)}">
-      <div class="strip" role="region" aria-label="${esc(`Photo of ${who}`)}">${shots}</div>
+      <div class="strip">${shots}</div>
     </section>`;
   }
   return `<section class="unit-gallery" aria-label="${esc(`Photos of ${who}`)}">
@@ -160,9 +162,14 @@ function primaryAction(p, { checkoutOff, inCartNow, first }) {
   return `<button class="btn-buy" type="button"${attr} data-add>Add to cart</button>`;
 }
 
-function buyHtml(p, { flaws, checkoutOff, inCartNow }) {
+// The buy block. Exported for test/shop-pages.test.js.
+export function buyHtml(p, { flaws, checkoutOff, inCartNow }) {
   const bench = isBench(p);
   const title = bench ? `${esc(p.name)} ${idSpan(p.id)}` : esc(p.name);
+  const photos = imagesOf(p).length;
+  const claim = bench && photos
+    ? `<p>${photos === 1 ? "This photo is" : "These photos are"} this unit, ${idSpan(p.id)}. You get this one.</p>`
+    : "";
   const terms = returnsLine(p);
   const flawLine = !flaws ? "" : flaws.photo
     ? `<p class="flaws"><button class="btn-text" type="button" data-photo="${flaws.photo}">${esc(flaws.text)}</button></p>`
@@ -182,7 +189,7 @@ function buyHtml(p, { flaws, checkoutOff, inCartNow }) {
       ${primaryAction(p, { checkoutOff, inCartNow, first: true })}
       <div class="terms">
         <p>${terms ? `${esc(terms)} ` : ""}<a href="/shipping-returns">Shipping and returns</a></p>
-        ${bench ? `<p>These photos are this unit, ${idSpan(p.id)}. You get this one.</p>` : ""}
+        ${claim}
         ${questionLine({ unitId: bench ? p.id : null })}
       </div>
     </div>`;
@@ -325,7 +332,16 @@ function mountGallery(main, n) {
     const k = Number(b.dataset.photo);
     if (!(k >= 1 && k <= n)) return;
     go(k - 1);
-    if (!wide.matches) gallery.scrollIntoView({ block: "start", behavior: behavior() });
+    if (wide.matches) return;
+    gallery.scrollIntoView({ block: "start", behavior: behavior() });
+    // From the keyboard (a click with no pointer: detail 0), focus follows
+    // to the photos now in view, so the next Tab or arrow key acts there and
+    // not on the button scrolled away: the strip when it can be swiped, else
+    // the one-photo section.
+    if (e.detail === 0) {
+      if (strip.tabIndex < 0) gallery.setAttribute("tabindex", "-1");
+      (strip.tabIndex >= 0 ? strip : gallery).focus({ preventScroll: true });
+    }
   });
 
   // Keep the same photo in view when the strip changes width.

@@ -15,10 +15,12 @@
   <meta property="og:image" content="https://dhole.dev/assets/brand/og-site.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="dhole.dev: refurbished retro consoles and controllers" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Shipping, returns and testing" />
   <meta name="twitter:description" content="Flat shipping: $18.00 for an order with a console, $6.00 for accessories. Orders ship within two business days with tracking. Returns, and how units are tested." />
   <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-site.png" />
+  <meta name="twitter:image:alt" content="dhole.dev: refurbished retro consoles and controllers" />
 
   <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
@@ -102,7 +104,10 @@
         <section class="info-section" id="paying" aria-labelledby="paying-h">
           <h2 id="paying-h">Paying</h2>
           <div class="prose">
-            <p>You pay by card on Stripe's checkout page. Your card details go to Stripe and never reach this site, and Stripe emails your receipt.</p>
+            <!-- True until STRIPE_SECRET_KEY is set: take this paragraph out then
+                 (SETUP.md, Step 6), with its test in test/info.test.js. -->
+            <p><strong>Online checkout isn't switched on yet.</strong> To buy a unit now, email <a href="mailto:support@dhole.dev">support@dhole.dev</a> with its id.</p>
+            <p>With online checkout, you pay by card on Stripe's checkout page. Your card details go to Stripe and never reach this site, and Stripe emails your receipt.</p>
             <p>When you check out, each unit in your order is held for you for about 30 minutes while you pay, so nobody else can buy it in the meantime. If the payment isn't finished by then, the unit goes back on sale.</p>
           </div>
         </section>
@@ -110,8 +115,8 @@
         <section class="info-section" id="data" aria-labelledby="data-h">
           <h2 id="data-h">Your data</h2>
           <div class="prose">
-            <p>To ship your order, the store keeps the name, email address and shipping address you give Stripe, and what you bought.</p>
-            <p>Your cart is kept in your own browser's local storage until you check out, along with the link to any checkout you've started, which lets you go back to it.</p>
+            <p>To ship your order, the store keeps your name, email address and shipping address, and what you bought.</p>
+            <p>Your cart is kept in your own browser's local storage until your order is paid, along with the link to any checkout you've started, which lets you go back to it.</p>
             <p>Visits are counted with Cloudflare Web Analytics, which sets no cookies.</p>
           </div>
         </section>

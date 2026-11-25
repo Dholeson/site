@@ -12,8 +12,16 @@
 //   CSP         no console message mentions Content Security Policy
 //   fold        on /product?id=ro-9001 and ro-9002 at 360x780, 390x844,
 //               960x800 and 1280x800, [data-primary-action] ends inside the
-//               first viewport
+//               first viewport. With --units failed the page has no buy
+//               action by design (spec §10.3), so there it is the
+//               "Couldn't load this unit just now." message that must
+//               end inside the first viewport
+//   photos      on ro-9001 and ro-9002 at every size, phone landscape
+//               (844x390) included, the photo panel and its counter row
+//               (.unit-gallery) end inside the first viewport
 //   $0.00       /cart never shows "$0.00", not even for a moment
+//   nav         with --text-scale: Cart, with its count, shows in full inside
+//               the header nav (only Store, Tools and Portfolio may scroll)
 //
 // It serves the repo with scripts/lib/static-server.mjs (random port, the real
 // CSP) and answers the data requests in the browser from
@@ -26,12 +34,18 @@
 // Options:
 //   --pages a,b,c       paths (default: every page below); "ro-9001" means /product?id=ro-9001
 //   --widths WxH,...    viewport sizes (default 320x640,360x780,390x844,1280x800, plus
-//                       1440x1600 for / and /store and 960x800 for ro-9001, ro-9002 and chiptune)
+//                       1440x1600 for / and /store, 960x800 for ro-9001, ro-9002 and
+//                       chiptune, and 844x390 for ro-9001 and ro-9002)
 //   --units 0,5         listings to serve besides the page's own fixture: numbers or "failed"
 //                       (only on pages that fetch listings: /, /store, /product, /cart)
 //   --checkout on|off   off: product heads say checkout is off (no STRIPE_SECRET_KEY)
 //   --slow-fonts        delay /assets/fonts/* by 2000 ms; CLS must still be 0
-//   --text-scale        html font-size 115% at 360 and 390; checks only document overflow
+//   --text-scale        larger and wider text at 320, 360 and 390, three ways: html
+//                       font-size 115%; WCAG 1.4.12 text spacing (line height 1.5,
+//                       letter 0.12em, word 0.16em, paragraphs 2em apart); and the
+//                       browser's own text size at 200% (default font 32px). Checks
+//                       only that the page doesn't overflow and that Cart, with its
+//                       count, shows in full inside the header nav
 //   --concurrency N     browser contexts at once (default and maximum 4)
 //   --root DIR          serve another folder instead of the repo (to test this script)
 //
@@ -62,11 +76,15 @@ const BASE_WIDTHS = ["320x640", "360x780", "390x844", "1280x800"];
 const EXTRA_WIDTHS = {
   "/": ["1440x1600"],
   "/store": ["1440x1600"],
-  "/product?id=ro-9001": ["960x800"],
-  "/product?id=ro-9002": ["960x800"],
+  "/product?id=ro-9001": ["960x800", "844x390"],
+  "/product?id=ro-9002": ["960x800", "844x390"],
   "/projects/chiptune": ["960x800"]
 };
-const TEXT_SCALE_SIZES = ["360x780", "390x844"];
+const TEXT_SCALE_SIZES = ["320x640", "360x780", "390x844"];
+// --text-scale's three ways to make text bigger or wider.
+const TEXT_MODES = ["115%", "spacing", "200%"];
+const TEXT_SPACING_CSS = "* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }" +
+  " p { margin-bottom: 2em !important; }";
 const FOLD_PAGES = new Set(["/product?id=ro-9001", "/product?id=ro-9002"]);
 const FOLD_SIZES = new Set(["360x780", "390x844", "960x800", "1280x800"]);
 const LISTING_PATHS = new Set(["/", "/store", "/product", "/cart"]);
@@ -144,12 +162,13 @@ function jobsFor(opts) {
     const own = path === "/product" ? [new URLSearchParams(page.split("?")[1] || "").get("id")].filter(Boolean)
       : path === "/cart" ? CART_SEED : [];
     for (const size of sizes) {
-      for (const units of listings ? opts.units : [null]) {
+      for (const units of listings ? opts.units : [null]) for (const text of opts.textScale ? TEXT_MODES : [null]) {
         jobs.push({
-          page, size, units, own,
+          page, size, units, own, text,
           cart: path === "/cart",
           drift: path === "/projects/drift-tester",
-          fold: FOLD_PAGES.has(page) && FOLD_SIZES.has(size) && !opts.textScale
+          fold: FOLD_PAGES.has(page) && FOLD_SIZES.has(size) && !opts.textScale,
+          photos: FOLD_PAGES.has(page) && !opts.textScale
         });
       }
     }
@@ -198,10 +217,16 @@ function seedCartInit(ids) {
   try { localStorage.setItem("dhole_store_cart_v1", JSON.stringify(ids.map(id => ({ id, qty: 1 })))); } catch { /* opaque origin */ }
 }
 
-function textScaleInit() {
+function textScaleInit({ mode, spacingCss }) {
   const apply = () => {
     if (!document.documentElement) return false;
-    document.documentElement.style.setProperty("font-size", "115%", "important");
+    if (mode === "115%") {
+      document.documentElement.style.setProperty("font-size", "115%", "important");
+    } else {
+      const style = document.createElement("style");
+      style.textContent = spacingCss;
+      document.documentElement.appendChild(style);
+    }
     return true;
   };
   if (!apply()) {
@@ -234,7 +259,7 @@ function gamepadInit({ padId, connectMs }) {
 }
 
 // Runs in the page after it has settled. Returns the raw measurements.
-function measure({ fold }) {
+function measure({ fold, failed, photos }) {
   const out = {};
   const de = document.documentElement;
   out.overflow = de.scrollWidth - window.innerWidth;
@@ -242,6 +267,18 @@ function measure({ fold }) {
 
   const header = document.querySelector(".site-header");
   out.header = header ? Math.round(header.getBoundingClientRect().height * 100) / 100 : null;
+
+  // How much of Cart (and its count) shows: the part inside both the nav's
+  // box and the viewport, as a share of the link's width.
+  const cart = document.querySelector(".site-nav .cart-link");
+  const nav = document.querySelector(".site-nav");
+  if (cart && nav) {
+    const c = cart.getBoundingClientRect(), n = nav.getBoundingClientRect();
+    const left = Math.max(c.left, n.left, 0), right = Math.min(c.right, n.right, window.innerWidth);
+    out.cart = { shown: c.width ? Math.max(0, right - left) / c.width : 0, text: cart.textContent.trim() };
+  } else {
+    out.cart = null;
+  }
 
   const L = window.__layout || { shifts: [], zeroMoney: null };
   const counted = L.shifts.filter(s => !s.input);
@@ -334,13 +371,17 @@ function measure({ fold }) {
   out.unparsedColours = unparsed;
 
   if (fold) {
-    const a = document.querySelector("[data-primary-action]");
+    const a = document.querySelector(failed ? ".unit--pending .panel-msg" : "[data-primary-action]");
     if (a) {
       const r = a.getBoundingClientRect();
       out.fold = { bottom: Math.round((r.bottom + window.scrollY) * 10) / 10, at: describe(a) };
     } else {
       out.fold = { bottom: null };
     }
+  }
+  if (photos) {
+    const g = document.querySelector(".unit-gallery");
+    out.photos = { bottom: g ? Math.round((g.getBoundingClientRect().bottom + window.scrollY) * 10) / 10 : null };
   }
   return out;
 }
@@ -374,10 +415,18 @@ async function runJob(browser, base, job, opts) {
     }
     await context.addInitScript(observeInit);
     if (job.cart) await context.addInitScript(seedCartInit, CART_SEED);
-    if (opts.textScale) await context.addInitScript(textScaleInit);
+    if (job.text === "115%" || job.text === "spacing") {
+      await context.addInitScript(textScaleInit, { mode: job.text, spacingCss: TEXT_SPACING_CSS });
+    }
     if (job.drift) await context.addInitScript(gamepadInit, { padId: PAD_ID, connectMs: PAD_CONNECT_MS });
 
     const page = await context.newPage();
+    if (job.text === "200%") {
+      // The browser's own text-size setting: every rem and em scales from it.
+      const cdp = await context.newCDPSession(page);
+      await cdp.send("Page.enable");
+      await cdp.send("Page.setFontSizes", { fontSizes: { standard: 32, fixed: 26 } });
+    }
     const csp = [];
     page.on("console", msg => { if (/content[\s-]security[\s-]policy/i.test(msg.text())) csp.push(msg.text()); });
     page.on("pageerror", err => result.notes.push(`page error: ${String(err && err.message || err).split("\n")[0]}`));
@@ -405,7 +454,7 @@ async function runJob(browser, base, job, opts) {
     const wait = loadedAt + SETTLE_MS - Date.now();
     if (wait > 0) await delay(wait);
     await page.evaluate(() => window.scrollTo(0, 0));
-    result.m = await page.evaluate(measure, { fold: job.fold });
+    result.m = await page.evaluate(measure, { fold: job.fold, failed: job.units === "failed", photos: job.photos });
     result.m.csp = csp;
   } catch (err) {
     result.failures.push(`run failed: ${String(err && err.message || err).split("\n")[0]}`);
@@ -423,7 +472,10 @@ function judge(r, opts) {
   if (!m) return;
   const fail = msg => r.failures.push(msg);
   if (m.overflow > 0) fail(`overflow: scrollWidth is ${m.overflow}px wider than the viewport`);
-  if (opts.textScale) return;
+  if (opts.textScale) {
+    if (m.cart && m.cart.shown < 0.999) fail(`nav: only ${Math.round(m.cart.shown * 100)}% of "${m.cart.text}" shows in the header (${r.text})`);
+    return;
+  }
   if (m.header === null) fail("header: no .site-header");
   else if (Math.abs(m.header - 61) > 0.01) fail(`header: .site-header is ${m.header}px, not 61`);
   if (m.cls >= 0.0005) {
@@ -438,8 +490,14 @@ function judge(r, opts) {
   }
   if (m.csp.length) fail(`CSP: ${m.csp.length} console message(s), first: ${m.csp[0].slice(0, 200)}`);
   if (r.fold) {
-    if (m.fold.bottom === null) fail("fold: no [data-primary-action]");
-    else if (m.fold.bottom > m.viewportH) fail(`fold: [data-primary-action] ends at y${m.fold.bottom}, below the ${m.viewportH}px viewport`);
+    // A failed listings load shows the failure message and no buy action.
+    const target = r.units === "failed" ? "the failure message (.panel-msg)" : "[data-primary-action]";
+    if (m.fold.bottom === null) fail(`fold: no ${target}`);
+    else if (m.fold.bottom > m.viewportH) fail(`fold: ${target} ends at y${m.fold.bottom}, below the ${m.viewportH}px viewport`);
+  }
+  if (r.photos) {
+    if (m.photos.bottom === null) fail("photos: no .unit-gallery");
+    else if (m.photos.bottom > m.viewportH) fail(`photos: the photo panel and counter row end at y${m.photos.bottom}, below the ${m.viewportH}px viewport`);
   }
   if (r.cart && m.zeroMoney !== null) fail(`$0.00 appeared on /cart at ${m.zeroMoney} ms`);
 }
@@ -455,21 +513,24 @@ function row(r, opts) {
     r.page,
     r.size,
     r.units === null ? dash : r.units,
+    r.text || dash,
     r.http ?? dash,
     cell(true, String(Math.max(0, m ? m.overflow : 0))),
     cell(!scaled, m && m.header !== null ? String(m.header) : "none"),
+    cell(scaled && m && m.cart, m && m.cart ? `${Math.round(m.cart.shown * 100)}%` : ""),
     cell(!scaled, m ? m.cls.toFixed(3) : ""),
     cell(!scaled && m && m.minFont, m && m.minFont ? String(Math.round(m.minFont.size * 10) / 10) : ""),
     cell(!scaled, m && m.h1 === null ? "no h1" : m && m.bigHeadings.length ? "FAIL" : "ok"),
     cell(!scaled && m && m.contrast, m && m.contrast ? m.contrast.ratio.toFixed(2) : ""),
     cell(!scaled, m ? String(m.csp.length) : ""),
     r.fold && m && m.fold ? (m.fold.bottom === null ? "none" : `${m.fold.bottom}/${m.viewportH}`) : dash,
+    r.photos && m && m.photos ? (m.photos.bottom === null ? "none" : `${m.photos.bottom}/${m.viewportH}`) : dash,
     r.failures.length ? "FAIL" : "ok"
   ];
 }
 
 function printTable(results, opts) {
-  const head = ["page", "size", "units", "http", "overflow", "header", "CLS", "min font", "headings", "contrast", "CSP", "fold", "result"];
+  const head = ["page", "size", "units", "text", "http", "overflow", "header", "cart", "CLS", "min font", "headings", "contrast", "CSP", "fold", "photos", "result"];
   const rows = [head, ...results.map(r => row(r, opts).map(String))];
   const widths = head.map((_, i) => Math.max(...rows.map(cells => cells[i].length)));
   const line = cells => cells.map((c, i) => c.padEnd(widths[i])).join("  ").trimEnd();
@@ -516,14 +577,14 @@ try {
 
 const t0 = Date.now();
 console.error(`check-layout: ${jobs.length} runs on ${server.url}, checkout ${opts.checkout}` +
-  `${opts.slowFonts ? ", fonts delayed 2 s" : ""}${opts.textScale ? ", text at 115% (overflow only)" : ""}, ` +
+  `${opts.slowFonts ? ", fonts delayed 2 s" : ""}${opts.textScale ? ", text at 115%, spaced and at 200% (overflow and Cart only)" : ""}, ` +
   `${opts.concurrency} at a time`);
 let done = 0;
 const results = await pool(jobs, opts.concurrency, async job => {
   const r = await runJob(browser, server.url, job, opts);
   done++;
   console.error(`[${done}/${jobs.length}] ${r.failures.length ? "FAIL" : "ok  "} ${job.page} ${job.size}` +
-    `${job.units === null ? "" : ` units ${job.units}`}`);
+    `${job.units === null ? "" : ` units ${job.units}`}${job.text ? ` text ${job.text}` : ""}`);
   return r;
 });
 await browser.close();
@@ -537,7 +598,7 @@ const noted = results.filter(r => r.notes.length);
 if (failed.length) {
   console.log("\nFailures:");
   for (const r of failed) {
-    console.log(`\n${r.page} ${r.size}${r.units === null ? "" : ` units ${r.units}`}:`);
+    console.log(`\n${r.page} ${r.size}${r.units === null ? "" : ` units ${r.units}`}${r.text ? ` text ${r.text}` : ""}:`);
     for (const f of r.failures) console.log(`  - ${f}`);
   }
 }

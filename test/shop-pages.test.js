@@ -14,7 +14,10 @@
 //   re-exports renderProduct and renderCart, catalogue.js exports exactly what
 //   it did, and reloadBench({ fresh: true }) skips the browser cache;
 // - assets/checkout-return.js against a stubbed localStorage: only a Stripe
-//   checkout URL under 30 minutes old is offered back to the buyer.
+//   checkout URL under 30 minutes old is offered back to the buyer, and
+//   /order-complete takes out only the lines of the checkout it completes;
+// - the cart's own-hold, checkout-off and gone-unit wording, and the buy
+//   block's "This photo is" / "These photos are" by photo count.
 //
 // The pages themselves are checked in a browser by npm run check:layout.
 //
@@ -119,6 +122,37 @@ test("store.html: the head from the spec, both shipping rates, and nothing stati
   assert.ok(html.includes("<h1>Refurbished consoles and controllers</h1>"));
   // Late content can only replace the held shelf or land after it.
   assert.match(mainOf(html), /<section id="shelf" class="shelf"[^>]*>[\s\S]*?<\/section>\s*<div id="store-after"><\/div>\s*<\/div>\s*$/);
+});
+
+// Under large text or WCAG 1.4.12 spacing the nav is wider than the bar.
+// Only Store, Tools and Portfolio scroll (inside .nav-scroll); Cart and its
+// count sit outside it and never shrink, so they are never clipped.
+// check:layout --text-scale measures it in the browser.
+test("the header keeps Cart outside the nav's scrolling part, at its full width", () => {
+  const chrome = read("assets/chrome.js");
+  assert.match(chrome, /<nav class="site-nav" aria-label="Main">\s*<div class="nav-scroll">\$\{NAV\.map\([^\n]*\)\.join\(""\)\}<\/div><a href="\/cart" class="cart-link" data-cart-link\$\{here\("cart"\)\}>Cart<\/a>\s*<\/nav>/);
+  const css = read("assets/site.css");
+  assert.match(css, /\.nav-scroll \{[^}]*min-width: 0;[^}]*overflow-x: auto;[^}]*\}/);
+  assert.match(css, /\.site-nav \.cart-link \{ flex-shrink: 0; \}/);
+  assert.ok(!/\.site-nav \{[^}]*overflow/.test(css), "the nav itself doesn't scroll, so it can't clip Cart");
+});
+
+test("money buttons keep an outline in contrast themes; small links are 44px wide; a focused card's photo clears the header", () => {
+  const css = read("assets/site.css");
+  // A transparent border is invisible here and drawn by a contrast theme;
+  // with border: 0, Add to cart and Check out were bare text there.
+  assert.match(css, /\.btn-buy \{[^}]*border: 1px solid transparent;/);
+  // "Store" and "Tools" in the footer, "Tools" on the 404.
+  assert.match(css, /\.link-list a \{[^}]*min-width: var\(--tap\);[^}]*\}/);
+  // Their text keeps the column edge: the 44px runs on to the right of a
+  // short word instead of centring it 2px in from the edge.
+  for (const rule of css.match(/\.(?:link-list a|btn-text) \{[^}]*\}/g)) assert.ok(!/justify-content/.test(rule), rule);
+  assert.match(css, /\.btn-text \{[^}]*min-width: var\(--tap\);/);
+  // Focus scrolls only the name link into view; the ring is round the card,
+  // whose 4:3 photo (75% of its width) and 8px margin sit above the name.
+  assert.match(css, /\.unit-card:not\(\.unit-card--compact\) \{ container-type: inline-size; \}/);
+  // Capped, so on a short screen the link itself still shows above the bottom edge.
+  assert.match(css, /\.unit-card:not\(\.unit-card--compact\):has\(> \.unit-card-photo\) \.unit-card-name a \{\s*scroll-margin-top: max\(0px, min\(calc\(75cqw \+ var\(--s-2\) \+ var\(--focus-gap\)\), calc\(100svh - var\(--header-h\) - var\(--s-4\) - 6em\)\)\);/);
 });
 
 section("product.html: the shell functions/product.js fills");
@@ -233,7 +267,7 @@ function stubStorage({ broken = false } = {}) {
   return map;
 }
 
-const { saveCheckout, liveCheckout, clearCheckout } = await import("../assets/checkout-return.js");
+const { saveCheckout, liveCheckout, orderedLines, clearCheckout } = await import("../assets/checkout-return.js");
 
 test("saveCheckout then liveCheckout: the URL, the ids and when it started", () => {
   const map = stubStorage();
@@ -293,6 +327,41 @@ test("malformed records read as none; ids keep only strings", () => {
   assert.deepEqual(liveCheckout().ids, []);
 });
 
+test("every line of the order is saved beside the held units; without lines the held ids stand in", () => {
+  const map = stubStorage();
+  saveCheckout({ url: STRIPE_URL, ids: ["ro-0042"], lines: ["ro-0042", "av-cable", 7] });
+  assert.deepEqual(JSON.parse(map.get(KEY)).lines, ["ro-0042", "av-cable"]);
+  assert.deepEqual(liveCheckout().ids, ["ro-0042"]);
+  assert.deepEqual(liveCheckout().lines, ["ro-0042", "av-cable"]);
+  // A catalogue-only order holds nothing, but its lines are still recorded.
+  saveCheckout({ url: STRIPE_URL, ids: [], lines: ["av-cable"] });
+  assert.deepEqual(liveCheckout().ids, []);
+  assert.deepEqual(liveCheckout().lines, ["av-cable"]);
+  saveCheckout({ url: STRIPE_URL, ids: ["ro-0042"] });
+  assert.deepEqual(liveCheckout().lines, ["ro-0042"]);
+  map.set(KEY, JSON.stringify({ url: STRIPE_URL, ids: ["ro-0042"], startedAt: Date.now() }));
+  assert.deepEqual(liveCheckout().lines, ["ro-0042"], "a record without lines");
+});
+
+test("orderedLines(): that checkout's lines for /order-complete, up to a day old, only for its own session", () => {
+  const map = stubStorage();
+  const at = (startedAt, url = STRIPE_URL) =>
+    map.set(KEY, JSON.stringify({ url, ids: ["ro-0042"], lines: ["ro-0042", "av-cable"], startedAt }));
+  at(Date.now() - 45 * 60 * 1000);
+  assert.equal(liveCheckout(), null, "past the hold");
+  assert.deepEqual(orderedLines("cs_test_a1b2c3"), ["ro-0042", "av-cable"], "Stripe's success redirect can land after the 30 minutes");
+  assert.deepEqual(orderedLines(null), ["ro-0042", "av-cable"], "no session named");
+  assert.equal(orderedLines("cs_test_zzz999"), null, "another session's order: not known");
+  at(Date.now() - 25 * 60 * 60 * 1000);
+  assert.equal(orderedLines("cs_test_a1b2c3"), null, "older than any Checkout Session");
+  at(Date.now(), "https://evil.example/c/pay/cs_test_a1b2c3");
+  assert.equal(orderedLines("cs_test_a1b2c3"), null, "not Stripe's checkout");
+  clearCheckout();
+  assert.equal(orderedLines("cs_test_a1b2c3"), null, "no record");
+  stubStorage({ broken: true });
+  assert.equal(orderedLines("cs_test_a1b2c3"), null, "blocked storage");
+});
+
 test("blocked storage: nothing throws, and there is no way back to offer", () => {
   stubStorage({ broken: true });
   assert.doesNotThrow(() => saveCheckout({ url: STRIPE_URL, ids: ["ro-0042"] }));
@@ -304,17 +373,103 @@ test("blocked storage: nothing throws, and there is no way back to offer", () =>
 
 section("the order pages and the cart's wording");
 
-test("/order-complete clears the cart and the saved checkout; /checkout-cancelled offers the way back", () => {
+test("/order-complete takes out the paid checkout's lines (the whole cart when unknown); /checkout-cancelled offers the way back", () => {
   const done = read("assets/entry/order-complete.js");
-  assert.match(done, /^clearCart\(\);$/m);
+  // A unit added to the cart after that checkout started wasn't paid for.
+  assert.ok(done.includes('orderedLines(new URLSearchParams(location.search).get("session_id"))'));
+  assert.match(done, /^if \(paid\) paid\.forEach\(id => removeFromCart\(id\)\);$/m);
+  assert.match(done, /^else clearCart\(\);$/m);
   assert.match(done, /^clearCheckout\(\);$/m);
   const cancelled = read("assets/entry/checkout-cancelled.js");
   assert.ok(cancelled.includes("liveCheckout()"));
+  // Only a checkout that holds units has units held for it.
+  assert.ok(cancelled.includes("live && live.ids.length"));
   assert.ok(cancelled.includes(">Return to your checkout</a>"));
   assert.ok(cancelled.includes('class="btn-buy"'));
   assert.ok(cancelled.includes("Your cart is as you left it."));
   // Without JavaScript the way back to the cart still shows.
   assert.match(read("checkout-cancelled.html"), /<noscript>[\s\S]*href="\/cart">Back to the cart<\/a>[\s\S]*<\/noscript>/);
+});
+
+test("the cart's own-hold, checkout-off and gone-unit wording", () => {
+  const cart = read("assets/cart-page.js");
+  // Own hold with other lines: they aren't in that checkout, and removing
+  // what can't be bought frees the rest (the next test).
+  assert.ok(cart.includes("<p>Not in the checkout you started.</p>"));
+  assert.ok(cart.includes("to check out the rest.</p>"));
+  // Checkout off: the email action takes Check out's place, plural when there are several units.
+  for (const s of ["Email to buy this unit", "Email to buy these units", "with its id.", "with their ids."]) assert.ok(cart.includes(s), s);
+  // A unit that can't be bought shows no empty photo box.
+  assert.ok(!cart.includes("cart-line-ph"));
+  assert.ok(!read("assets/shop.css").includes("cart-line-ph"));
+  // Back from Stripe, the listings come past the browser cache.
+  assert.ok(cart.includes("liveCheckout() ? reloadBench({ fresh: true }) : loadBench()"));
+});
+
+test("a cart line's price wraps under its name instead of drawing over it", () => {
+  // At 320px with 150% or 200% browser text a third grid column for the price
+  // squeezed the name to a few px and the two overlapped. The price now shares
+  // a wrapping row with the name, and the line has just photo and body.
+  const cart = read("assets/cart-page.js");
+  assert.match(cart, /<div class="cart-line-head">\s*<p class="cart-line-name">[\s\S]*?<\/p>\s*<p class="cart-line-price num">/);
+  const css = read("assets/shop.css");
+  assert.match(css, /\.cart-line \{[^}]*grid-template-columns: 96px minmax\(0, 1fr\);/);
+  assert.match(css, /\.cart-line-head \{[^}]*flex-wrap: wrap;/);
+  // A support address in a cart notice breaks rather than widening the summary.
+  assert.match(css, /\.cart-summary \{[^}]*grid-template-columns: minmax\(0, 1fr\);/);
+  assert.match(read("assets/site.css"), /\.notice \{[^}]*overflow-wrap: anywhere;/);
+});
+
+const { cartAction } = await import("../assets/cart-page.js");
+
+test("own hold: 'Or remove' names every line that can't be bought, a gone unit too", () => {
+  const live = { url: "https://checkout.stripe.com/c/pay/cs_test_a1", ids: ["ro-9002"], lines: ["ro-9001", "ro-9002"], startedAt: 0 };
+  const gone = id => ({ id, qty: 1, unavailable: "gone" });
+  const items = [{ id: "ro-9001", source: "bench" }];
+  const span = id => `<span class="id">${id}</span>`;
+  const orRemove = html => (/<p>Or remove (.*?) to check out the rest\.<\/p>/.exec(html) || [])[1];
+
+  // Held only: removing it frees the rest.
+  const held = cartAction({ items, unavailable: [gone("ro-9002")], live });
+  assert.ok(held.includes(`href="${live.url}">Return to your checkout</a>`), held);
+  assert.equal(orRemove(held), span("RO-9002"));
+
+  // Held, and a unit gone for another reason: removing only the held one
+  // would still leave RO-9005, so both are named, in cart order.
+  const mixed = cartAction({ items, unavailable: [gone("ro-9005"), gone("ro-9002")], live });
+  assert.equal(orRemove(mixed), `${span("RO-9005")} and ${span("RO-9002")}`, mixed);
+  const three = cartAction({ items, unavailable: [gone("ro-9002"), gone("ro-9005"), gone("ro-9006")], live });
+  assert.equal(orRemove(three), `${span("RO-9002")}, ${span("RO-9005")} and ${span("RO-9006")}`, three);
+
+  // Nothing else in the cart: no rest to check out.
+  assert.equal(orRemove(cartAction({ items: [], unavailable: [gone("ro-9002"), gone("ro-9005")], live })), undefined);
+
+  // No own hold: Check out, disabled while a line can't be bought.
+  const plain = cartAction({ items, unavailable: [gone("ro-9005")], live: null });
+  assert.match(plain, /<button class="btn-buy" type="button" data-checkout disabled>Check out<\/button>/);
+  assert.ok(plain.includes("<p>Remove the unavailable unit to check out.</p>"));
+  assert.match(cartAction({ items, unavailable: [], live: null }), /data-checkout>Check out<\/button>/);
+});
+
+section("the product page's buy block");
+
+const { buyHtml } = await import("../assets/product-page.js");
+
+test("'This photo is this unit' for one photo, 'These photos are' for more, nothing for a catalogue item", () => {
+  const img = c => `/api/store/img/${c.repeat(64)}.jpg`;
+  const unit = images => ({
+    id: "ro-0043", name: "GameCube (DOL-001), Indigo", platform: "GameCube", category: "console",
+    condition: "Refurbished", priceCents: 13900, stock: 1, shippingClass: "console",
+    image: images[0], images, blurb: "Cleaned and tested.", details: [], source: "bench"
+  });
+  const opts = { flaws: null, checkoutOff: false, inCartNow: false };
+  const one = buyHtml(unit([img("a")]), opts);
+  assert.ok(one.includes('<p>This photo is this unit, <span class="id">RO-0043</span>. You get this one.</p>'), one);
+  assert.ok(!one.includes("These photos"));
+  const two = buyHtml(unit([img("a"), img("b")]), opts);
+  assert.ok(two.includes('<p>These photos are this unit, <span class="id">RO-0043</span>. You get this one.</p>'), two);
+  const item = { ...unit([]), id: "av-cable", source: undefined, image: "assets/store/av-cable.svg", images: undefined };
+  assert.ok(!/this unit/.test(buyHtml(item, opts)), "a catalogue item claims no unit");
 });
 
 test("no buyer-facing text points at SETUP.md or blames someone else's checkout", () => {

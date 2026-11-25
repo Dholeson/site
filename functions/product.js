@@ -11,6 +11,10 @@
 //   bench unit sold                       410, noindex
 //   bench unit withdrawn                  404, noindex
 //   no id, unknown or malformed id        404, noindex
+//   a unit id not in lower case (RO-0042) 301 to the lower-case URL
+//
+// Pages show a unit's id upper-cased, so a hand-made link can carry it that
+// way; the redirect comes first, needs no D1, and keeps one URL per unit.
 //
 // Every product head also says whether Stripe is set up: with no
 // STRIPE_SECRET_KEY (the same test functions/api/checkout.js makes) it
@@ -42,7 +46,7 @@ import {
   recordImageSize, toProduct
 } from "../lib/store-db.js";
 import {
-  PAGE_HEADERS, injectHead, isPagesDev, notFoundHead, productHead, shipToCountries, siteUrl, statusFor
+  PAGE_HEADERS, injectHead, isPagesDev, lowerBenchId, notFoundHead, productHead, shipToCountries, siteUrl, statusFor
 } from "../lib/seo.js";
 
 const BENCH_STATE = { available: "in-stock", reserved: "reserved", sold: "sold", withdrawn: "withdrawn" };
@@ -130,8 +134,24 @@ function headersFor(asset, hostname) {
   return h;
 }
 
+// /product?id=RO-0042 -> /product?id=ro-0042, the rest of the query kept.
+function lowerCaseRedirect(url, id) {
+  const to = new URL(url);
+  to.searchParams.set("id", id);
+  const headers = new Headers(PAGE_HEADERS);
+  headers.set("Location", `${to.pathname}${to.search}`);
+  headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+  if (isPagesDev(url.hostname)) headers.set("X-Robots-Tag", "noindex");
+  return new Response(null, { status: 301, headers });
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
+  if (request.method === "GET" || request.method === "HEAD") {
+    const url = new URL(request.url);
+    const lower = lowerBenchId(url.searchParams.get("id"));
+    if (lower) return lowerCaseRedirect(url, lower);
+  }
   const asset = await context.next();
   if (request.method !== "GET" && request.method !== "HEAD") return asset;
   if (!asset.ok || !/text\/html/i.test(asset.headers.get("Content-Type") || "")) return asset;
