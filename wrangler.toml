@@ -36,6 +36,8 @@ ENABLE_AUTOMATIC_TAX = "false"
 #   migrations/1001_store.sql  the store's live bench stock (store_listings,
 #     store_sales), the site's own, used by the bench API, the public store
 #     API, checkout and the Stripe webhook
+#   migrations/1002_store_images.sql  store_images, each bench photo's pixel
+#     size for link previews; optional (the site works before it's applied)
 # league-ify's build copies its migrations in by name, numbered from 0001; the
 # site's own are numbered from 1001 so the two never collide.
 # Bound as env.DB inside every Pages Function.
