@@ -1,0 +1,53 @@
+/* ==========================================================================
+   Home (index.html, assets/home.js). Linked after site.css.
+
+   Tokens only: no colour values here (test/design.test.js). The index rows
+   use the shared .index vocabulary in site.css: one column below 60em; from
+   60em, 12 columns with the title in 3, the text in 5 and the capture in 4,
+   and a row without a capture gives its text 9. Rows are grouped by space
+   and the weight of their titles, never by rules or boxes.
+   ========================================================================== */
+
+/* The status line and Listed now arrive after first paint. The status line
+   fills a slot held at two lines (.index-status) and Listed now comes after
+   everything else, so neither moves anything. Holding main at the viewport's
+   height keeps the footer below the fold while they arrive. */
+main.home { min-height: calc(100svh - var(--header-h)); }
+
+/* The h1: 32px, then 40px from 60em, across at most 8 of the 12 columns
+   (776px at 1280). */
+.home .page-head h1 { font-size: var(--t-h1); }
+@media (min-width: 60em) {
+  .home .page-head h1 {
+    max-width: calc((100% - 11 * var(--col-gap)) * 8 / 12 + 7 * var(--col-gap));
+    font-size: var(--t-display);
+  }
+}
+
+/* Captures sit on a square sweep panel, so a capture of a white page reads
+   as a picture rather than as controls on this page. Capped so no capture
+   outweighs the Store row: 240px wide (panel included) below 60em, the
+   4-column slot from 60em (376px at 1280). Below 60em the phone crop shows;
+   from 60em the desktop capture (the <source> in index.html). */
+.home .index-media {
+  max-width: 240px;
+  padding: var(--s-3);
+}
+@media (min-width: 60em) {
+  .home .index-media { max-width: none; }
+}
+
+/* After the index: the same space as between its rows. */
+.home-also { max-width: var(--measure); margin-top: var(--s-7); }
+#owner:not(:empty),
+#listed-now:not(:empty) { margin-top: var(--s-7); }
+@media (min-width: 60em) {
+  .home-also,
+  #owner:not(:empty),
+  #listed-now:not(:empty) { margin-top: var(--s-8); }
+}
+
+/* Listed now: up to 4 unit cards (compact below 60em), then the link to the
+   rest when there are more. */
+.listed-now .unit-cards { margin-top: var(--s-5); }
+.listed-now-all { margin-top: var(--s-5); }

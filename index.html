@@ -3,27 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dhole.dev — tested retro consoles &amp; browser projects</title>
-  <meta name="description" content="Refurbished N64, SNES and GameCube consoles and controllers, opened, cleaned and tested before they are listed. Plus side projects that run in your browser." />
-  <link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+  <title>dhole.dev: refurbished retro consoles, browser tools and product case studies</title>
+  <meta name="description" content="Refurbished retro game consoles and controllers, each listed with photos of that exact unit. Also tools that run in your browser, and product case studies." />
   <link rel="canonical" href="https://dhole.dev/" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="dhole.dev" />
   <meta property="og:url" content="https://dhole.dev/" />
-  <meta property="og:title" content="dhole.dev — projects and retro consoles" />
-  <meta property="og:description" content="Browser-playable projects, and tested retro game consoles and accessories for sale." />
-  <meta property="og:image" content="https://dhole.dev/assets/brand/og.png" />
+  <meta property="og:title" content="dhole.dev: refurbished retro consoles, browser tools and case studies" />
+  <meta property="og:description" content="Refurbished retro game consoles and controllers, each listed with photos of that exact unit. Also tools that run in your browser, and product case studies." />
+  <meta property="og:image" content="https://dhole.dev/assets/brand/og-site.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="dhole.dev — projects and retro consoles" />
-  <meta name="twitter:description" content="Browser-playable projects, and tested retro game consoles and accessories for sale." />
-  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og.png" />
-  <link rel="stylesheet" href="/assets/site.css" />
-  <link rel="stylesheet" href="/assets/pages.css" />
-  <script type="module" src="/assets/entry/home.js"></script>
+  <meta name="twitter:title" content="dhole.dev: refurbished retro consoles, browser tools and case studies" />
+  <meta name="twitter:description" content="Refurbished retro game consoles and controllers, each listed with photos of that exact unit. Also tools that run in your browser, and product case studies." />
+  <meta name="twitter:image" content="https://dhole.dev/assets/brand/og-site.png" />
+
+  <link rel="icon" href="/assets/brand/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/brand/icon-180.png" />
+  <link rel="preload" href="/assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="/assets/site.css?v=2" />
+  <link rel="stylesheet" href="/assets/home.css?v=2" />
+  <script type="module" src="/assets/entry/home.js?v=2"></script>
+  <!-- Without JS the shelf is never checked, so the status line offers the store instead. -->
+  <noscript><style>.shelf-checking { display: none; }</style></noscript>
+  <link rel="modulepreload" href="/assets/chrome.js" />
+  <link rel="modulepreload" href="/assets/cart.js" />
+  <link rel="modulepreload" href="/assets/catalogue.js" />
+  <link rel="modulepreload" href="/assets/unit-card.js" />
+  <link rel="modulepreload" href="/assets/unit-copy.js" />
+  <link rel="modulepreload" href="/assets/owner-block.js" />
+  <link rel="modulepreload" href="/assets/esc.js" />
+  <link rel="modulepreload" href="/assets/store-config.js" />
+  <link rel="modulepreload" href="/data/products.js" />
+  <link rel="modulepreload" href="/data/owner.js" />
   <!-- Structured data: a data block, never executed, so the CSP has nothing
        to block. The site's name for search results, and who runs it. -->
   <script type="application/ld+json">
@@ -32,75 +47,87 @@
     "@graph": [
       { "@type": "WebSite", "@id": "https://dhole.dev/#website", "name": "dhole.dev", "url": "https://dhole.dev/" },
       { "@type": "Organization", "@id": "https://dhole.dev/#org", "name": "dhole.dev", "url": "https://dhole.dev/",
-        "logo": "https://dhole.dev/assets/brand/apple-touch-icon.png",
+        "logo": "https://dhole.dev/assets/brand/icon-180.png",
         "email": "support@dhole.dev",
-        "description": "Refurbished retro game consoles and controllers, tested before they are listed." }
+        "description": "Refurbished retro game consoles and controllers." }
     ]
   }
   </script>
 </head>
 <body>
   <header class="site-header"></header>
-  <section class="hero">
+  <main class="home">
     <div class="wrap">
-      <p class="eyebrow">Projects &amp; hardware</p>
-      <h1>Things I build, and consoles I bring back.</h1>
-      <p>
-        Open browser tools without downloading or installing anything, or shop retro
-        consoles and accessories cleaned and tested before sale.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="/projects">Try the projects</a>
-        <a class="btn btn-primary" href="/store">Visit the shop</a>
+      <div class="page-head">
+        <h1>I refurbish retro game consoles and controllers and sell them here.</h1>
+        <p class="lede">Every listing has photos of the exact unit you'd get. This is also where I keep the tools I've built and my product case studies.</p>
       </div>
-      <p class="hero-note">
-        Consoles are opened, cleaned, and boot-tested before listing. Controller sticks
-        are measured with the drift tester on this site.
-      </p>
-    </div>
-  </section>
 
-  <main>
-    <div class="wrap">
-      <section class="section">
-        <div class="section-head">
-          <h2>Browser tools</h2>
-          <a class="more" href="/projects">See all browser tools</a>
-        </div>
-        <div class="grid grid-2" id="home-projects"></div>
-      </section>
-
-      <section class="section">
-        <div class="section-head">
-          <h2>In the shop</h2>
-          <a class="more" href="/store">Everything for sale →</a>
-        </div>
-        <div class="grid" id="home-products"></div>
-      </section>
-
-      <section class="section">
-        <div class="split-note">
-          <div>
-            <h2>Why the consoles are tested</h2>
-            <p class="muted">
-              Anything I sell gets opened, cleaned, and put through a full boot before it
-              is listed. Controller sticks get measured with the drift tester on this
-              site, so when a listing says the stick is good, that is a reading rather
-              than an opinion.
-            </p>
-            <a class="btn btn-sm" href="/projects/drift-tester">Try the drift tester →</a>
+      <!-- One row per section, separated by space only. The tool rows copy
+           data/projects.js in its order (title, demo, tagline, builtWith and
+           shot); test/home.test.js holds them equal, so change both together. -->
+      <div class="index">
+        <section class="index-row">
+          <h2 class="index-title"><a href="/store">Store</a></h2>
+          <div class="index-text">
+            <!-- The amounts mirror data/products.js SHIPPING; test/home.test.js checks. -->
+            <p>Refurbished consoles and controllers. Shipping is $18.00 for an order with a console or $6.00 for accessories on their own, and orders ship within two business days.</p>
+            <!-- Two lines are held for this, so assets/home.js fills it without moving anything. -->
+            <p class="index-status" id="shelf-status" aria-live="polite"><span class="shelf-checking">Checking what's on the shelf…</span><noscript><a href="/store">Open the store</a></noscript></p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="section">
-        <div class="section-head"><h2>More on dhole.dev</h2></div>
-        <ul class="more-links">
-          <li><a href="/portfolio"><b>Portfolio</b><span>Case studies of products I've shipped: the problem, the decisions, the outcome.</span></a></li>
-          <li><a href="/minecraft"><b>Lazy Sunday</b><span>One-click modded Minecraft for friends: click Play and land in the server, mods and all.</span></a></li>
-          <li><a href="/shipping-returns"><b>Shipping &amp; returns</b><span>Flat-rate US shipping, two business days to ship, and how every unit is tested.</span></a></li>
-        </ul>
-      </section>
+        <section class="index-row">
+          <h2 class="index-title"><a href="/projects/drift-tester">Controller Drift Tester</a></h2>
+          <div class="index-text">
+            <p>Plug in a controller and measure where its sticks rest when you let go.</p>
+            <p class="quiet">Built with the Gamepad API and Canvas. No dependencies.</p>
+          </div>
+        </section>
+
+        <section class="index-row">
+          <h2 class="index-title"><a href="/projects/discover-cleaner">Discover Cleaner</a></h2>
+          <div class="index-text">
+            <p>Clears songs from your Spotify "to listen" playlist once you've heard them.</p>
+            <p class="quiet">Built with Python, the Spotify API, Last.fm and SQLite.</p>
+          </div>
+          <a class="index-media" href="/projects/discover-cleaner" tabindex="-1">
+            <picture>
+              <source media="(min-width: 60em)" srcset="/assets/home/discover-cleaner-now.webp" width="720" height="405" />
+              <img src="/assets/home/discover-cleaner-now-phone.webp" width="358" height="179" alt="Discover Cleaner's Now panel: the song playing, a countdown to when it clears from the backlog, and Like &amp; clear, Keep in backlog and Clear now buttons" decoding="async" />
+            </picture>
+          </a>
+        </section>
+
+        <section class="index-row">
+          <h2 class="index-title"><a href="/projects/chiptune">Chiptune Sequencer</a></h2>
+          <div class="index-text">
+            <p>A six-track step sequencer built on raw Web Audio oscillators.</p>
+            <p class="quiet">Built with Web Audio. No dependencies.</p>
+          </div>
+          <a class="index-media" href="/projects/chiptune" tabindex="-1">
+            <picture>
+              <source media="(min-width: 60em)" srcset="/assets/home/chiptune.webp" width="720" height="405" />
+              <img src="/assets/home/chiptune-phone.webp" width="358" height="201" alt="The chiptune sequencer with its preloaded pattern: six tracks of sixteen steps, the transport and tempo controls" loading="lazy" decoding="async" />
+            </picture>
+          </a>
+        </section>
+
+        <section class="index-row">
+          <h2 class="index-title"><a href="/portfolio">Portfolio</a></h2>
+          <div class="index-text">
+            <p>Case studies of products I've built on my own time by directing AI coding agents.</p>
+          </div>
+        </section>
+      </div>
+
+      <p class="home-also">Also here: <a href="/minecraft">Lazy Sunday</a>, a modded Minecraft server page for my friends.</p>
+
+      <!-- Filled by assets/home.js: who runs the site (only once data/owner.js
+           has a name), then the units listed now (only when there are any).
+           Both come after everything else, so neither can push anything down. -->
+      <div id="owner"></div>
+      <div id="listed-now"></div>
     </div>
   </main>
 </body>
