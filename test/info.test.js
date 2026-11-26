@@ -145,6 +145,9 @@ test("your data: the cart is kept until the order is paid (order-complete remove
   assert.ok(text.includes("Your cart is kept in your own browser's local storage until your order is paid,"), text);
   assert.ok(!/until you check out/.test(text));
   assert.ok(!/you give Stripe/.test(text), "true whether the order came through Stripe or by email");
+  // assets/theme.js keeps a footer choice of Light or Dark in localStorage
+  // (dhole_theme_v1), so the page that says what the site keeps says so.
+  assert.ok(text.includes("If you choose Light or Dark in the footer, that choice is kept there too."), text);
 });
 
 test("the receipt promise has its setup step: SETUP.md turns on Stripe's Customer emails, Successful payments", () => {

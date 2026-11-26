@@ -13,9 +13,12 @@
 // - The footer control in assets/chrome.js, statically and with a stub DOM:
 //   rendered only when window.dholeTheme exists; legend "Theme", then
 //   "Match device", "Light", "Dark" (auto, light, dark; name="site-theme"),
-//   the current choice checked; a change calls dholeTheme.set(); a
-//   "dhole:theme" event re-checks the radios; nothing in the header; THEMES
-//   and themeChoice are not exported.
+//   the current choice checked, each radio autocomplete="off"; a change
+//   calls dholeTheme.set(); a "dhole:theme" event and every pageshow
+//   re-check the radios (a Back that reloads the page can otherwise restore
+//   the radio checked when the visitor left); nothing in the header; THEMES
+//   and themeChoice are not exported. A chosen Light narrows the
+//   color-scheme meta to "only light" (Chrome's auto dark opt-out).
 //
 // Why node:vm and not a browser: Playwright launches Chromium with the
 // back/forward cache off, and re-enabling it headless gave a "masked"
@@ -134,7 +137,7 @@ test("stored \"light\" on a dark device: data-theme=\"light\", the dark meta's m
   const p = page({ stored: "light", dark: true });
   assert.equal(p.attrs.get("data-theme"), "light", where("a stored light choice beats a dark device"));
   assert.equal(p.media(), "not all", where("chose light: the dark theme-color never applies (media \"not all\")"));
-  assert.equal(p.scheme(), "light", where("chose light: color-scheme narrows to \"light\""));
+  assert.equal(p.scheme(), "only light", where("chose light: color-scheme narrows to \"only light\", so Chrome's auto dark leaves the page alone (a plain \"light\" page gets darkened by it)"));
   assert.equal(p.theme.resolved(), "light", where("resolved() is the choice, not the device"));
 });
 
@@ -191,6 +194,9 @@ test("set(\"auto\") removes the stored key and the attribute, and resets both me
   assert.equal(p.scheme(), "light dark");
   p.theme.set("light");
   assert.equal(p.store.get(KEY), "light", where("set(\"light\") stores \"light\""));
+  assert.equal(p.scheme(), "only light", where("set(\"light\") narrows color-scheme to \"only light\""));
+  p.theme.set("dark");
+  assert.equal(p.scheme(), "dark", where("set(\"dark\") narrows color-scheme to \"dark\""));
   p.theme.set("bogus");
   assert.equal(p.theme.choice(), "auto", where("an unknown value means auto"));
   assert.equal(p.store.has(KEY), false);
@@ -297,10 +303,15 @@ test("THEMES lists Match device, Light and Dark in that order, as auto, light an
     `${CHROME_FILE}: THEMES must be [["auto", "Match device"], ["light", "Light"], ["dark", "Dark"]] (plain words, in this order)`);
 });
 
-test("the markup: fieldset.theme-choice, legend \"Theme\", radios named site-theme", () => {
+test("the markup: fieldset.theme-choice, legend \"Theme\", radios named site-theme, autocomplete=\"off\"", () => {
   const body = fnBody(CHROME_SRC, "themeChoice");
   assert.match(body, /<fieldset class="theme-choice">\s*<legend>Theme<\/legend>\s*<div class="theme-options">/, `${CHROME_FILE}: the fieldset, its legend "Theme" and .theme-options`);
   assert.match(body, /<label><input type="radio" name="site-theme" value="\$\{value\}"/, `${CHROME_FILE}: each option a native radio named site-theme inside its label`);
+  // A Back that reloads the page (no back/forward cache) otherwise has
+  // Chrome and Firefox restore the radio checked when the visitor left, over
+  // the one rendered from choice(), with no change event: measured in
+  // Chromium, the footer then showed Dark on a light page.
+  assert.match(body, /<input type="radio" name="site-theme"[^>]* autocomplete="off" \/>/, `${CHROME_FILE}: each radio carries autocomplete="off", so the browser never restores an old checked state over the current choice`);
 });
 
 test("the footer places it between the footer nav and the copyright line, and the header has no theme control", () => {
@@ -312,11 +323,16 @@ test("the footer places it between the footer nav and the copyright line, and th
   assert.ok(!/theme|radio/i.test(header[1]), `${CHROME_FILE}: the header markup must not change (Cart at 320px stays as it is)`);
 });
 
-test("a change calls dholeTheme.set(); a \"dhole:theme\" listener re-checks the radios", () => {
+test("a change calls dholeTheme.set(); \"dhole:theme\" and every pageshow re-check the radios", () => {
   assert.match(CHROME_SRC, /addEventListener\("change", e => \{\s*if \(e\.target\.name === "site-theme"\) window\.dholeTheme\.set\(e\.target\.value\);/,
     `${CHROME_FILE}: a change listener on .theme-choice calls window.dholeTheme.set(e.target.value) for site-theme radios`);
-  assert.match(CHROME_SRC, /window\.addEventListener\("dhole:theme", \(\) => \{[\s\S]*?\.checked = [\s\S]*?window\.dholeTheme\.choice\(\)/,
-    `${CHROME_FILE}: a window "dhole:theme" listener sets each radio's checked from dholeTheme.choice() (another tab, or a back/forward-cache restore)`);
+  const sync = /const sync = \(\) => \{([\s\S]*?)\n {4}\};/.exec(CHROME_SRC);
+  assert.ok(sync && /\.checked = [\s\S]*?window\.dholeTheme\.choice\(\)/.test(sync[1]),
+    `${CHROME_FILE}: a sync() sets each radio's checked from dholeTheme.choice()`);
+  assert.match(CHROME_SRC, /window\.addEventListener\("dhole:theme", sync\);/,
+    `${CHROME_FILE}: "dhole:theme" (another tab, or a back/forward-cache restore) runs sync()`);
+  assert.match(CHROME_SRC, /window\.addEventListener\("pageshow", sync\);/,
+    `${CHROME_FILE}: every pageshow runs sync(), persisted or not: a Back that reloads the page can restore an old checked radio`);
 });
 
 test("THEMES and themeChoice stay internal: chrome.js exports only mountChrome", async () => {
@@ -371,7 +387,7 @@ test("without window.dholeTheme (an old cached page): no fieldset, no listener, 
     const p = mount(undefined);
     assert.doesNotThrow(() => mountChrome("store"), `${CHROME_FILE}: mountChrome() must work on a page without theme.js`);
     assert.ok(!p.footer().innerHTML.includes("theme-choice"), `${CHROME_FILE}: no theme choice without window.dholeTheme`);
-    assert.ok(!p.listeners["dhole:theme"], `${CHROME_FILE}: no "dhole:theme" listener without the control`);
+    assert.ok(!p.listeners["dhole:theme"] && !p.listeners.pageshow, `${CHROME_FILE}: no "dhole:theme" or pageshow listener without the control`);
     assert.ok(p.header.innerHTML.includes('class="site-nav"'), "the header is still filled");
   } finally { restore(); }
 });
@@ -411,6 +427,13 @@ test("choosing calls dholeTheme.set() with the radio's value; \"dhole:theme\" re
     assert.equal((p.listeners["dhole:theme"] || []).length, 1, `${CHROME_FILE}: one window "dhole:theme" listener`);
     p.listeners["dhole:theme"][0]({ detail: { choice: "light", resolved: "light" } });
     assert.deepEqual(fs.radios.filter(r => r.checked).map(r => r.value), ["light"], `${CHROME_FILE}: "dhole:theme" checks the radio for dholeTheme.choice()`);
+    // A Back that reloads the page: the browser restored the radio checked
+    // when the visitor left (here Dark), with no change event, while the
+    // choice is Light. pageshow (persisted or not) puts it right.
+    for (const r of fs.radios) r.checked = r.value === "dark";
+    assert.equal((p.listeners.pageshow || []).length, 1, `${CHROME_FILE}: one window "pageshow" listener`);
+    p.listeners.pageshow[0]({ persisted: false });
+    assert.deepEqual(fs.radios.filter(r => r.checked).map(r => r.value), ["light"], `${CHROME_FILE}: pageshow checks the radio for dholeTheme.choice(), even when not persisted`);
   } finally { restore(); }
 });
 

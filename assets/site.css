@@ -150,6 +150,14 @@
   }
 }
 
+/* Light chosen in the footer: "only" asks the browser not to darken the page
+   by itself. Chrome's auto dark ("darken websites" on Android) darkens a
+   page that declares plain light, turning the money button into a dark grey
+   block on a near-black page. Match device and Dark declare dark when the
+   device is dark, so it leaves those alone. theme.js narrows the
+   color-scheme meta to "only light" too, for the frame before this file. */
+:root[data-theme="light"] { color-scheme: only light; }
+
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 

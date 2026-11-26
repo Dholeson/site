@@ -62,12 +62,14 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
 .pf-media picture img,
 .case-shot picture img { max-width: 23.375rem; }
 .pf-media:has(picture),
-.case-shot:has(picture) { max-width: calc(23.375rem + 2 * var(--s-3)); }
+.case-shot:has(picture),
+.case-shot-link:has(picture) { max-width: calc(23.375rem + 2 * var(--s-3)); }
 @media (min-width: 60em) {
   .pf-media picture img,
   .case-shot picture img { max-width: none; }
   .pf-media:has(picture),
-  .case-shot:has(picture) { max-width: none; }
+  .case-shot:has(picture),
+  .case-shot-link:has(picture) { max-width: none; }
 }
 
 .pf-earlier { margin-top: var(--s-5); }
@@ -119,6 +121,10 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
 .case-body { display: grid; gap: var(--s-7); align-content: start; min-width: 0; }
 
 .case-shot { margin: 0; }
+/* A capture of a tool on this site opens it (portfolio-page.js). The link
+   takes the capture's cap above, so the blank page beside a phone crop on a
+   tablet isn't a link. */
+.case-shot-link { display: block; }
 .case-body > section,
 .case-lines { max-width: var(--measure); }
 .case-body > section { display: grid; gap: var(--s-3); }
@@ -131,7 +137,10 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
 /* "More views" (data/portfolio.js gallery): further real views of the
    product, each on the same 12 px panel frame, captioned. Below 60em each
    is its phone layout at 374 px at most; from 60em the laptop view fills
-   the column. Pictures are display: block in site.css already. */
+   the column, as wide as the capture above it: its section is let out of
+   the reading measure (36rem would stop it at 552 px, where the laptop
+   view's text can't be read), and the captions keep it. Pictures are
+   display: block in site.css already. */
 .case-gallery { display: grid; gap: var(--s-6); }
 .case-gallery picture { max-width: calc(23.375rem + 2 * var(--s-3)); padding: var(--s-3); background: var(--panel); }
 .case-gallery img { width: 100%; height: auto; max-width: 23.375rem; }
@@ -139,6 +148,7 @@ main.case-page { min-height: calc(100svh - var(--header-h)); }
 @media (min-width: 60em) {
   .case-gallery img,
   .case-gallery picture { max-width: none; }
+  .case-body > section:has(> .case-gallery) { max-width: none; }
 }
 
 .case-pager {

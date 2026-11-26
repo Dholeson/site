@@ -26,7 +26,9 @@
 // And the two themes (dark-spec §12), in every run, --text-scale included,
 // in this order after the measurements above (CLS first, at scroll 0):
 //   theme       the expected theme is --theme, or --scheme when --theme is
-//               auto. html's computed color-scheme is that theme; html
+//               auto. html's computed color-scheme is that theme ("light
+//               only" when --theme is light: site.css opts a chosen Light out
+//               of the browser's auto dark); html
 //               [data-theme] is the --theme value (absent for auto); and the
 //               first meta[name=theme-color] whose media is absent or matches
 //               has the same colour as body's computed background
@@ -50,7 +52,8 @@
 //               rings must still be two colours (CanvasText and Canvas)
 //   print       last: emulateMedia({ media: "print" }) with the context's
 //               colorScheme left as it is (the device stays dark in a dark
-//               run). html's color-scheme is light, body is rgb(255, 255, 255)
+//               run). html's color-scheme is light ("light only" with
+//               --theme light), body is rgb(255, 255, 255)
 //               with rgb(27, 27, 27) text, every .for-dark is display: none
 //               and no .for-light is. Then emulateMedia({ media: null })
 //
@@ -213,6 +216,11 @@ function parseArgs(argv) {
   opts.concurrency = Math.min(opts.concurrency, MAX_CONTEXTS);
   // The theme every check expects: the visitor's choice, else the device's.
   opts.expected = opts.theme === "auto" ? opts.scheme : opts.theme;
+  // html's computed color-scheme for it, on screen and in print. A chosen
+  // Light is "only light" (site.css: Chrome's auto dark leaves it alone),
+  // which Chromium computes as "light only".
+  opts.computedScheme = opts.theme === "light" ? "light only" : opts.expected;
+  opts.printScheme = opts.theme === "light" ? "light only" : "light";
   return opts;
 }
 
@@ -407,7 +415,7 @@ function themeState() {
 // What the theme check finds wrong in a themeState(), or [].
 function themeProblems(t, opts) {
   const out = [];
-  if (t.scheme !== opts.expected) out.push(`html's color-scheme is "${t.scheme}", expected "${opts.expected}"`);
+  if (t.scheme !== opts.computedScheme) out.push(`html's color-scheme is "${t.scheme}", expected "${opts.computedScheme}"`);
   const attr = opts.theme === "auto" ? null : opts.theme;
   if (t.attr !== attr) out.push(`html[data-theme] is ${t.attr === null ? "absent" : `"${t.attr}"`}, expected ${attr === null ? "absent" : `"${attr}"`}`);
   const meta = hexRgb(t.meta), bg = rgbOf(t.bg);
@@ -495,7 +503,7 @@ function printProblems(t, opts) {
   const out = [];
   if (!t.print) out.push("print media isn't applied");
   if (t.device !== opts.scheme) out.push(`the device reads ${t.device} under print, not ${opts.scheme}`);
-  if (t.scheme !== "light") out.push(`html's color-scheme is "${t.scheme}" in print`);
+  if (t.scheme !== opts.printScheme) out.push(`html's color-scheme is "${t.scheme}" in print, expected "${opts.printScheme}"`);
   if (t.bg !== "rgb(255, 255, 255)") out.push(`body's background is ${t.bg} in print`);
   if (t.fg !== "rgb(27, 27, 27)") out.push(`body's text is ${t.fg} in print`);
   if (t.pairs.darkShown) out.push(`${t.pairs.darkShown} .for-dark shown in print`);

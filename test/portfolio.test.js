@@ -524,6 +524,11 @@ test("chiptune: the theme pair on /portfolio and on its case page, both lazy, li
   assert.ok(row.startsWith("<article"), "the chiptune row has the media class (full width)");
   const { main } = await renderWith("/case?id=chiptune");
   assert.ok(main.includes(CHIPTUNE_PAIR("case-shot")), "the case page leads with the pair, lazy");
+  // A capture of a tool on this site opens it, as on home and /projects:
+  // its pictured Stop, Randomise and sliders would otherwise sit beside the
+  // real "Open the sequencer" button doing nothing.
+  assert.ok(main.includes(`<a class="case-shot-link" href="/projects/chiptune" tabindex="-1">${CHIPTUNE_PAIR("case-shot")}</a>`),
+    "the case page's capture is a link to the sequencer, out of the tab order");
   assert.ok(main.indexOf('class="case-shot"') < main.indexOf("<h2>The problem</h2>"), "the screenshot leads the story");
   assert.ok(!/prefers-color-scheme/.test(list + main), "never a colour-scheme <source>");
   assert.ok(!main.includes("More views"), "chiptune has no gallery");
@@ -531,7 +536,7 @@ test("chiptune: the theme pair on /portfolio and on its case page, both lazy, li
   // its case page as the first capture.
   const dc = (await renderWith("/case?id=discover-cleaner")).main;
   assert.ok(!/for-light|for-dark/.test(dc), "no pair without imageDark");
-  assert.match(dc, /<figure class="case-shot"><picture><source media="\(min-width: 60em\)" srcset="\/assets\/portfolio\/discover-cleaner\.webp" width="1440" height="900"><img src="\/assets\/portfolio\/discover-cleaner-phone\.webp" alt="[^"]+" width="374" height="491" decoding="async"><\/picture><\/figure>/);
+  assert.match(dc, /<a class="case-shot-link" href="\/projects\/discover-cleaner-demo\/" tabindex="-1"><figure class="case-shot"><picture><source media="\(min-width: 60em\)" srcset="\/assets\/portfolio\/discover-cleaner\.webp" width="1440" height="900"><img src="\/assets\/portfolio\/discover-cleaner-phone\.webp" alt="[^"]+" width="374" height="491" decoding="async"><\/picture><\/figure><\/a>/);
 });
 
 test("discover-cleaner: 'More views' right after What shipped, three framed figures in order, lazy, captions as on its tool page", async () => {
@@ -575,6 +580,24 @@ const STUB = {
   id: "zz-stub", title: "Stub", pitch: "A stub.", shipped: ["One thing."],
   image: "/assets/portfolio/stub.webp", imageWidth: 1440, imageHeight: 810, imageAlt: "A stub & its \"alt\""
 };
+
+test("the case capture links only to an on-site primary link: off-site, protocol-relative or no link is a plain figure", async () => {
+  const fig = '<figure class="case-shot"><img src="/assets/portfolio/stub.webp"';
+  for (const links of [undefined, [], [{ label: "Elsewhere", href: "https://example.com/", primary: true }],
+    [{ label: "Sneaky", href: "//example.com/", primary: true }], [{ label: "Not primary", href: "/projects/stub" }]]) {
+    const main = await renderStub({ ...STUB, links });
+    assert.ok(main.includes(fig) && !main.includes("case-shot-link"), `links ${JSON.stringify(links)}: a plain figure`);
+  }
+  const onsite = await renderStub({ ...STUB, links: [{ label: "Open it", href: "/projects/stub?x=\"1\"", primary: true }] });
+  assert.ok(onsite.includes(`<a class="case-shot-link" href="/projects/stub?x=&quot;1&quot;" tabindex="-1">${fig}`), "on-site: a link, href escaped");
+  const noShot = await renderStub({ ...STUB, image: "", links: [{ label: "Open it", href: "/projects/stub", primary: true }] });
+  assert.ok(!noShot.includes("case-shot"), "no screenshot: no link either");
+  // The link is capped like the capture below 60em, so the blank page beside
+  // a phone crop on a tablet isn't clickable.
+  const pcss = read("assets/portfolio.css");
+  assert.match(pcss, /\.case-shot:has\(picture\),\s*\.case-shot-link:has\(picture\) \{ max-width: calc\(23\.375rem \+ 2 \* var\(--s-3\)\); \}/);
+  assert.match(pcss, /@media \(min-width: 60em\) \{\s*\.pf-media picture img,[^@]*?\.case-shot-link:has\(picture\) \{ max-width: none; \}\s*\}/);
+});
 
 test("a pair without a phone crop is two single-image pictures; half a pair is the light screenshot alone", async () => {
   const alt = "A stub &amp; its &quot;alt&quot;";
@@ -649,6 +672,10 @@ test("screenshots and gallery views sit on a 12 px --panel frame; --sweep is for
   assert.match(FLAT, /\.case-gallery img \{ width: 100%; height: auto; max-width: 23\.375rem; \}/);
   assert.match(FLAT, /\.case-gallery figcaption \{ margin-top: var\(--s-3\); max-width: var\(--measure\); \}/);
   assert.ok(/\.case-gallery img, \.case-gallery picture \{ max-width: none; \}/.test(WIDE), "from 60em the laptop view fills");
+  // ...and its section isn't held to --measure (36rem), which stopped the
+  // three 1440x900 views at 552 px, narrower than the capture above them.
+  assert.ok(WIDE.includes(".case-body > section:has(> .case-gallery) { max-width: none; }"), "from 60em the gallery's section is let out of the measure");
+  assert.ok(!NARROW.includes(":has(> .case-gallery)"), "only from 60em");
   assert.ok(!/--sweep/.test(CSS), "no --sweep in portfolio.css");
   // A rule that set display on a picture would beat site.css's .for-dark.
   assert.ok(!/picture[^{]*\{[^}]*display:/.test(FLAT), "no display on pictures here (site.css's pair rules decide)");

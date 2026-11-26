@@ -11,7 +11,10 @@
 // no attribute, and site.css does the rest. No colours here.
 //
 // Two metas follow the choice too:
-//   <meta name="color-scheme">: "light dark", or the chosen theme;
+//   <meta name="color-scheme">: "light dark" while following the device,
+//     "dark" for Dark, and "only light" for Light, so a browser that darkens
+//     light-only pages by itself (Chrome's auto dark, "darken websites" on
+//     Android) leaves a chosen Light alone, as site.css says too;
 //   <meta name="theme-color" data-dark media="(prefers-color-scheme: dark)">:
 //     its media becomes "all" (chose dark) or "not all" (chose light).
 //
@@ -57,7 +60,7 @@
       metas[i].setAttribute("media", choice === "dark" ? "all" : choice === "light" ? "not all" : DARK);
     }
     var scheme = document.querySelector('meta[name="color-scheme"]');
-    if (scheme) scheme.setAttribute("content", choice === "auto" ? "light dark" : choice);
+    if (scheme) scheme.setAttribute("content", choice === "auto" ? "light dark" : choice === "light" ? "only light" : "dark");
   }
 
   function announce() {

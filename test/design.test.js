@@ -819,6 +819,30 @@ test("the two dark blocks: one of each in site.css, screen only, identical, colo
   report(problems, "Dark blocks");
 });
 
+// A chosen Light opts out of the browser's own darkening. Chrome's auto dark
+// ("darken websites" on Android) darkens a page that declares plain light:
+// under Chromium's auto dark emulation, Light chosen on a dark device turned
+// the #ffffff page to #121212 with the #1b1b1b money button left on it
+// (about 1.1:1). "only light" stops that (measured the same way). Exactly
+// one :root[data-theme="light"] rule, in site.css, setting nothing but
+// color-scheme: only light: the light tokens are the base :root's.
+// theme-core.test.js holds the matching "only light" meta.
+test("a chosen Light declares color-scheme: only light, and nothing else", () => {
+  const problems = [];
+  const found = RULES.filter(r => r.selector === ':root[data-theme="light"]');
+  if (found.length !== 1) {
+    problems.push(`${found.length ? found.map(r => `${r.file}:${r.line}`).join(", ") : SITE_CSS_FILE}: ${found.length} :root[data-theme="light"] rules; there must be exactly one, in ${SITE_CSS_FILE}: :root[data-theme="light"] { color-scheme: only light; }`);
+  }
+  for (const r of found) {
+    if (r.file !== SITE_CSS_FILE) problems.push(`${where(r)}: belongs in ${SITE_CSS_FILE}`);
+    const decls = r.decls.map(d => `${d.prop}: ${d.value}`);
+    if (decls.length !== 1 || decls[0] !== "color-scheme: only light") {
+      problems.push(`${where(r)}: declares ${decls.join("; ") || "nothing"}; it must declare only color-scheme: only light (Chrome's auto dark opt-out; the light tokens are the base :root's)`);
+    }
+  }
+  report(problems, "Light opt-out");
+});
+
 test("text pairs are at least 4.5:1 and edges at least 3:1, from the actual token values, in every theme", () => {
   assert.ok(TOKEN_SETS.length >= 3, `expected the base and two dark token sets, found: ${TOKEN_SETS.map(t => t.label).join("; ")}`);
   report(TOKEN_SETS.flatMap(contrastProblems), "Contrast");

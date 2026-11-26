@@ -169,7 +169,7 @@ export function renderCase() {
         ${buttons(w)}
       </div>
       <div class="case-body">
-        ${screenshot(w, "case-shot", true)}
+        ${caseShot(w)}
         ${section("The problem", set(w.problem) && `<p>${esc(w.problem)}</p>`)}
         ${section("What shipped", list(w.shipped))}
         ${section("More views", gallery(w))}
@@ -183,6 +183,19 @@ export function renderCase() {
     </div>`;
   main.querySelector(".case-head").after(all);
   stickWhileItFits(main.querySelector(".case-side"));
+}
+
+// The case page's leading screenshot. A capture of a tool on this site (the
+// entry's primary link is a path here) opens that tool, as the same capture
+// does on home and /projects, so a click on the pictured controls reaches
+// the real ones rather than doing nothing. It is left out of the tab order:
+// the facts column's button already leads there. A screenshot of something
+// off-site stays a plain figure.
+function caseShot(w) {
+  const shot = screenshot(w, "case-shot", true);
+  const primary = primaryLink(w);
+  if (!shot || !primary || !/^\/(?!\/)/.test(primary.href)) return shot;
+  return `<a class="case-shot-link" href="${esc(primary.href)}" tabindex="-1">${shot}</a>`;
 }
 
 // From 960px the facts column is sticky, but only while it fits under the

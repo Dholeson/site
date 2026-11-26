@@ -362,7 +362,10 @@ grouped by space: the guard forbids borders on `.index-row`, `.pf-row` and
 `.unit-card`. Photo panels are square (radius 0) on `--sweep`, and captures
 of the tools sit square on a 12 px `--panel` frame in both themes, so their
 pictured buttons never look live; the 4 px `--radius` is for controls and
-`.notice` only.
+`.notice` only. A capture of a tool on this site is also a link to that tool
+(`tabindex="-1"`, out of the tab order) on home, `/projects` and its case
+page, so a click on a pictured control reaches the real one instead of
+doing nothing. Screenshots of off-site work stay plain figures.
 
 **The product head tells the page what it can offer.** `functions/product.js`
 writes two metas into the seo block, because it already knows the unit's
@@ -580,6 +583,17 @@ graphite, rule-c, edge, fault), never a rule, size or font. `--sweep-ink`,
 `--sweep-graphite` and `--buy-*` follow `--ink`, `--graphite` and `--paper`
 by themselves, and `--kapton*` stay the same.
 
+**Light chosen is `only light`.** Chrome's auto dark ("darken websites" on
+Android) darkens a page that declares plain `light`, so a visitor who picked
+Light in that browser got a machine-darkened page with the money button a
+dark grey block on near-black (about 1.1:1, under Chromium's auto dark
+emulation). `:root[data-theme="light"] { color-scheme: only light; }` in
+`site.css`, and `theme.js`'s `"only light"` meta, opt out; the design guard
+holds that rule to that one declaration. Match device and Dark declare
+`dark` on a dark device, which auto dark already leaves alone. Chromium
+computes the value as `light only`, which `check:layout` expects with
+`--theme light`.
+
 **Screen only, so print is always light.** Both dark blocks and the pair
 rules sit in `@media screen …`, so printing and Save as PDF use the light
 tokens whatever the device or the footer choice: a receipt
@@ -608,7 +622,8 @@ the single `theme-color` used to be:
   'self'` covers it, and nothing is inline). It reads `localStorage`
   `dhole_theme_v1` (`"light"`, `"dark"`, or absent to follow the device), sets
   `<html data-theme>` before `<body>` is parsed, so a visitor who chose never
-  sees the other theme first, and narrows the two metas to the choice.
+  sees the other theme first, and narrows the two metas to the choice
+  (`color-scheme` to `"dark"` or `"only light"`).
 - It comes after the metas it rewrites and before every stylesheet: a
   classic script after a stylesheet waits for it, and one before doesn't
   (the preload scanner still finds `site.css` early). It is one
@@ -633,6 +648,17 @@ choice still applies to that page. Playwright launches Chromium with the
 back/forward cache off (and re-enabling it headless gave a "masked" restore),
 so no browser run exercises this: `test/theme-core.test.js` pins it case by
 case in `node:vm`.
+
+A Back that the back/forward cache can't serve (a `no-store` page such as
+the 404, or a page the cache dropped) reloads the page, and the browser
+then restores form state: the radio checked when the visitor left,
+over the one `chrome.js` just rendered from `choice()`, with no `change`
+event. Measured in Chromium: pick Dark on `/shipping-returns`, Light on the
+next page, press Back, and the page was light with Dark checked, and
+clicking Dark did nothing. So the radios are `autocomplete="off"` (which
+stops the restore; Firefox documents the same use of it), and `chrome.js`
+also re-checks them on every `pageshow`, persisted or not; either alone
+fixed it in Chromium (`test/theme-core.test.js` pins both).
 
 **The footer control.** `assets/chrome.js` renders a "Theme" fieldset of
 three native radios, Match device, Light and Dark, between the footer links
@@ -754,7 +780,8 @@ at every size, phone landscape included (photos); `/cart` never showing
 Every run, `--text-scale` included, also checks the themes, in this order
 after the measurements above (layout shift first, at scroll 0):
 - **theme**: html's computed `color-scheme` is the expected theme (`--theme`,
-  or `--scheme` when the theme is `auto`); `html[data-theme]` is the
+  or `--scheme` when the theme is `auto`; `light only` with `--theme light`);
+  `html[data-theme]` is the
   `--theme` value (absent for auto); and the first `theme-color` meta that
   applies has body's background colour.
 - **pairs**: every `assets/**/*-dark.webp` and its light partner make a
@@ -769,7 +796,8 @@ after the measurements above (layout shift first, at scroll 0):
   3:1 from one of them; then all of it again under
   `forcedColors: "active"`.
 - **print**, last: `emulateMedia({ media: "print" })` with the device's
-  scheme left as it is. html's `color-scheme` is light, body is white with
+  scheme left as it is. html's `color-scheme` is light (`light only` with
+  `--theme light`), body is white with
   `#1b1b1b` text, and every `.for-dark` is hidden and no `.for-light`.
 
 Options: `--units 0,1,5,failed`, `--checkout off`, `--slow-fonts` (fonts 2 s
@@ -818,6 +846,13 @@ script:
   `--scheme dark --theme light`, and `--scheme dark` (every page at
   390×844): all 69 already in the right theme with every module held back
   (body `#161616` for dark, `#ffffff` for light, the header still empty).
+
+On 2026-11-26, after the verification fixes (`only light` for a chosen
+Light, the footer radios after a reloading Back, the case page's capture
+link and the wider "More views"), the same 13 runs passed again with the
+same counts, plus `--scheme light --theme light` (153) and `--first-paint
+--scheme light --theme light` (23): 2090 of 2090, html's `color-scheme`
+`light only` wherever Light was chosen, print light in every run.
 
 The same day, one-off Playwright checks (not committed): on
 `/projects/drift-tester` with a stubbed pad, at 390 and 1280, each footer

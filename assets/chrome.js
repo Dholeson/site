@@ -23,8 +23,13 @@
 // copyright line. assets/theme.js (a classic script in every page's head)
 // does the work through window.dholeTheme; this only renders the radios,
 // calls dholeTheme.set() on a change, and re-checks them on "dhole:theme"
-// (another tab's choice, or a page back from the back/forward cache). With
-// no window.dholeTheme (an old cached page without theme.js) there is no
+// (another tab's choice, or a page back from the back/forward cache) and on
+// every pageshow. The radios are autocomplete="off": a Back that reloads the
+// page (no back/forward cache: a no-store page, or one the cache dropped)
+// otherwise has the browser restore the radio that was checked when the
+// visitor left, over the one rendered here and with no change event, so the
+// footer shows one theme while the page is in another. With no
+// window.dholeTheme (an old cached page without theme.js) there is no
 // choice to offer, so nothing is rendered. The header never changes.
 
 import { mountCartBadge } from "./cart.js";
@@ -54,7 +59,7 @@ function themeChoice() {
   if (!theme) return "";
   const current = theme.choice();
   const options = THEMES.map(([value, label]) =>
-    `<label><input type="radio" name="site-theme" value="${value}"${value === current ? " checked" : ""} />${label}</label>`).join("");
+    `<label><input type="radio" name="site-theme" value="${value}"${value === current ? " checked" : ""} autocomplete="off" />${label}</label>`).join("");
   return `<fieldset class="theme-choice">
       <legend>Theme</legend>
       <div class="theme-options">${options}</div>
@@ -105,13 +110,17 @@ export function mountChrome(current = "") {
     choice.addEventListener("change", e => {
       if (e.target.name === "site-theme") window.dholeTheme.set(e.target.value);
     });
-    // Another tab chose, or the page came back from the back/forward cache
-    // to a different stored choice: check the radio that is now current.
-    window.addEventListener("dhole:theme", () => {
+    // Check the radio for the current choice. On "dhole:theme": another tab
+    // chose, or the page came back from the back/forward cache to a
+    // different stored choice. On every pageshow: a browser that restores
+    // form state despite autocomplete="off" has done so by then.
+    const sync = () => {
       for (const radio of choice.querySelectorAll('input[name="site-theme"]')) {
         radio.checked = radio.value === window.dholeTheme.choice();
       }
-    });
+    };
+    window.addEventListener("dhole:theme", sync);
+    window.addEventListener("pageshow", sync);
   }
 
   mountCartBadge();
